@@ -1,4 +1,4 @@
-// core/auth/AuthProvider.tsx
+// core/auth/context/AuthProvider.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -8,115 +8,116 @@ import {
   signOut,
   onIdTokenChanged,
   type User,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
-import { useCookies } from "react-cookie";
-import Cookies from "js-cookie";
+
+type Roles = string[];
 
 interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
   checkingAuth: boolean;
-  role?: string;
+  roles: Roles;
 }
 
 interface AuthContextType {
   authState: AuthState;
-  login: (email: string, password: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  loading: boolean; // loading inicial de firebase-hook
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const COOKIE_NAME = "jwt";
-const COOKIE_PATH = "/";
-const isProd =
-  typeof window !== "undefined" && window.location.protocol === "https:";
+function normalizeRoles(claims: Record<string, unknown>): Roles {
+  // recomendado: claims.roles = ["ADMIN","USER"]
+  const roles = claims.roles;
+  if (Array.isArray(roles)) {
+    return roles.map((r) => String(r).toUpperCase());
+  }
 
-function setJwtCookie(setCookie: any, token: string, expirationTime: string) {
-  setCookie(COOKIE_NAME, token, {
-    path: COOKIE_PATH,
-    expires: new Date(expirationTime),
-    secure: isProd,
-    sameSite: "strict",
-  });
+  // fallback legacy: claims.role = "ADMIN"
+  const role = claims.role;
+  if (typeof role === "string" && role.trim()) {
+    return [role.toUpperCase()];
+  }
+
+  return [];
 }
 
-function removeJwtCookie(removeCookie: any) {
-  removeCookie(COOKIE_NAME, { path: COOKIE_PATH });
-}
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
-  const [_, loading] = useAuthState(auth); // estado inicial de firebase
-  const [, setCookie, removeCookie] = useCookies([COOKIE_NAME]);
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [_, loading] = useAuthState(auth);
 
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     user: null,
-    checkingAuth: true, // arranca chequeando
+    checkingAuth: true,
+    roles: [],
   });
 
   useEffect(() => {
     const unsub = onIdTokenChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
-        removeJwtCookie(removeCookie);
         setAuthState({
           isAuthenticated: false,
           user: null,
           checkingAuth: false,
-          role: "",
+          roles: [],
         });
         return;
       }
 
-      // todavía no tenemos claims → seguimos en checking
       setAuthState((prev) => ({ ...prev, checkingAuth: true }));
 
+      // true => fuerza refresh (útil cuando recién seteás claims)
       const idTokenResult = await firebaseUser.getIdTokenResult(true);
-      const { token, expirationTime, claims } = idTokenResult;
-
-      setJwtCookie(setCookie, token, expirationTime);
+      const roles = normalizeRoles(idTokenResult.claims);
 
       setAuthState({
         isAuthenticated: true,
         user: firebaseUser,
-        checkingAuth: false, // ✅ listo, ya resolvió
-        role: (claims.role as string | undefined)?.toUpperCase() || "",
+        checkingAuth: false,
+        roles,
       });
     });
 
     return () => unsub();
-  }, [removeCookie, setCookie]);
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  const loginWithEmail = async (email: string, password: string) => {
     setAuthState((s) => ({ ...s, checkingAuth: true }));
     await signInWithEmailAndPassword(auth, email, password);
-    // no seteamos nada más, onIdTokenChanged se encarga
+  };
+
+  const loginWithGoogle = async () => {
+    setAuthState((s) => ({ ...s, checkingAuth: true }));
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await signInWithPopup(auth, provider);
   };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-      Cookies.remove("jwt", { path: "/" });
-      localStorage.setItem(
-        "logoutReason",
-        "Sesión vencida. Por favor iniciá sesión nuevamente."
-      );
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        checkingAuth: false,
-        role: "",
-      });
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    }
+    await signOut(auth);
+    setAuthState({
+      isAuthenticated: false,
+      user: null,
+      checkingAuth: false,
+      roles: [],
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        authState,
+        loginWithEmail,
+        loginWithGoogle,
+        logout,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

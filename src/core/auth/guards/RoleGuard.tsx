@@ -1,13 +1,12 @@
-// RoleGuard.tsx
+// core/auth/guards/RoleGuard.tsx
 import { Navigate, Outlet } from "react-router-dom";
-
 import { type JSX } from "react";
 import { useAuth } from "@/core/auth/context/AuthProvider";
 
 interface Props {
   allowedRoles: string[];
   redirectPath?: string;
-  indexElement?: JSX.Element; // opcional
+  indexElement?: JSX.Element;
 }
 
 export default function RoleGuard({
@@ -16,12 +15,20 @@ export default function RoleGuard({
   indexElement,
 }: Props) {
   const { authState } = useAuth();
+  const { isAuthenticated, roles, checkingAuth } = authState;
 
-  if (!authState.isAuthenticated) return <Navigate to="/forbidden" replace />;
-  if (!authState.role || !allowedRoles.includes(authState.role))
+  if (checkingAuth) return null;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  const hasAccess = roles.some((r) => allowedRoles.includes(r));
+
+  if (!hasAccess) {
     return <Navigate to={redirectPath} replace />;
+  }
 
-  // si es index y me pasaron un componente, lo devuelvo
   if (indexElement) return indexElement;
 
   return <Outlet />;

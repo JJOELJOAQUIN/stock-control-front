@@ -1,6 +1,7 @@
+// features/auth/ui/ProtectedRoute.tsx
 import { Navigate } from "react-router-dom";
 import { type ReactNode } from "react";
-import { Loader2 } from "lucide-react"; // shadcn loader
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/core/auth/context/AuthProvider";
 
 interface Props {
@@ -9,11 +10,9 @@ interface Props {
 
 export default function ProtectedRoute({ children }: Props) {
   const { authState, loading } = useAuth();
+  const { isAuthenticated, checkingAuth } = authState;
 
-
-  const isChecking = loading || authState.checkingAuth;
-
-  if (isChecking) {
+  if (loading || checkingAuth) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -21,7 +20,7 @@ export default function ProtectedRoute({ children }: Props) {
     );
   }
 
-  if (!authState.isAuthenticated) {
+  if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
