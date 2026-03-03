@@ -9,7 +9,7 @@ import { cn } from "../lib/utils";
 
 import { DarkModeToggle } from "./dark-mode-toggle";
 import { useAuth } from "@/core/auth/context/AuthProvider";
-import { useDecodedJwt } from "@/core/auth/hooks/useDecodedJwt";
+import { useFirebaseClaims } from "@/core/auth/hooks/useDecodedJwt";
 import { getInitials } from "../lib/initials/initials";
 
 import { Link, useLocation } from "react-router-dom";
@@ -27,7 +27,7 @@ import React from "react";
 
 export function Navbar() {
   const { logout } = useAuth();
-  const decoded = useDecodedJwt();
+  const {claims, loading} = useFirebaseClaims();
 
   const location = useLocation();
 
@@ -126,9 +126,9 @@ export function Navbar() {
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-muted cursor-pointer"
               )}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted p-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
                 <span className="text-xs font-semibold text-foreground">
-                  {getInitials(decoded?.name || "JD")}
+                  {getInitials(claims?.name || "JD")}
                 </span>
               </div>
             </button>

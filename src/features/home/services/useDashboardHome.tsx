@@ -1,8 +1,11 @@
-import { useGetSummaryQuery, useGetCashQuery } from "../api/dashboardApi";
+import {
+  useGetSummaryByContextQuery,
+  useGetCashByContextQuery,
+} from "../api/dashboardApi";
 
-export function useDashboardHome() {
-  const summary = useGetSummaryQuery();
-  const cash = useGetCashQuery();
+export function useDashboardContext(context: "LOCAL" | "CONSULTORIO") {
+  const summary = useGetSummaryByContextQuery(context);
+  const cash = useGetCashByContextQuery(context);
 
   return {
     summary: summary.data,

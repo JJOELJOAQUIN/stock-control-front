@@ -69,11 +69,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
+      console.log("🔥 Firebase login detectado:", firebaseUser.uid);
+
       setAuthState((prev) => ({ ...prev, checkingAuth: true }));
 
-      // true => fuerza refresh (útil cuando recién seteás claims)
-      const idTokenResult = await firebaseUser.getIdTokenResult(true);
-      const roles = normalizeRoles(idTokenResult.claims);
+      const token = await firebaseUser.getIdToken(true);
+
+      // 🔥 FORZAR IMPACTO EN BACKEND
+      await fetch("http://localhost:8080/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("🔥 Backend impactado");
+
+      // 🔥 Ahora refrescar claims nuevamente
+      const refreshed = await firebaseUser.getIdTokenResult(true);
+      console.log("🔥 Claims luego de backend:", refreshed.claims);
+
+      const roles = normalizeRoles(refreshed.claims);
+
+      console.log("🔥 Roles finales:", roles);
 
       setAuthState({
         isAuthenticated: true,

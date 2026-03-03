@@ -1,46 +1,43 @@
-import { useCookies } from "react-cookie";
-import { jwtDecode } from "jwt-decode";
-import { useMemo } from "react";
+import { getAuth, onIdTokenChanged } from "firebase/auth";
+import { useEffect, useState } from "react";
 
-export interface FirebaseTokenPayload {
-  user_id: string;
-  email: string;
-  exp: number;
-  iat: number;
-  name?: string;
+type FirebaseClaims = {
   role?: string;
-}
+  name?: string;
+  email?: string;
+  user_id?: string;
+};
 
-export const useDecodedJwt = (): FirebaseTokenPayload | null => {
-  const [cookies] = useCookies(["jwt"]);
-  const token = cookies.jwt;
+export function useFirebaseClaims() {
+  const [claims, setClaims] = useState<FirebaseClaims | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const decoded = useMemo(() => {
-    if (!token) return null;
+  useEffect(() => {
+    const auth = getAuth();
 
-    try {
-      const payload = jwtDecode<FirebaseTokenPayload>(token);
-      const isExpired = payload.exp * 1000 < Date.now();
-      if (isExpired) {
-        console.warn("JWT expirado");
-        return null;
+    const unsub = onIdTokenChanged(auth, async (user) => {
+      try {
+        if (!user) {
+          setClaims(null);
+          return;
+        }
+
+        // forceRefresh=true si acabás de setear claims y querés asegurar refresco
+        const res = await user.getIdTokenResult(true);
+
+        setClaims({
+          role: (res.claims.role as string | undefined) ?? undefined,
+          name: (res.claims.name as string | undefined) ?? user.displayName ?? undefined,
+          email: user.email ?? undefined,
+          user_id: (res.claims.user_id as string | undefined) ?? user.uid,
+        });
+      } finally {
+        setLoading(false);
       }
-      return payload;
-    } catch (error) {
-      console.error("Error al decodificar JWT:", error);
-      return null;
-    }
-  }, [token]);
+    });
 
-  return decoded;
-};
+    return () => unsub();
+  }, []);
 
-
-export const useUserName = (): string => {
-  const decodedJwt = useDecodedJwt();
-
-  const splitName = decodedJwt?.name?.split(" ") || [];
-  const firstName = splitName[0] || "Usuario";
-
-  return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
-};
+  return { claims, loading };
+}

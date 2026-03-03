@@ -1,17 +1,19 @@
+import { Routes, Route } from "react-router-dom";
+
 import ProtectedRoute from "@/features/auth/ui/ProtectedRoute";
-import Home from "@/features/home/ui/Home";
+import RoleGuard from "../guards/RoleGuard";
+
 import Login from "@/features/login/ui/screens/Login";
 import Tracking from "@/features/tracking/ui/screens/Tracking";
 import Users from "@/features/users/ui/screens/Users";
+import StockPage from "@/features/stock/ui/stock";
+import CajaLocalPage from "@/features/caja/ui/caja-local";
+import CajaConsultorioPage from "@/features/caja/ui/caja-consultorio";
+import MovimientosConsultorioPage from "@/features/movimientos/ui/movimientos-consultorio";
 import { DashboardLayout } from "@/shared/components/dashboard-layout";
 import NotFound404 from "@/shared/screen/404";
-
-import { Routes, Route } from "react-router-dom";
-import RoleGuard from "../guards/RoleGuard";
-import Commercial from "@/features/commercial/ui/screen/commercial";
-import CommercialDetail from "@/features/commercial/ui/screen/commercial-detail";
-import CommercialAdminPanel from "@/features/commercial/ui/screen/commercial-admin-panel";
-import CommercialAnalysisClient from "@/features/commercial/ui/screen/commercial-analysis-clients";
+import HomeByContext from "@/features/home/ui/HomeByContext";
+import Home from "@/features/home/ui/ContextSelector";
 
 enum Role {
   ADMIN = "ADMIN",
@@ -27,30 +29,28 @@ const rolesConfig: Record<string, Role[]> = {
 export default function Router() {
   return (
     <Routes>
-      {/* Login */}
+      {/* 🔐 LOGIN */}
       <Route path="/" element={<Login />} />
 
-      {/* Dashboard */}
-      <Route
-        path="/inicio"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
+      {/* 🔐 DASHBOARD */}
+
+      
+      <Route path="/inicio" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<Home />} />
+        <Route path="home" element={<HomeByContext />} />
+
         <Route path="seguimiento" element={<Tracking />} />
-        <Route path="commercial/:id" element={<Commercial />} />
-        <Route path="commercial" element={<CommercialAdminPanel />} />
-        <Route path="commercial/analysis" element={<CommercialAnalysisClient />} />
-        <Route path="commercial/client/:id" element={<CommercialDetail />} />
+        <Route path="stock" element={<StockPage />} />
+        <Route path="caja/local" element={<CajaLocalPage />} />
+        <Route path="caja/consultorio" element={<CajaConsultorioPage />} />
+        <Route path="movimientos-consultorio" element={<MovimientosConsultorioPage />} />
+
+        {/* admin */}
         <Route element={<RoleGuard allowedRoles={rolesConfig.users} />}>
           <Route path="usuarios" element={<Users />} />
         </Route>
       </Route>
-
-      {/* 404 AL FINAL */}
+      {/* 404 */}
       <Route path="*" element={<NotFound404 />} />
     </Routes>
   );

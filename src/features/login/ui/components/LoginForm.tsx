@@ -61,12 +61,12 @@ export default function LoginForm() {
             Continuar con Google
           </Button>
 
-          <div className="text-center text-xs text-muted-foreground">
+          {/* <div className="text-center text-xs text-muted-foreground">
             o ingresá con email
-          </div>
+          </div> */}
 
-          {/* EMAIL */}
-          <form className="space-y-4" onSubmit={handleEmailLogin}>
+
+          {/* <form className="space-y-4" onSubmit={handleEmailLogin}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -104,7 +104,7 @@ export default function LoginForm() {
             >
               Entrar
             </Button>
-          </form>
+          </form> */}
         </CardContent>
       </Card>
     </div>

@@ -1,37 +1,20 @@
-'use client';
+import { useState } from "react";
+import { BentoGrid } from "@/shared/components/bento-grid";
+import { BentoNavCard, BentoStatCard, BentoSectionCard } from "@/shared/components/bento-card";
+import { Input } from "@/shared/components/ui/input";
+import { Package, Wallet, Receipt, Search, TrendingUp, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
-import { useState } from "react"
-import { BentoGrid } from "@/shared/components/bento-grid"
-import {
-  BentoNavCard,
-  BentoStatCard,
-  BentoSectionCard,
-} from "@/shared/components/bento-card"
-import { Input } from "@/shared/components/ui/input"
-import {
-  Package,
-  Wallet,
-  Receipt,
-  Search,
-  TrendingUp,
-  DollarSign,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-} from "lucide-react"
-
-export default function InicioPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+export default function HomeLocal() {
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="min-h-full bg-background text-foreground space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Panel de Administracion</h1>
-          <p className="text-muted-foreground">Bienvenido, gestiona tu negocio desde aqui</p>
+          <h1 className="text-3xl font-bold text-foreground">Panel Local</h1>
+          <p className="text-muted-foreground">Gestión del local.</p>
         </div>
-        
-        {/* Search Input */}
+
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -43,53 +26,31 @@ export default function InicioPage() {
         </div>
       </div>
 
-      {/* Bento Grid */}
       <BentoGrid>
-        {/* Stock Card - Prominent */}
         <BentoSectionCard
           href="/inicio/stock"
           className="col-span-1 row-span-2 sm:col-span-2 lg:col-span-2"
           icon={<Package className="h-6 w-6" />}
           title="Stock"
-          description="Gestiona tu inventario de productos"
+          description="Inventario del local"
           items={["Ingresar", "Egresar", "Ver inventario"]}
         />
 
-        {/* Caja Local */}
         <BentoNavCard
           href="/inicio/caja/local"
           variant="secondary"
           icon={<Wallet className="h-6 w-6" />}
           title="Caja Local"
-          description="Flujo de dinero local"
+          description="Flujo de dinero del local"
         />
 
-        {/* Caja Consultorio */}
-        <BentoNavCard
-          href="/inicio/caja/consultorio"
-          variant="secondary"
-          icon={<DollarSign className="h-6 w-6" />}
-          title="Caja Consultorio"
-          description="Flujo de dinero consultorio"
-        />
-
-        {/* Movimientos Consultorio */}
-        <BentoNavCard
-          href="/inicio/movimientos-consultorio"
-          variant="gradient"
-          className="col-span-1 sm:col-span-2"
-          icon={<Receipt className="h-6 w-6" />}
-          title="Movimientos Consultorio"
-          description="Registro de todas las transacciones del consultorio"
-        />
-
-        {/* Stats Cards */}
+        {/* Stats */}
         <BentoStatCard
           href="/inicio/stock"
           label="Total Productos"
           value="156"
           change="+12 esta semana"
-          changePositive={true}
+          changePositive
           icon={<Package className="h-4 w-4" />}
         />
 
@@ -98,11 +59,10 @@ export default function InicioPage() {
           label="Caja Local"
           value="$45,230"
           change="+8.2% vs mes anterior"
-          changePositive={true}
+          changePositive
           icon={<TrendingUp className="h-4 w-4" />}
         />
 
-        {/* Quick Actions */}
         <BentoNavCard
           href="/inicio/stock?action=ingresar"
           variant="primary"
@@ -120,5 +80,5 @@ export default function InicioPage() {
         />
       </BentoGrid>
     </div>
-  )
+  );
 }

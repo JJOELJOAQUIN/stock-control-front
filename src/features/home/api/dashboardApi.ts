@@ -4,16 +4,22 @@ import type { CashKpiSummary } from "../models/cashKpiSummary";
 
 export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getSummary: builder.query<DashboardSummary, void>({
-      query: () => ({
-        url: "/api/dashboard/summary",
+    getSummaryByContext: builder.query<
+      DashboardSummary,
+      "LOCAL" | "CONSULTORIO"
+    >({
+      query: (context) => ({
+        url: `/api/dashboard/summary?context=${context}`,
         method: "GET",
       }),
     }),
 
-    getCash: builder.query<CashKpiSummary, void>({
-      query: () => ({
-        url: "/api/dashboard/cash",
+    getCashByContext: builder.query<
+      CashKpiSummary,
+      "LOCAL" | "CONSULTORIO"
+    >({
+      query: (context) => ({
+        url: `/api/dashboard/cash/context?context=${context}`,
         method: "GET",
       }),
     }),
@@ -21,6 +27,6 @@ export const dashboardApi = baseApi.injectEndpoints({
 });
 
 export const {
-  useGetSummaryQuery,
-  useGetCashQuery,
+  useGetSummaryByContextQuery,
+  useGetCashByContextQuery,
 } = dashboardApi;

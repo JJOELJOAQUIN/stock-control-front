@@ -10,14 +10,17 @@ import { store } from "./core/store/store";
 import App from "./App";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./core/context/theme-provider";
+import { BusinessProvider } from "./core/context/business-context";
 
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider>
     <CookiesProvider>
       <AuthProvider>
         <Provider store={store}>
-          <App />
-          <Toaster closeButton  richColors position="top-right" />
+          <BusinessProvider>
+            <App />
+          </BusinessProvider>
+          <Toaster closeButton richColors position="top-right" />
         </Provider>
       </AuthProvider>
     </CookiesProvider>
