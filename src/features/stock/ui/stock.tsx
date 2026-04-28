@@ -1,316 +1,400 @@
-'use client';
+"use client";
 
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/shared/components/ui/button"
-import { Input } from "@/shared/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/shared/components/ui/dialog"
-import { Label } from "@/shared/components/ui/label"
-import { Badge } from "@/shared/components/ui/badge"
-import {
-  Search,
-  Plus,
-  Minus,
-  Package,
-  ArrowLeft,
-} from "lucide-react"
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
-// Mock data for products
-const initialProducts = [
-  { id: 1, name: "Crema Facial Hidratante", sku: "CF001", quantity: 45, minStock: 10, price: 25000 },
-  { id: 2, name: "Serum Vitamina C", sku: "SV001", quantity: 8, minStock: 15, price: 35000 },
-  { id: 3, name: "Mascarilla de Arcilla", sku: "MA001", quantity: 32, minStock: 10, price: 18000 },
-  { id: 4, name: "Tonico Facial", sku: "TF001", quantity: 28, minStock: 12, price: 22000 },
-  { id: 5, name: "Protector Solar SPF50", sku: "PS001", quantity: 5, minStock: 20, price: 28000 },
-  { id: 6, name: "Aceite de Rosa Mosqueta", sku: "AR001", quantity: 18, minStock: 8, price: 32000 },
-]
+import { Button } from "@/shared/components/ui/button";
+import { Badge } from "@/shared/components/ui/badge";
+
+import { useStockPage } from "../hooks/useStockPage";
+import type {
+  CreateProductRequest,
+  PaymentMethod,
+  ProductWithStock,
+  UpdateProductRequest,
+} from "../types/stock.types";
+import { StockSummary } from "../components/StockSumary";
+import { StockOperationsPanel } from "../components/StockOperationPanel";
+import { ProductCatalogSection } from "../components/ProductCatalogSection";
+import { CreateProductDialog } from "../components/CreateProductDialog";
+import { PurchaseDialog } from "../components/PurchaseDialog";
+import { SellDialog } from "../components/SellDialog";
+import { EditProductDialog } from "../components/EditProductDialog";
+
+
+
+type NewProductForm = CreateProductRequest;
 
 export default function StockPage() {
-  const [products, setProducts] = useState(initialProducts)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isIngresoOpen, setIsIngresoOpen] = useState(false)
-  const [isEgresoOpen, setIsEgresoOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<typeof initialProducts[0] | null>(null)
-  const [quantity, setQuantity] = useState("")
+  const {
+    context,
+    filteredProducts,
+    isLoading,
+    search,
+    setSearch,
+    barcodeQuery,
+    setBarcodeQuery,
+    scannedProduct,
+    isScanning,
+    isCreatingProduct,
+    isPurchasing,
+    isSelling,
+    isUpdatingProduct,
+    isDeactivatingProduct,
+    handleCreateProduct,
+    handleScan,
+    handlePurchase,
+    handleSell,
+    handleUpdateProduct,
+    handleDeactivateProduct,
+  } = useStockPage();
 
-  const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
+  const [isSellOpen, setIsSellOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const handleIngreso = () => {
-    if (selectedProduct && quantity) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === selectedProduct.id
-            ? { ...p, quantity: p.quantity + Number.parseInt(quantity) }
-            : p
-        )
-      )
-      setIsIngresoOpen(false)
-      setSelectedProduct(null)
-      setQuantity("")
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductWithStock | null>(null);
+
+  const [newProduct, setNewProduct] = useState<NewProductForm>({
+    name: "",
+    description: "",
+    minimumStock: 0,
+    category: "COSMETICO_VENTA",
+    brand: "LIDHERMA",
+    expirable: false,
+    scope: "BOTH",
+    barcode: "",
+    costPrice: 0,
+  });
+
+  const [editForm, setEditForm] = useState<UpdateProductRequest>({
+    name: "",
+    description: "",
+    minimumStock: 0,
+    category: "COSMETICO_VENTA",
+    brand: "LIDHERMA",
+    expirable: false,
+    active: true,
+    costPrice: 0,
+  });
+
+  const [purchaseForm, setPurchaseForm] = useState({
+    quantity: "",
+    amount: "",
+    comment: "",
+  });
+
+  const [sellForm, setSellForm] = useState({
+    quantity: "",
+    amount: "",
+    paymentMethod: "CASH" as PaymentMethod,
+    comment: "",
+  });
+
+  const totalProducts = filteredProducts.length;
+
+  const activeProducts = useMemo(
+    () => filteredProducts.filter((p) => p.active),
+    [filteredProducts]
+  );
+
+  const inactiveProducts = useMemo(
+    () => filteredProducts.filter((p) => !p.active),
+    [filteredProducts]
+  );
+
+  const openPurchaseDialog = (product: ProductWithStock) => {
+    setSelectedProduct(product);
+    setPurchaseForm({
+      quantity: "",
+      amount: "",
+      comment: "",
+    });
+    setIsPurchaseOpen(true);
+  };
+
+  const openSellDialog = () => {
+    if (!scannedProduct) {
+      toast.error("Primero escaneá un producto");
+      return;
     }
-  }
 
-  const handleEgreso = () => {
-    if (selectedProduct && quantity) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === selectedProduct.id
-            ? { ...p, quantity: Math.max(0, p.quantity - Number.parseInt(quantity)) }
-            : p
-        )
-      )
-      setIsEgresoOpen(false)
-      setSelectedProduct(null)
-      setQuantity("")
+    setSellForm({
+      quantity: "",
+      amount: "",
+      paymentMethod: "CASH",
+      comment: "",
+    });
+    setIsSellOpen(true);
+  };
+
+  const openEditDialog = (product: ProductWithStock) => {
+    setEditingProduct(product);
+    setEditForm({
+      name: product.name,
+      description: "",
+      minimumStock: product.minimumStock,
+      category: product.category,
+      brand: product.brand,
+      expirable: false,
+      active: product.active,
+      costPrice: Number(product.costPrice ?? 0),
+    });
+    setIsEditOpen(true);
+  };
+
+  const onSubmitCreateProduct = async () => {
+    try {
+      if (!newProduct.name.trim()) {
+        toast.error("El nombre es obligatorio");
+        return;
+      }
+
+      if (newProduct.minimumStock < 0) {
+        toast.error("El stock mínimo no puede ser negativo");
+        return;
+      }
+
+      if (newProduct.costPrice <= 0) {
+        toast.error("El costo debe ser mayor a cero");
+        return;
+      }
+
+      await handleCreateProduct({
+        ...newProduct,
+        name: newProduct.name.trim(),
+        description: newProduct.description?.trim() || "",
+        barcode: newProduct.barcode?.trim() || "",
+      });
+
+      setIsCreateOpen(false);
+      setNewProduct({
+        name: "",
+        description: "",
+        minimumStock: 0,
+        category: "COSMETICO_VENTA",
+        brand: "LIDHERMA",
+        expirable: false,
+        scope: "BOTH",
+        barcode: "",
+        costPrice: 0,
+      });
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo crear el producto");
     }
-  }
+  };
 
-  const getStockStatus = (quantity: number, minStock: number) => {
-    if (quantity <= minStock * 0.5) return { label: "Critico", variant: "destructive" as const }
-    if (quantity <= minStock) return { label: "Bajo", variant: "secondary" as const }
-    return { label: "Normal", variant: "default" as const }
-  }
+  const onSubmitPurchase = async () => {
+    try {
+      if (!selectedProduct) {
+        toast.error("Seleccioná un producto");
+        return;
+      }
+
+      const quantity = Number(purchaseForm.quantity);
+      const amount = Number(purchaseForm.amount);
+
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        toast.error("La cantidad debe ser mayor a cero");
+        return;
+      }
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        toast.error("El monto debe ser mayor a cero");
+        return;
+      }
+
+      await handlePurchase({
+        productId: selectedProduct.id,
+        quantity,
+        amount,
+        comment: purchaseForm.comment.trim(),
+      });
+
+      setIsPurchaseOpen(false);
+      setSelectedProduct(null);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo registrar la compra");
+    }
+  };
+
+  const onSubmitSell = async () => {
+    try {
+      if (!scannedProduct?.barcode) {
+        toast.error("No hay producto escaneado");
+        return;
+      }
+
+      const quantity = Number(sellForm.quantity);
+      const amount = Number(sellForm.amount);
+
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        toast.error("La cantidad debe ser mayor a cero");
+        return;
+      }
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        toast.error("El monto debe ser mayor a cero");
+        return;
+      }
+
+      await handleSell({
+        barcode: scannedProduct.barcode,
+        quantity,
+        amount,
+        paymentMethod: sellForm.paymentMethod,
+        comment: sellForm.comment.trim(),
+      });
+
+      setIsSellOpen(false);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo registrar la venta");
+    }
+  };
+
+  const onSubmitEdit = async () => {
+    try {
+      if (!editingProduct) return;
+
+      if (!editForm.name.trim()) {
+        toast.error("El nombre es obligatorio");
+        return;
+      }
+
+      if (editForm.minimumStock < 0) {
+        toast.error("El stock mínimo no puede ser negativo");
+        return;
+      }
+
+      if (editForm.costPrice <= 0) {
+        toast.error("El costo debe ser mayor a cero");
+        return;
+      }
+
+      await handleUpdateProduct(editingProduct.id, {
+        ...editForm,
+        name: editForm.name.trim(),
+        description: editForm.description?.trim() || "",
+      });
+
+      setIsEditOpen(false);
+      setEditingProduct(null);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo actualizar el producto");
+    }
+  };
+
+  const onDeactivateProduct = async (product: ProductWithStock) => {
+    try {
+      await handleDeactivateProduct(product.id);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo desactivar el producto");
+    }
+  };
 
   return (
-       <div className="min-h-full bg-background text-foreground space-y-6">
-
-      {/* Header */}
+    <div className="min-h-full bg-background text-foreground space-y-6">
       <div className="flex items-center gap-4">
         <Link to="/inicio">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
+
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-foreground">Stock</h1>
-          <p className="text-muted-foreground">Gestiona el inventario de productos</p>
+          <p className="text-muted-foreground">
+            Catálogo y operación por contexto
+          </p>
         </div>
+
+        <Badge variant="outline">
+          Contexto actual: {context ?? "Sin seleccionar"}
+        </Badge>
       </div>
 
-      {/* Actions Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nombre o SKU..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      <StockSummary
+        totalProducts={totalProducts}
+        activeProducts={activeProducts.length}
+        inactiveProducts={inactiveProducts.length}
+      />
 
-        <div className="flex gap-2">
-          {/* Ingreso Dialog */}
-          <Dialog open={isIngresoOpen} onOpenChange={setIsIngresoOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Ingresar Stock
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Ingresar Stock</DialogTitle>
-                <DialogDescription>
-                  Agrega unidades al inventario de un producto
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Producto</Label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={selectedProduct?.id || ""}
-                    onChange={(e) => {
-                      const product = products.find((p) => p.id === Number.parseInt(e.target.value))
-                      setSelectedProduct(product || null)
-                    }}
-                  >
-                    <option value="">Seleccionar producto</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} (Stock actual: {product.quantity})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Cantidad a ingresar</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="Ingrese cantidad"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsIngresoOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleIngreso} disabled={!selectedProduct || !quantity}>
-                  Confirmar Ingreso
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+      <StockOperationsPanel
+        context={context}
+        barcodeQuery={barcodeQuery}
+        setBarcodeQuery={setBarcodeQuery}
+        scannedProduct={scannedProduct}
+        isScanning={isScanning}
+        onScan={handleScan}
+        onOpenSell={openSellDialog}
+        onOpenPurchaseFromScan={() => {
+          const product = filteredProducts.find(
+            (item) => item.id === scannedProduct?.id
+          );
 
-          {/* Egreso Dialog */}
-          <Dialog open={isEgresoOpen} onOpenChange={setIsEgresoOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 bg-transparent">
-                <Minus className="h-4 w-4" />
-                Egresar Stock
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Egresar Stock</DialogTitle>
-                <DialogDescription>
-                  Registra la salida de unidades del inventario
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
+          if (!product) {
+            toast.error("No se encontró el producto en catálogo");
+            return;
+          }
 
-                <div className="space-y-2">
-                  <Label>Producto</Label>
-                  <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={selectedProduct?.id || ""}
-                    onChange={(e) => {
-                      const product = products.find((p) => p.id === Number.parseInt(e.target.value))
-                      setSelectedProduct(product || null)
-                    }}
-                  >
-                    <option value="">Seleccionar producto</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} (Stock actual: {product.quantity})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Cantidad a egresar</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max={selectedProduct?.quantity || 0}
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="Ingrese cantidad"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsEgresoOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleEgreso} disabled={!selectedProduct || !quantity} variant="destructive">
-                  Confirmar Egreso
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+          openPurchaseDialog(product);
+        }}
+      />
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Productos</p>
-              <p className="text-2xl font-bold text-foreground">{products.length}</p>
-            </div> 
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-              <Package className="h-5 w-5 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Unidades Totales</p>
-              <p className="text-2xl font-bold text-foreground">
-                {products.reduce((acc, p) => acc + p.quantity, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
-              <Package className="h-5 w-5 text-destructive" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Stock Bajo</p>
-              <p className="text-2xl font-bold text-foreground">
-                {products.filter((p) => p.quantity <= p.minStock).length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ProductCatalogSection
+        products={filteredProducts}
+        isLoading={isLoading}
+        search={search}
+        setSearch={setSearch}
+        onOpenCreate={() => setIsCreateOpen(true)}
+        onOpenPurchase={openPurchaseDialog}
+        onOpenEdit={openEditDialog}
+        onDeactivate={onDeactivateProduct}
+        isDeactivating={isDeactivatingProduct}
+      />
 
-      {/* Products Table */}
-      <div className="rounded-xl border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Producto</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead className="text-right">Stock</TableHead>
-              <TableHead className="text-right">Stock Min.</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Precio</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProducts.map((product) => {
-              const status = getStockStatus(product.quantity, product.minStock)
-              return (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{product.sku}</TableCell>
-                  <TableCell className="text-right font-semibold">{product.quantity}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{product.minStock}</TableCell>
-                  <TableCell>
-                    <Badge variant={status.variant}>{status.label}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    ${product.price.toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <CreateProductDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        form={newProduct}
+        setForm={setNewProduct}
+        isSubmitting={isCreatingProduct}
+        onSubmit={onSubmitCreateProduct}
+      />
+
+      <PurchaseDialog
+        open={isPurchaseOpen}
+        onOpenChange={setIsPurchaseOpen}
+        productName={selectedProduct?.name ?? ""}
+        form={purchaseForm}
+        setForm={setPurchaseForm}
+        isSubmitting={isPurchasing}
+        onSubmit={onSubmitPurchase}
+      />
+
+      <SellDialog
+        open={isSellOpen}
+        onOpenChange={setIsSellOpen}
+        barcode={scannedProduct?.barcode ?? ""}
+        form={sellForm}
+        setForm={setSellForm}
+        isSubmitting={isSelling}
+        onSubmit={onSubmitSell}
+      />
+
+      <EditProductDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        product={editingProduct}
+        form={editForm}
+        setForm={setEditForm}
+        isSubmitting={isUpdatingProduct}
+        onSubmit={onSubmitEdit}
+      />
     </div>
-  )
+  );
 }

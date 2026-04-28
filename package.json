@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+     "perf": "node scripts/perf-bot/index.js",
+    "perf:full": "npm run build && node scripts/perf-bot/index.js",
+    "perf:bundle": "npm run build && node -e \"import('./scripts/perf-bot/bundle.js').then(m => m.analyzeBundle().then(console.log))\""
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
@@ -52,8 +55,10 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "glob": "^13.0.6",
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
+    "puppeteer": "^24.42.0",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

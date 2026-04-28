@@ -13,7 +13,7 @@ import { Button } from "@/shared/components/ui/button";
 export default function LoginForm() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const { loginWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithEmail } = useAuth();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,16 +31,6 @@ export default function LoginForm() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      await loginWithGoogle();
-      toast.success("Sesión iniciada con Google", { duration: 2500 });
-      navigate("/inicio");
-    } catch {
-      toast.error("No se pudo iniciar sesión con Google", { duration: 2500 });
-    }
-  };
-
   return (
     <div className="w-full h-screen flex items-center justify-center">
       <Card className="h-screen w-full flex flex-col items-center justify-center bg-card dark:bg-card/90 shadow-lg border-none rounded-none">
@@ -51,22 +41,7 @@ export default function LoginForm() {
         />
 
         <CardContent className="w-full max-w-sm space-y-4">
-          {/* GOOGLE */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleLogin}
-          >
-            Continuar con Google
-          </Button>
-
-          {/* <div className="text-center text-xs text-muted-foreground">
-            o ingresá con email
-          </div> */}
-
-
-          {/* <form className="space-y-4" onSubmit={handleEmailLogin}>
+          <form className="space-y-4" onSubmit={handleEmailLogin}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -104,7 +79,7 @@ export default function LoginForm() {
             >
               Entrar
             </Button>
-          </form> */}
+          </form>
         </CardContent>
       </Card>
     </div>

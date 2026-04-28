@@ -45,11 +45,8 @@ const menuItems: MenuItem[] = [
   {
     icon: Wallet,
     label: "Caja",
-    href: "/inicio/caja",
-    submenu: [
-      { label: "Caja Local", href: "/inicio/caja/local", icon: Wallet },
-      { label: "Caja Consultorio", href: "/inicio/caja/consultorio", icon: Wallet },
-    ],
+    href: "/inicio/caja/consultorio",
+
   },
   {
     icon: Receipt,

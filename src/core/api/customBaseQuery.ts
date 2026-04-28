@@ -8,21 +8,20 @@ import { logoutUser } from "../auth/helper/logoutHandler";
 import { getAuth } from "firebase/auth";
 
 const VITE_URL_API = import.meta.env.VITE_API_URL;
-console.log("API BASE URL:", VITE_URL_API);
-
+const VITE_BACKEND_FIREBASE_AUTH =
+  import.meta.env.VITE_BACKEND_FIREBASE_AUTH === "true";
 
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: VITE_URL_API ,
-  
+  baseUrl: VITE_URL_API,
   credentials: "include",
   jsonContentType: "application/json",
-
   prepareHeaders: async (headers) => {
+    if (!VITE_BACKEND_FIREBASE_AUTH) return headers;
+
     const auth = getAuth();
     const user = auth.currentUser;
-
-    // Token
     const token = user ? await user.getIdToken() : null;
+
     if (token) headers.set("Authorization", `Bearer ${token}`);
     return headers;
   },

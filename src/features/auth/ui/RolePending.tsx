@@ -1,24 +1,20 @@
 import { useEffect } from "react";
 import { useAuth } from "@/core/auth/context/AuthProvider";
-import { auth } from "@/core/auth/firebase";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const RolePending = () => {
-  const { authState } = useAuth();
+  const { authState, refreshSession } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      const user = auth.currentUser;
-      if (user) {
-        await user.getIdToken(true); // 🔥 fuerza refresh claims
-      }
-    }, 8000); // cada 8 segundos
+      await refreshSession();
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshSession]);
 
   useEffect(() => {
     if (
@@ -28,7 +24,7 @@ const RolePending = () => {
       toast.success("Cuenta aprobada correctamente");
       navigate("/inicio");
     }
-  }, [authState.roles]);
+  }, [authState.roles, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

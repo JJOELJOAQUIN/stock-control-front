@@ -1,124 +1,42 @@
-'use client';
+import { Banner } from "@/shared/components/ui/banner";
+import { CTACard } from "@/shared/components/ui/charts/cta-card";
+import { useBusinessContext } from "@/core/context/business-context";
+import { Store, Stethoscope } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-import { useState } from "react"
-import { BentoGrid } from "@/shared/components/bento-grid"
-import {
-  BentoNavCard,
-  BentoStatCard,
-  BentoSectionCard,
-} from "@/shared/components/bento-card"
-import { Input } from "@/shared/components/ui/input"
-import {
-  Package,
-  Wallet,
-  Receipt,
-  Search,
-  TrendingUp,
-  DollarSign,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-} from "lucide-react"
+const Home = () => {
+  const navigate = useNavigate();
+  const { setContext } = useBusinessContext();
 
-export default function InicioPage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const goToContext = (ctx: "LOCAL" | "CONSULTORIO") => {
+    setContext(ctx);
+    navigate("/inicio/home");
+  };
 
   return (
-    <div className="min-h-full bg-background text-foreground space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Panel de Administracion</h1>
-          <p className="text-muted-foreground">Bienvenido, gestiona tu negocio desde aqui</p>
-        </div>
-        
-        {/* Search Input */}
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar productos, movimientos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+    <div>
+      <Banner
+        title="Bienvenido"
+        description="Selecciona el entorno de trabajo."
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <CTACard
+          title="LOCAL"
+          description="Gestionar inventario y caja del local"
+          icon={<Store className="h-6 w-6" />}
+          onClick={() => goToContext("LOCAL")}
+        />
+
+        <CTACard
+          title="CONSULTORIO"
+          description="Gestionar inventario y caja del consultorio"
+          icon={<Stethoscope className="h-6 w-6" />}
+          onClick={() => goToContext("CONSULTORIO")}
+        />
       </div>
-
-      {/* Bento Grid */}
-      <BentoGrid>
-        {/* Stock Card - Prominent */}
-        <BentoSectionCard
-          href="/inicio/stock"
-          className="col-span-1 row-span-2 sm:col-span-2 lg:col-span-2"
-          icon={<Package className="h-6 w-6" />}
-          title="Stock"
-          description="Gestiona tu inventario de productos"
-          items={["Ingresar", "Egresar", "Ver inventario"]}
-        />
-
-        {/* Caja Local */}
-        <BentoNavCard
-          href="/inicio/caja/local"
-          variant="secondary"
-          icon={<Wallet className="h-6 w-6" />}
-          title="Caja Local"
-          description="Flujo de dinero local"
-        />
-
-        {/* Caja Consultorio */}
-        <BentoNavCard
-          href="/inicio/caja/consultorio"
-          variant="secondary"
-          icon={<DollarSign className="h-6 w-6" />}
-          title="Caja Consultorio"
-          description="Flujo de dinero consultorio"
-        />
-
-        {/* Movimientos Consultorio */}
-        <BentoNavCard
-          href="/inicio/movimientos-consultorio"
-          variant="gradient"
-          className="col-span-1 sm:col-span-2"
-          icon={<Receipt className="h-6 w-6" />}
-          title="Movimientos Consultorio"
-          description="Registro de todas las transacciones del consultorio"
-        />
-
-        {/* Stats Cards */}
-        <BentoStatCard
-          href="/inicio/stock"
-          label="Total Productos"
-          value="156"
-          change="+12 esta semana"
-          changePositive={true}
-          icon={<Package className="h-4 w-4" />}
-        />
-
-        <BentoStatCard
-          href="/inicio/caja/local"
-          label="Caja Local"
-          value="$45,230"
-          change="+8.2% vs mes anterior"
-          changePositive={true}
-          icon={<TrendingUp className="h-4 w-4" />}
-        />
-
-        {/* Quick Actions */}
-        <BentoNavCard
-          href="/inicio/stock?action=ingresar"
-          variant="primary"
-          icon={<ArrowDownToLine className="h-6 w-6" />}
-          title="Ingresar Stock"
-          description="Agregar productos al inventario"
-        />
-
-        <BentoNavCard
-          href="/inicio/stock?action=egresar"
-          variant="accent"
-          icon={<ArrowUpFromLine className="h-6 w-6" />}
-          title="Egresar Stock"
-          description="Registrar salida de productos"
-        />
-      </BentoGrid>
     </div>
-  )
-}
+  );
+};
+
+export default Home;
