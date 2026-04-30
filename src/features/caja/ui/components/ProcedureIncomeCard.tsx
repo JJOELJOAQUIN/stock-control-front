@@ -1,158 +1,191 @@
+"use client";
+
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/shared/components/ui/button";
+import { Stethoscope, Sparkles } from "lucide-react";
+import type { PaymentMethod, ProcedureOption } from "../../types/cash.types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-import type {
-    PaymentMethod,
-    ProcedureOption,
-} from "../../types/cash.types";
+import { Button } from "@/shared/components/ui/button";
+import { Spinner } from "@/shared/components/ui/spinner";
 
-const PAYMENT_METHODS: PaymentMethod[] = [
-    "CASH",
-    "TRANSFER",
-    "DEBIT",
-    "CREDIT",
+
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "CASH", label: "Efectivo" },
+  { value: "TRANSFER", label: "Transferencia" },
+  { value: "DEBIT", label: "Débito" },
+  { value: "CREDIT", label: "Crédito" },
 ];
 
 type Props = {
-    title: string;
-    description: string;
-    procedures: ProcedureOption[];
+  title: string;
+  description: string;
+  procedures: ProcedureOption[];
+  doctorSharePercent: number;
+  cosmetologistSharePercent: number;
+  isSubmitting: boolean;
+  variant?: "cosmetologia" | "medica";
+  onSubmit: (payload: {
+    procedure: ProcedureOption;
+    amount: number;
+    paymentMethod: PaymentMethod;
+    comment?: string;
     doctorSharePercent: number;
     cosmetologistSharePercent: number;
-    isSubmitting: boolean;
-    onSubmit: (payload: {
-        procedure: ProcedureOption;
-        amount: number;
-        paymentMethod: PaymentMethod;
-        comment?: string;
-        doctorSharePercent: number;
-        cosmetologistSharePercent: number;
-    }) => Promise<void>;
+  }) => Promise<void>;
 };
 
 export function ProcedureIncomeCard({
-    title,
-    description,
-    procedures,
-    doctorSharePercent,
-    cosmetologistSharePercent,
-    isSubmitting,
-    onSubmit,
+  title,
+  description,
+  procedures,
+  doctorSharePercent,
+  cosmetologistSharePercent,
+  isSubmitting,
+  variant = "cosmetologia",
+  onSubmit,
 }: Props) {
-    const initialProcedure = procedures[0];
+  const initialProcedure = procedures[0];
 
-    const [procedureCode, setProcedureCode] = useState(initialProcedure?.code ?? "");
-    const [amount, setAmount] = useState(String(initialProcedure?.amount ?? 0));
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
-    const [comment, setComment] = useState("");
+  const [procedureCode, setProcedureCode] = useState(
+    initialProcedure?.code ?? ""
+  );
+  const [amount, setAmount] = useState(String(initialProcedure?.amount ?? 0));
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [comment, setComment] = useState("");
 
-    const selectedProcedure = useMemo(
-        () => procedures.find((p) => p.code === procedureCode),
-        [procedures, procedureCode]
-    );
+  const selectedProcedure = useMemo(
+    () => procedures.find((p) => p.code === procedureCode),
+    [procedures, procedureCode]
+  );
 
-    const handleProcedureChange = (code: string) => {
-        setProcedureCode(code);
+  const handleProcedureChange = (code: string) => {
+    setProcedureCode(code);
+    const found = procedures.find((p) => p.code === code);
+    if (found) {
+      setAmount(String(found.amount));
+    }
+  };
 
-        const found = procedures.find((p) => p.code === code);
-        if (found) {
-            setAmount(String(found.amount));
-        }
-    };
+  const handleSubmit = async () => {
+    const parsedAmount = Number(amount);
 
-    const handleSubmit = async () => {
-        const parsedAmount = Number(amount);
+    if (!selectedProcedure) {
+      toast.error("Seleccioná un procedimiento");
+      return;
+    }
 
-        if (!selectedProcedure) {
-            toast.error("Seleccioná un procedimiento");
-            return;
-        }
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      toast.error("El monto debe ser mayor a cero");
+      return;
+    }
 
-        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            toast.error("El monto debe ser mayor a cero");
-            return;
-        }
+    await onSubmit({
+      procedure: selectedProcedure,
+      amount: parsedAmount,
+      paymentMethod,
+      comment: comment.trim(),
+      doctorSharePercent,
+      cosmetologistSharePercent,
+    });
 
-        await onSubmit({
-            procedure: selectedProcedure,
-            amount: parsedAmount,
-            paymentMethod,
-            comment: comment.trim(),
-            doctorSharePercent,
-            cosmetologistSharePercent,
-        });
+    setComment("");
+  };
 
-        setComment("");
-    };
+  const Icon = variant === "medica" ? Stethoscope : Sparkles;
+  const accentColor =
+    variant === "medica"
+      ? "text-sky-600 dark:text-sky-400"
+      : "text-violet-600 dark:text-violet-400";
+  const bgColor =
+    variant === "medica"
+      ? "bg-sky-100 dark:bg-sky-900/50"
+      : "bg-violet-100 dark:bg-violet-900/50";
 
-    return (
-        <section className="rounded-xl border border-border bg-card p-4 space-y-4">
-            <div>
-                <h2 className="text-lg font-semibold">{title}</h2>
-                <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div
+            className={`flex size-10 items-center justify-center rounded-lg ${bgColor} ${accentColor}`}
+          >
+            <Icon className="size-5" />
+          </div>
+          <div>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                    <Label>Procedimiento</Label>
-                    <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={procedureCode}
-                        onChange={(e) => handleProcedureChange(e.target.value)}
-                    >
-                        {procedures.map((item) => (
-                            <option key={item.code} value={item.code}>
-                                {item.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+      <CardContent>
+        <FieldGroup className="gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Field>
+              <FieldLabel>Procedimiento</FieldLabel>
+              <Select value={procedureCode} onValueChange={handleProcedureChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar procedimiento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {procedures.map((item) => (
+                    <SelectItem key={item.code} value={item.code}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
 
-                <div className="space-y-2">
-                    <Label>Monto</Label>
-                    <Input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                    />
-                </div>
+            <Field>
+              <FieldLabel>Monto</FieldLabel>
+              <Input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </Field>
 
-                <div className="space-y-2">
-                    <Label>Método de pago</Label>
-                    <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                    >
-                        {PAYMENT_METHODS.map((item) => (
-                            <option key={item} value={item}>
-                                {item}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+            <Field>
+              <FieldLabel>Método de pago</FieldLabel>
+              <Select
+                value={paymentMethod}
+                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
 
-                <div className="space-y-2 md:col-span-3">
-                    <Label>Comentario</Label>
-                    <Input
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        placeholder="Opcional"
-                    />
-                </div>
-            </div>
+          <Field>
+            <FieldLabel>Comentario (opcional)</FieldLabel>
+            <Input
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Agregar nota o comentario..."
+            />
+          </Field>
 
-            <div className="flex items-center justify-between gap-4">
-               <Button
-                    className="ml-auto"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                >
-                    Registrar ingreso
-                </Button>
-            </div>
-        </section>
-    );
+          <div className="flex justify-end pt-2">
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting && <Spinner />}
+              Registrar ingreso
+            </Button>
+          </div>
+        </FieldGroup>
+      </CardContent>
+    </Card>
+  );
 }

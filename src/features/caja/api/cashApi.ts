@@ -1,6 +1,7 @@
 import { baseApi } from "@/core/api/baseApi";
 import type {
   CashContext,
+  CashDailySplitResponse,
   CashMovementResponse,
   CreateCashMovementRequest,
   PageResponse,
@@ -18,6 +19,25 @@ export const cashApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["Cash"],
+    }),
+
+
+    getDailyCashSplit: builder.query<
+      CashDailySplitResponse,
+      { context: CashContext; date?: string }
+    >({
+      query: ({ context, date }) => {
+        const params = new URLSearchParams();
+
+        params.set("context", context);
+        if (date) params.set("date", date);
+
+        return {
+          url: `/api/cash-movements/daily-split?${params.toString()}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["Cash"],
     }),
 
     getCashMovements: builder.query<
@@ -45,4 +65,5 @@ export const cashApi = baseApi.injectEndpoints({
 export const {
   useCreateCashMovementMutation,
   useGetCashMovementsQuery,
+  useGetDailyCashSplitQuery
 } = cashApi;

@@ -1,13 +1,8 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
-
 import { useStockPage } from "../hooks/useStockPage";
 import type {
   CreateProductRequest,
@@ -22,8 +17,6 @@ import { CreateProductDialog } from "../components/CreateProductDialog";
 import { PurchaseDialog } from "../components/PurchaseDialog";
 import { SellDialog } from "../components/SellDialog";
 import { EditProductDialog } from "../components/EditProductDialog";
-
-
 
 type NewProductForm = CreateProductRequest;
 
@@ -298,23 +291,33 @@ export default function StockPage() {
 
   return (
     <div className="min-h-full bg-background text-foreground space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <Link to="/inicio">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 shrink-0"
+          >
             <ArrowLeft className="h-5 w-5" />
+            <span className="sr-only">Volver al inicio</span>
           </Button>
         </Link>
 
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-foreground">Stock</h1>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <PackageCheck className="h-5 w-5 text-primary" />
+            </div>
+
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Stock
+            </h1>
+          </div>
+
           <p className="text-muted-foreground">
-            Catálogo y operación por contexto
+            Gestión de productos, existencias y control de inventario
           </p>
         </div>
-
-        <Badge variant="outline">
-          Contexto actual: {context ?? "Sin seleccionar"}
-        </Badge>
       </div>
 
       <StockSummary

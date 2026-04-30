@@ -99,6 +99,16 @@ export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
   },
 ];
 
+export type CashDailySplitResponse = {
+  date: string;
+  context: CashContext;
+  netIncome: number;
+  doctorTotal: number;
+  cosmetologistTotal: number;
+};
+
+export type CashActor = "MEDICA" | "COSMETOLOGA";
+
 export const MEDICA_PROCEDURES: ProcedureOption[] = [
   {
     code: "CONSULTA",

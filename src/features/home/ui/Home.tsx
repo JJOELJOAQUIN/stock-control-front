@@ -21,12 +21,12 @@ const Home = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <CTACard
+        {/* <CTACard
           title="LOCAL"
           description="Gestionar inventario y caja del local"
           icon={<Store className="h-6 w-6" />}
           onClick={() => goToContext("LOCAL")}
-        />
+        /> */}
 
         <CTACard
           title="CONSULTORIO"

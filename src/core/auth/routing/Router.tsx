@@ -13,7 +13,8 @@ import MovimientosConsultorioPage from "@/features/movimientos/ui/movimientos-co
 import { DashboardLayout } from "@/shared/components/dashboard-layout";
 import NotFound404 from "@/shared/screen/404";
 import HomeByContext from "@/features/home/ui/HomeByContext";
-import Home from "@/features/home/ui/ContextSelector";
+
+import HomeConsultorio from "@/features/home/ui/screens/HomeConsultorio";
 
 
 
@@ -28,7 +29,7 @@ export default function Router() {
 
       
       <Route path="/inicio" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-        <Route index element={<Home />} />
+        <Route index element={<HomeConsultorio />} />
         <Route path="home" element={<HomeByContext />} />
 
         <Route path="seguimiento" element={<Tracking />} />

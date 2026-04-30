@@ -10,8 +10,8 @@ export function useMovementsPage() {
   const { context } = useBusinessContext();
 
   const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [type, setType] = useState<StockMovementType | "">("");
-  const [reason, setReason] = useState<StockMovementReason | "">("");
+  const [type, setType] = useState<StockMovementType | "ALL">("ALL");
+  const [reason, setReason] = useState<StockMovementReason | "ALL">("ALL");
   const [minQty, setMinQty] = useState<string>("");
   const [maxQty, setMaxQty] = useState<string>("");
   const [from, setFrom] = useState<string>("");
@@ -29,8 +29,8 @@ export function useMovementsPage() {
     ? {
         productId: selectedProductId,
         context: context!,
-        type: type || undefined,
-        reason: reason || undefined,
+        type: type !== "ALL" ? type : undefined,
+        reason: reason !== "ALL" ? reason : undefined,
         minQty: minQty ? Number(minQty) : undefined,
         maxQty: maxQty ? Number(maxQty) : undefined,
         from: from || undefined,
@@ -53,8 +53,8 @@ export function useMovementsPage() {
   );
 
   const resetFilters = () => {
-    setType("");
-    setReason("");
+    setType("ALL");
+    setReason("ALL");
     setMinQty("");
     setMaxQty("");
     setFrom("");

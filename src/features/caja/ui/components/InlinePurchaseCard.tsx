@@ -1,12 +1,16 @@
+"use client";
+
 import { useState } from "react";
 import { toast } from "sonner";
 import { PackagePlus } from "lucide-react";
-
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { Input } from "@/shared/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
+import { Spinner } from "@/shared/components/ui/spinner";
+
 
 type Props = {
   products: ProductWithStock[];
@@ -61,72 +65,86 @@ export function InlineProductPurchaseCard({
   };
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Compra directa de producto</h2>
-        <p className="text-sm text-muted-foreground">
-          Registrar ingreso de stock y egreso de caja desde consultorio
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="space-y-2 md:col-span-1">
-          <Label>Producto</Label>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
-          >
-            <option value="">Seleccionar producto</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name} · Stock: {product.currentStock}
-              </option>
-            ))}
-          </select>
+    <Card className="border-amber-200/30 dark:border-amber-800/30">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400">
+            <PackagePlus className="size-5" />
+          </div>
+          <div>
+            <CardTitle>Compra directa de producto</CardTitle>
+            <CardDescription>
+              Registrar ingreso de stock y egreso de caja desde consultorio
+            </CardDescription>
+          </div>
         </div>
+      </CardHeader>
 
-        <div className="space-y-2">
-          <Label>Cantidad</Label>
-          <Input
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-          />
-        </div>
+      <CardContent>
+        <FieldGroup className="gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <Field>
+              <FieldLabel>Producto</FieldLabel>
+              <Select value={productId} onValueChange={setProductId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar producto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name} · Stock: {product.currentStock}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
 
-        <div className="space-y-2">
-          <Label>Monto total</Label>
-          <Input
-            type="number"
-            min="0"
-            step="0.01"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
+            <Field>
+              <FieldLabel>Cantidad</FieldLabel>
+              <Input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </Field>
 
-        <div className="space-y-2">
-          <Label>Comentario</Label>
-          <Input
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Opcional"
-          />
-        </div>
-      </div>
+            <Field>
+              <FieldLabel>Monto total</FieldLabel>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0"
+              />
+            </Field>
 
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="gap-2"
-        >
-          <PackagePlus className="h-4 w-4" />
-          Registrar compra
-        </Button>
-      </div>
-    </section>
+            <Field>
+              <FieldLabel>Comentario</FieldLabel>
+              <Input
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Opcional"
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button
+              variant="outline"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950 dark:hover:text-amber-300"
+            >
+              {isSubmitting && <Spinner />}
+              <PackagePlus className="size-4" />
+              Registrar compra
+            </Button>
+          </div>
+        </FieldGroup>
+      </CardContent>
+    </Card>
   );
 }

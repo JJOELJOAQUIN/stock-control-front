@@ -1,23 +1,21 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-import type { ProductWithStock, UpdateProductRequest } from "../types/stock.types";
 
+import { Barcode, DollarSign, Pencil } from "lucide-react";
+import type { ProductWithStock, UpdateProductRequest } from "../types/stock.types";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
+import { Input } from "@/shared/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/shared/components/ui/input-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { Spinner } from "@/shared/components/ui/spinner";
 
 const PRODUCT_CATEGORIES = [
-  "COSMETICO_VENTA",
-  "INSUMO_CAMILLA",
-  "INSUMO_DESCARTABLE",
-  "MESOTERAPIA",
-  "OTRO",
+  { value: "COSMETICO_VENTA", label: "Cosmetico Venta" },
+  { value: "INSUMO_CAMILLA", label: "Insumo Camilla" },
+  { value: "INSUMO_DESCARTABLE", label: "Insumo Descartable" },
+  { value: "MESOTERAPIA", label: "Mesoterapia" },
+  { value: "OTRO", label: "Otro" },
 ] as const;
 
 const PRODUCT_BRANDS = [
@@ -61,150 +59,172 @@ export function EditProductDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Editar producto</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5 text-primary" />
+            Editar Producto
+          </DialogTitle>
           <DialogDescription>
-            Modificá los datos del producto seleccionado
+            Modifica los datos del producto seleccionado.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2">
-            <Label>Nombre</Label>
+        <FieldGroup className="grid grid-cols-1 gap-5 py-4 md:grid-cols-2">
+          <Field className="md:col-span-2">
+            <FieldLabel>Nombre del producto</FieldLabel>
             <Input
               value={form.name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2 md:col-span-2">
-            <Label>Descripción</Label>
+          <Field className="md:col-span-2">
+            <FieldLabel>Descripcion (opcional)</FieldLabel>
             <Input
+              placeholder="Detalles adicionales..."
               value={form.description ?? ""}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, description: e.target.value }))
-              }
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2">
-            <Label>Stock mínimo</Label>
+          <Field>
+            <FieldLabel>Stock minimo</FieldLabel>
             <Input
               type="number"
               min="0"
               value={form.minimumStock}
               onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  minimumStock: Number(e.target.value),
-                }))
+                setForm((prev) => ({ ...prev, minimumStock: Number(e.target.value) }))
               }
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2">
-            <Label>Costo</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.costPrice}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  costPrice: Number(e.target.value),
-                }))
-              }
-            />
-          </div>
+          <Field>
+            <FieldLabel>Costo unitario</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <DollarSign className="h-4 w-4" />
+              </InputGroupAddon>
+              <InputGroupInput
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.costPrice}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, costPrice: Number(e.target.value) }))
+                }
+              />
+            </InputGroup>
+          </Field>
 
-          <div className="space-y-2">
-            <Label>Categoría</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          <Field>
+            <FieldLabel>Categoria</FieldLabel>
+            <Select
               value={form.category}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  category: e.target.value,
-                }))
-              }
+              onValueChange={(value) => setForm((prev) => ({ ...prev, category: value }))}
             >
-              {PRODUCT_CATEGORIES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
-          <div className="space-y-2">
-            <Label>Marca</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          <Field>
+            <FieldLabel>Marca</FieldLabel>
+            <Select
               value={form.brand}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  brand: e.target.value,
-                }))
-              }
+              onValueChange={(value) => setForm((prev) => ({ ...prev, brand: value }))}
             >
-              {PRODUCT_BRANDS.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRODUCT_BRANDS.map((brand) => (
+                  <SelectItem key={brand} value={brand}>
+                    {brand}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
-          <div className="space-y-2">
-            <Label>Expirable</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          <Field>
+            <FieldLabel>Expirable</FieldLabel>
+            <Select
               value={String(form.expirable ?? false)}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  expirable: e.target.value === "true",
-                }))
+              onValueChange={(value) =>
+                setForm((prev) => ({ ...prev, expirable: value === "true" }))
               }
             >
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
-          </div>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Si</SelectItem>
+                <SelectItem value="false">No</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
 
-          <div className="space-y-2">
-            <Label>Activo</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          <Field>
+            <FieldLabel>Estado</FieldLabel>
+            <Select
               value={String(form.active ?? true)}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  active: e.target.value === "true",
-                }))
+              onValueChange={(value) =>
+                setForm((prev) => ({ ...prev, active: value === "true" }))
               }
             >
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </select>
-          </div>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Activo</SelectItem>
+                <SelectItem value="false">Inactivo</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
 
-          <div className="space-y-2 md:col-span-2">
-            <Label>Barcode</Label>
-            <Input value={product?.barcode ?? ""} disabled />
-          </div>
-        </div>
+          <Field className="md:col-span-2">
+            <FieldLabel>Codigo de barras</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <Barcode className="h-4 w-4" />
+              </InputGroupAddon>
+              <InputGroupInput value={product?.barcode ?? ""} disabled />
+            </InputGroup>
+            <p className="mt-1 text-xs text-muted-foreground">
+              El codigo de barras no puede modificarse.
+            </p>
+          </Field>
+        </FieldGroup>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
+          {product && (
+            <Badge
+              variant={product.active ? "default" : "secondary"}
+              className="mr-auto"
+            >
+              Stock actual: {product.currentStock}
+            </Badge>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button onClick={onSubmit} disabled={isSubmitting}>
-            Guardar cambios
+            {isSubmitting ? (
+              <>
+                <Spinner className="h-4 w-4" />
+                Guardando...
+              </>
+            ) : (
+              "Guardar Cambios"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

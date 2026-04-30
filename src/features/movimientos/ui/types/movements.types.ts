@@ -3,7 +3,9 @@ export type StockMovementType = "IN" | "OUT" | "ADJUST";
 export type StockMovementReason =
   | "COMPRA_PROVEEDOR"
   | "VENTA"
-  | "AJUSTE_ERROR";
+  | "AJUSTE_ERROR"
+  | "DEVOLUCION"
+  | "MERMA";
 
 export type BusinessContext = "LOCAL" | "CONSULTORIO";
 

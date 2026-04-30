@@ -4,12 +4,10 @@ import { toast } from "sonner";
 import {
   useCreateCashMovementMutation,
   useGetCashMovementsQuery,
+  useGetDailyCashSplitQuery,
 } from "../api/cashApi";
 
-import type {
-  PaymentMethod,
-  ProcedureOption,
-} from "../types/cash.types";
+import type { PaymentMethod, ProcedureOption } from "../types/cash.types";
 
 import {
   useGetProductsWithStockQuery,
@@ -19,9 +17,16 @@ import {
 } from "@/features/stock/api/stockApi";
 
 import type { ProductScanResponse } from "@/features/stock/types/stock.types";
+import type { CashActor } from '../types/cash.types';
+
+function getTodayISODate() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function useCashConsultorioPage() {
   const [page, setPage] = useState(0);
+  const [splitDate, setSplitDate] = useState(getTodayISODate());
+
   const size = 10;
 
   const [barcodeQuery, setBarcodeQuery] = useState("");
@@ -39,11 +44,18 @@ export function useCashConsultorioPage() {
   });
 
   const {
-    data: products = [],
-    refetch: refetchProducts,
-  } = useGetProductsWithStockQuery({
+    data: dailySplit,
+    isLoading: isLoadingDailySplit,
+    refetch: refetchDailySplit,
+  } = useGetDailyCashSplitQuery({
     context: "CONSULTORIO",
+    date: splitDate,
   });
+
+  const { data: products = [], refetch: refetchProducts } =
+    useGetProductsWithStockQuery({
+      context: "CONSULTORIO",
+    });
 
   const [createCashMovement, { isLoading: isCreating }] =
     useCreateCashMovementMutation();
@@ -84,6 +96,11 @@ export function useCashConsultorioPage() {
     );
   }, [items]);
 
+  const refetchCaja = async () => {
+    await refetchCash();
+    await refetchDailySplit();
+  };
+
   const scanProduct = async () => {
     if (!barcodeQuery.trim()) {
       toast.error("Ingresá un código de barras");
@@ -109,6 +126,7 @@ export function useCashConsultorioPage() {
     amount: number;
     paymentMethod: PaymentMethod;
     comment?: string;
+    performedBy: CashActor;
   }) => {
     try {
       await sellByBarcode({
@@ -118,11 +136,12 @@ export function useCashConsultorioPage() {
         paymentMethod: payload.paymentMethod,
         context: "CONSULTORIO",
         comment: payload.comment,
+        performedBy: payload.performedBy,
       }).unwrap();
 
       toast.success("Venta de producto registrada");
 
-      await refetchCash();
+      await refetchCaja();
       await refetchProducts();
 
       const updatedProduct = await triggerScan({
@@ -153,7 +172,7 @@ export function useCashConsultorioPage() {
 
       toast.success("Compra de producto registrada");
 
-      await refetchCash();
+      await refetchCaja();
       await refetchProducts();
 
       if (scannedProduct?.barcode) {
@@ -194,7 +213,7 @@ export function useCashConsultorioPage() {
       }).unwrap();
 
       toast.success("Ingreso por procedimiento registrado");
-      await refetchCash();
+      await refetchCaja();
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar el ingreso");
     }
@@ -220,7 +239,7 @@ export function useCashConsultorioPage() {
       }).unwrap();
 
       toast.success("Egreso registrado");
-      await refetchCash();
+      await refetchCaja();
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar el egreso");
     }
@@ -233,6 +252,11 @@ export function useCashConsultorioPage() {
     page,
     setPage,
     size,
+
+    splitDate,
+    setSplitDate,
+    dailySplit,
+    isLoadingDailySplit,
 
     products,
 

@@ -1,10 +1,10 @@
 import { useBusinessContext } from "@/core/context/business-context";
-import HomeLocal from "./screens/HomeLocal";
+
 import HomeConsultorio from "./screens/HomeConsultorio";
 
 export default function HomeByContext() {
   const { context } = useBusinessContext();
-  const resolvedContext = context ?? "LOCAL";
+  const resolvedContext = context ?? "CONSULTORIO";
 
-  return resolvedContext === "LOCAL" ? <HomeLocal /> : <HomeConsultorio />;
+  return resolvedContext === "CONSULTORIO" ? <HomeConsultorio /> : null;
 }

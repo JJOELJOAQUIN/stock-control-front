@@ -1,3 +1,5 @@
+import type { CashActor } from "@/features/caja/types/cash.types";
+
 export type BusinessContext = "LOCAL" | "CONSULTORIO";
 
 export type ProductScope = "LOCAL" | "CONSULTORIO" | "BOTH";
@@ -54,6 +56,7 @@ export type SellByBarcodeRequest = {
   paymentMethod: PaymentMethod;
   context: BusinessContext;
   comment?: string;
+  performedBy: CashActor;
 };
 
 export type ProductWithStock = {

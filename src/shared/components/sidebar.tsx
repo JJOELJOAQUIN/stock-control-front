@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard,
+
   Package,
   Wallet,
   Receipt,
@@ -27,6 +27,7 @@ import {
 } from "@/shared/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar"
 import { Button } from "@/shared/components/ui/button"
+import { HomeIcon } from 'lucide-react';
 
 /* =========================
    MENU CONFIG
@@ -40,7 +41,11 @@ export interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Inicio", href: "/inicio" },
+  {  
+   
+       icon: HomeIcon, label: "Home", href: "/inicio"
+  
+  },
   { icon: Package, label: "Stock", href: "/inicio/stock" },
   {
     icon: Wallet,

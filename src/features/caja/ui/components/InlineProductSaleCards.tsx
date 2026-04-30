@@ -1,20 +1,55 @@
+"use client";
+
 import { useState } from "react";
 import { toast } from "sonner";
-import { Barcode, Search } from "lucide-react";
+import { Barcode, Search, ShoppingBag, Package } from "lucide-react";
 
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-import { Badge } from "@/shared/components/ui/badge";
+import type {
+  PaymentMethod,
+  CashActor,
+} from "../../types/cash.types";
 
-import type { PaymentMethod } from "../../types/cash.types";
 import type { ProductScanResponse } from "@/features/stock/types/stock.types";
 
-const PAYMENT_METHODS: PaymentMethod[] = [
-  "CASH",
-  "TRANSFER",
-  "DEBIT",
-  "CREDIT",
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/components/ui/card";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/shared/components/ui/field";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/shared/components/ui/input-group";
+import { Button } from "@/shared/components/ui/button";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { Badge } from "@/shared/components/ui/badge";
+import { Input } from "@/shared/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "CASH", label: "Efectivo" },
+  { value: "TRANSFER", label: "Transferencia" },
+  { value: "DEBIT", label: "Débito" },
+  { value: "CREDIT", label: "Crédito" },
+];
+
+const SALE_ACTORS: { value: CashActor; label: string }[] = [
+  { value: "COSMETOLOGA", label: "Cosmetóloga" },
+  { value: "MEDICA", label: "Médica" },
 ];
 
 type Props = {
@@ -29,6 +64,7 @@ type Props = {
     quantity: number;
     amount: number;
     paymentMethod: PaymentMethod;
+    performedBy: CashActor;
     comment?: string;
   }) => Promise<void>;
 };
@@ -45,6 +81,7 @@ export function InlineProductSaleCard({
   const [quantity, setQuantity] = useState("1");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [performedBy, setPerformedBy] = useState<CashActor>("COSMETOLOGA");
   const [comment, setComment] = useState("");
 
   const handleSell = async () => {
@@ -71,7 +108,10 @@ export function InlineProductSaleCard({
       quantity: parsedQty,
       amount: parsedAmount,
       paymentMethod,
-      comment: comment.trim() || "Venta de producto desde caja consultorio",
+      performedBy,
+      comment:
+        comment.trim() ||
+        `Venta de producto desde caja consultorio - ${performedBy}`,
     });
 
     setQuantity("1");
@@ -80,122 +120,166 @@ export function InlineProductSaleCard({
   };
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Venta directa de producto</h2>
-        <p className="text-sm text-muted-foreground">
-          Escaneá un producto y registrá la venta desde caja consultorio
-        </p>
-      </div>
+    <Card className="border-emerald-200/30 dark:border-emerald-800/30">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400">
+            <ShoppingBag className="size-5" />
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
-        <div className="space-y-2">
-          <Label>Código de barras</Label>
-          <div className="relative">
-            <Barcode className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={barcodeQuery}
-              onChange={(e) => setBarcodeQuery(e.target.value)}
-              placeholder="Escanear o ingresar barcode..."
-              className="pl-10"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onScan();
-                }
-              }}
-            />
+          <div>
+            <CardTitle>Venta directa de producto</CardTitle>
+            <CardDescription>
+              Escaneá un producto y registrá la venta desde caja consultorio
+            </CardDescription>
           </div>
         </div>
+      </CardHeader>
 
-        <Button
-          variant="outline"
-          onClick={onScan}
-          disabled={!barcodeQuery.trim() || isScanning}
-          className="gap-2"
-        >
-          <Search className="h-4 w-4" />
-          Buscar
-        </Button>
-      </div>
+      <CardContent>
+        <FieldGroup className="gap-4">
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <InputGroup>
+                <InputGroupAddon>
+                  <Barcode className="size-4" />
+                </InputGroupAddon>
 
-      {scannedProduct && (
-        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-lg font-semibold">{scannedProduct.name}</p>
-              <p className="text-sm text-muted-foreground">
-                Barcode: {scannedProduct.barcode}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Scope: {scannedProduct.scope}
-              </p>
+                <InputGroupInput
+                  value={barcodeQuery}
+                  onChange={(e) => setBarcodeQuery(e.target.value)}
+                  placeholder="Escanear o ingresar código de barras..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      onScan();
+                    }
+                  }}
+                />
+              </InputGroup>
             </div>
 
-            <div className="flex gap-2">
-              <Badge
-                variant={scannedProduct.belowMinimum ? "destructive" : "default"}
-              >
-                Stock actual: {scannedProduct.currentStock}
-              </Badge>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Cantidad</Label>
-              <Input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Monto</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Método de pago</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={paymentMethod}
-                onChange={(e) =>
-                  setPaymentMethod(e.target.value as PaymentMethod)
-                }
-              >
-                {PAYMENT_METHODS.map((method) => (
-                  <option key={method} value={method}>
-                    {method}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Comentario</Label>
-              <Input
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Opcional"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button onClick={handleSell} disabled={isSelling}>
-              Registrar venta
+            <Button
+              variant="outline"
+              onClick={onScan}
+              disabled={!barcodeQuery.trim() || isScanning}
+            >
+              {isScanning ? <Spinner /> : <Search className="size-4" />}
+              Buscar
             </Button>
           </div>
-        </div>
-      )}
-    </section>
+
+          {scannedProduct && (
+            <div className="rounded-xl border border-emerald-200/50 bg-emerald-50/50 p-4 dark:border-emerald-800/50 dark:bg-emerald-950/20">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
+                    <Package className="size-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+
+                  <div>
+                    <p className="font-semibold">{scannedProduct.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {scannedProduct.barcode} · {scannedProduct.scope}
+                    </p>
+                  </div>
+                </div>
+
+                <Badge
+                  variant={
+                    scannedProduct.belowMinimum ? "destructive" : "secondary"
+                  }
+                >
+                  Stock: {scannedProduct.currentStock}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                <Field>
+                  <FieldLabel>Cantidad</FieldLabel>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel>Monto</FieldLabel>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0"
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel>Método de pago</FieldLabel>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={(v) =>
+                      setPaymentMethod(v as PaymentMethod)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field>
+                  <FieldLabel>Venta realizada por</FieldLabel>
+                  <Select
+                    value={performedBy}
+                    onValueChange={(v) =>
+                      setPerformedBy(v as CashActor)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      {SALE_ACTORS.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field>
+                  <FieldLabel>Comentario</FieldLabel>
+                  <Input
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Opcional"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <Button onClick={handleSell} disabled={isSelling}>
+                  {isSelling && <Spinner />}
+                  Registrar venta
+                </Button>
+              </div>
+            </div>
+          )}
+        </FieldGroup>
+      </CardContent>
+    </Card>
   );
 }
