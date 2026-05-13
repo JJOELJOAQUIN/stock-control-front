@@ -7,9 +7,14 @@ import {
   useGetDailyCashSplitQuery,
 } from "../api/cashApi";
 
-import type { PaymentMethod, ProcedureOption } from "../types/cash.types";
+import type {
+  PaymentMethod,
+  ProcedureOption,
+  CashActor,
+} from "../types/cash.types";
 
 import {
+  useGetExpiringProductBatchesQuery,
   useGetProductsWithStockQuery,
   useLazyScanProductByBarcodeQuery,
   usePurchaseProductMutation,
@@ -17,7 +22,6 @@ import {
 } from "@/features/stock/api/stockApi";
 
 import type { ProductScanResponse } from "@/features/stock/types/stock.types";
-import type { CashActor } from '../types/cash.types';
 
 function getTodayISODate() {
   return new Date().toISOString().slice(0, 10);
@@ -52,10 +56,21 @@ export function useCashConsultorioPage() {
     date: splitDate,
   });
 
-  const { data: products = [], refetch: refetchProducts } =
-    useGetProductsWithStockQuery({
-      context: "CONSULTORIO",
-    });
+  const {
+    data: products = [],
+    refetch: refetchProducts,
+  } = useGetProductsWithStockQuery({
+    context: "CONSULTORIO",
+  });
+
+  const {
+    data: expiringProducts = [],
+    isLoading: isLoadingExpiringProducts,
+    refetch: refetchExpiringProducts,
+  } = useGetExpiringProductBatchesQuery({
+    context: "CONSULTORIO",
+    days: 90,
+  });
 
   const [createCashMovement, { isLoading: isCreating }] =
     useCreateCashMovementMutation();
@@ -143,6 +158,7 @@ export function useCashConsultorioPage() {
 
       await refetchCaja();
       await refetchProducts();
+      await refetchExpiringProducts();
 
       const updatedProduct = await triggerScan({
         barcode: payload.barcode,
@@ -160,6 +176,8 @@ export function useCashConsultorioPage() {
     quantity: number;
     amount: number;
     comment?: string;
+    expirationDate?: string | null;
+    lotNumber?: string | null;
   }) => {
     try {
       await purchaseProduct({
@@ -168,12 +186,15 @@ export function useCashConsultorioPage() {
         amount: payload.amount,
         context: "CONSULTORIO",
         comment: payload.comment,
+        expirationDate: payload.expirationDate ?? null,
+        lotNumber: payload.lotNumber ?? null,
       }).unwrap();
 
       toast.success("Compra de producto registrada");
 
       await refetchCaja();
       await refetchProducts();
+      await refetchExpiringProducts();
 
       if (scannedProduct?.barcode) {
         const updatedProduct = await triggerScan({
@@ -259,6 +280,9 @@ export function useCashConsultorioPage() {
     isLoadingDailySplit,
 
     products,
+
+    expiringProducts,
+    isLoadingExpiringProducts,
 
     isLoading,
     isCreating,

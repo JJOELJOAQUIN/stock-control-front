@@ -238,7 +238,7 @@ export function Sidebar({
             )}
           >
             <img
-              src="/logo_rosarosa-01.PNG"
+              src="/logo_nuevo.png"
               alt="RosaRosa"
               className="h-6 w-auto object-contain"
             />

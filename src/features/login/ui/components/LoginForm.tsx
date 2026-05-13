@@ -35,7 +35,7 @@ export default function LoginForm() {
     <div className="w-full h-screen flex items-center justify-center">
       <Card className="h-screen w-full flex flex-col items-center justify-center bg-card dark:bg-card/90 shadow-lg border-none rounded-none">
         <img
-          src="/logo_rosarosa-01.PNG"
+          src="/logo_nuevo.png"
           alt="Logo"
           className="max-w-64 mx-auto mb-6"
         />

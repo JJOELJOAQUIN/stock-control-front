@@ -7,7 +7,7 @@
     return (
       <div className="relative w-full h-screen overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <Silk color="#F2C1CF" speed={3} noiseIntensity={1} />
+      <Silk color="#B2967D" speed={3} noiseIntensity={0.75} />
 
         </div>
 
@@ -22,7 +22,7 @@
 
           <div className="w-1/2 h-full flex items-center justify-center z-20">
             <img
-              src="/public/logo_rosarosa-01.PNG"
+              src="/public/logo_nuevo.PNG"
               className="max-w-lg "
               alt="logo"
             />

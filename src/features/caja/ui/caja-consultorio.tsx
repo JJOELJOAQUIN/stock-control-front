@@ -14,7 +14,7 @@ import {
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
 import { InlineProductPurchaseCard } from "./components/InlinePurchaseCard";
 import { DailySplitSummary } from "./components/DailySplitSummary";
-
+import { ProductExpirationAlerts } from "./components/ProductExpirationAlerts";
 
 export default function CajaConsultorioPage() {
 
@@ -42,8 +42,12 @@ export default function CajaConsultorioPage() {
     setSplitDate,
     dailySplit,
     isLoadingDailySplit,
+    expiringProducts,
+    isLoadingExpiringProducts,
 
   } = useCashConsultorioPage();
+
+
 
 
   return (
@@ -87,6 +91,11 @@ export default function CajaConsultorioPage() {
           doctorTotal={Number(dailySplit?.doctorTotal ?? 0)}
           cosmetologistTotal={Number(dailySplit?.cosmetologistTotal ?? 0)}
           isLoading={isLoadingDailySplit}
+        />
+
+        <ProductExpirationAlerts
+          items={expiringProducts}
+          isLoading={isLoadingExpiringProducts}
         />
 
 

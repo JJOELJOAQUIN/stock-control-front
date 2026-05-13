@@ -20,6 +20,8 @@ type Props = {
     quantity: number;
     amount: number;
     comment?: string;
+    expirationDate?: string | null;
+    lotNumber?: string | null;
   }) => Promise<void>;
 };
 
@@ -32,6 +34,8 @@ export function InlineProductPurchaseCard({
   const [quantity, setQuantity] = useState("1");
   const [amount, setAmount] = useState("");
   const [comment, setComment] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
+  const [lotNumber, setLotNumber] = useState("");
 
   const handleSubmit = async () => {
     if (!productId) {
@@ -57,11 +61,15 @@ export function InlineProductPurchaseCard({
       quantity: parsedQuantity,
       amount: parsedAmount,
       comment: comment.trim() || "Compra de producto desde caja consultorio",
+      expirationDate: expirationDate || null,
+      lotNumber: lotNumber.trim() || null,
     });
 
     setQuantity("1");
     setAmount("");
     setComment("");
+    setExpirationDate("");
+    setLotNumber("");
   };
 
   return (
@@ -106,6 +114,24 @@ export function InlineProductPurchaseCard({
                 min="1"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel>Fecha de vencimiento</FieldLabel>
+              <Input
+                type="date"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel>Número de lote</FieldLabel>
+              <Input
+                value={lotNumber}
+                onChange={(e) => setLotNumber(e.target.value)}
+                placeholder="Opcional"
               />
             </Field>
 

@@ -47,6 +47,8 @@ export type PurchaseProductRequest = {
   amount: number;
   context: BusinessContext;
   comment?: string;
+  expirationDate?: string | null;
+  lotNumber?: string | null;
 };
 
 export type SellByBarcodeRequest = {
@@ -93,3 +95,15 @@ export type PatchProductRequest = {
   expirable?: boolean;
   active?: boolean;
 };
+
+export type ProductBatchExpiration = {
+  batchId: string;
+  productId: string;
+  expirationDate: string;
+  quantityCurrent: number;
+  productName: string;
+  barcode?: string | null;
+  lotNumber?: string | null;
+  daysToExpire: number;
+  context: "LOCAL" | "CONSULTORIO";
+}

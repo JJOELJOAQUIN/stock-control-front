@@ -1,13 +1,15 @@
 import { baseApi } from "@/core/api/baseApi";
-import type {
-  CreateProductRequest,
-  Product,
-  ProductScanResponse,
-  ProductWithStock,
-  PurchaseProductRequest,
-  SellByBarcodeRequest,
-  UpdateProductRequest,
+import {
+  type ProductBatchExpiration,
+  type CreateProductRequest,
+  type Product,
+  type ProductScanResponse,
+  type ProductWithStock,
+  type PurchaseProductRequest,
+  type SellByBarcodeRequest,
+  type UpdateProductRequest,
 } from "../types/stock.types";
+
 
 export const stockApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -87,6 +89,17 @@ export const stockApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Products", "Stock", "Cash"],
     }),
+
+    getExpiringProductBatches: builder.query<
+      ProductBatchExpiration[],
+      { context: "LOCAL" | "CONSULTORIO"; days?: number }
+    >({
+      query: ({ context, days = 90 }) => ({
+        url: `/api/product-batches/expiring?context=${context}&days=${days}`,
+        method: "GET",
+      }),
+      providesTags: ["Stock"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -100,4 +113,5 @@ export const {
   useSellByBarcodeMutation,
   useUpdateProductMutation,
   useDeactivateProductMutation,
+  useGetExpiringProductBatchesQuery,
 } = stockApi;

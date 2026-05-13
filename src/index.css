@@ -3,131 +3,215 @@
 @tailwind utilities;
 
 /* =========================================================
-   THEME TOKENS – BRAND: #BB8B87
+   THEME TOKENS – BRAND: WARM LINEN / CAMEL / ESPRESSO
+   Palette:
+   Linen     #F5F1EA
+   Khaki     #D7C9B8
+   Camel     #B2967D
+   Cocoa     #7D5A44
+   Espresso  #4A342A
    ========================================================= */
 
 :root {
-  /* Base */
-  --background: oklch(0.985 0.002 20);
-  --foreground: oklch(0.22 0.02 20);
+  /* =========================================================
+     BASE
+     ========================================================= */
 
-  /* Surfaces */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 20);
+  /* Linen #F5F1EA */
+  --background: oklch(0.959 0.01 82);
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 20);
+  /* Espresso #4A342A */
+  --foreground: oklch(0.347 0.036 45);
 
-  /* 🔴 BRAND COLOR – #BB8B87 */
-  --primary: oklch(0.67 0.09 25);
-  --primary-foreground: oklch(0.15 0.02 20);
+  /* =========================================================
+     SURFACES
+     ========================================================= */
 
-  /* Soft brand variants */
-  --secondary: oklch(0.94 0.03 25);
-  --secondary-foreground: oklch(0.3 0.04 20);
+  /* Warm off-white, slightly lifted from background */
+  --card: oklch(0.985 0.006 82);
+  --card-foreground: oklch(0.347 0.036 45);
 
-  --accent: oklch(0.72 0.08 25);
-  --accent-foreground: oklch(0.15 0.02 20);
+  --popover: oklch(0.985 0.006 82);
+  --popover-foreground: oklch(0.347 0.036 45);
 
-  --muted: oklch(0.96 0.015 25);
-  --muted-foreground: oklch(0.5 0.03 20);
+  /* =========================================================
+     BRAND
+     ========================================================= */
 
-  /* States */
+  /* Camel #B2967D */
+  --primary: oklch(0.692 0.049 64);
+
+  /* Espresso for good contrast on Camel */
+  --primary-foreground: oklch(0.239 0.026 39);
+
+  /* Khaki #D7C9B8 */
+  --secondary: oklch(0.843 0.028 73);
+  --secondary-foreground: oklch(0.347 0.036 45);
+
+  /* Cocoa #7D5A44 */
+  --accent: oklch(0.499 0.057 53);
+  --accent-foreground: oklch(0.959 0.01 82);
+
+  /* Soft linen-muted */
+  --muted: oklch(0.931 0.017 76);
+  --muted-foreground: oklch(0.498 0.044 50);
+
+  /* =========================================================
+     STATES
+     ========================================================= */
+
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
 
-  /* UI */
-  --border: oklch(0.9 0.02 25);
-  --input: oklch(0.9 0.02 25);
-  --ring: oklch(0.67 0.09 25);
+  /* =========================================================
+     UI
+     ========================================================= */
 
-  --radius: 0.75rem;
+  /* Khaki border, low contrast */
+  --border: oklch(0.842 0.022 73);
+  --input: oklch(0.842 0.022 73);
 
-  /* Sidebar */
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.25 0.02 20);
-  --sidebar-primary: oklch(0.67 0.09 25);
-  --sidebar-primary-foreground: oklch(0.15 0.02 20);
-  --sidebar-accent: oklch(0.95 0.03 25);
-  --sidebar-accent-foreground: oklch(0.3 0.04 20);
-  --sidebar-border: oklch(0.9 0.02 25);
-  --sidebar-ring: oklch(0.67 0.09 25);
+  /* Camel ring */
+  --ring: oklch(0.692 0.049 64);
+
+  --radius: 0.875rem;
+
+  /* =========================================================
+     CHARTS
+     ========================================================= */
+
+  --chart-1: oklch(0.692 0.049 64); /* Camel */
+  --chart-2: oklch(0.499 0.057 53); /* Cocoa */
+  --chart-3: oklch(0.843 0.028 73); /* Khaki */
+  --chart-4: oklch(0.638 0.06 54);  /* Warm clay */
+  --chart-5: oklch(0.347 0.036 45); /* Espresso */
+
+  /* =========================================================
+     SIDEBAR
+     ========================================================= */
+
+  --sidebar: oklch(0.985 0.006 82);
+  --sidebar-foreground: oklch(0.347 0.036 45);
+
+  --sidebar-primary: oklch(0.692 0.049 64);
+  --sidebar-primary-foreground: oklch(0.239 0.026 39);
+
+  --sidebar-accent: oklch(0.931 0.017 76);
+  --sidebar-accent-foreground: oklch(0.347 0.036 45);
+
+  --sidebar-border: oklch(0.842 0.022 73);
+  --sidebar-ring: oklch(0.692 0.049 64);
 }
 
 /* =========================================================
-   DARK MODE – TERRACOTA SUAVE
+   DARK MODE – ESPRESSO / COCOA / CAMEL
    ========================================================= */
 
 .dark {
-  --background: oklch(0.15 0.02 20);
-  --foreground: oklch(0.95 0.01 20);
+  /* Deep Espresso */
+  --background: oklch(0.21 0.017 45);
+  --foreground: oklch(0.959 0.01 82);
 
-  --card: oklch(0.18 0.02 20);
-  --card-foreground: oklch(0.95 0.01 20);
+  /* Slightly elevated espresso */
+  --card: oklch(0.24 0.026 39);
+  --card-foreground: oklch(0.959 0.01 82);
 
-  --popover: oklch(0.18 0.02 20);
-  --popover-foreground: oklch(0.95 0.01 20);
+  --popover: oklch(0.24 0.026 39);
+  --popover-foreground: oklch(0.959 0.01 82);
 
-  /* Brand darker */
-  --primary: oklch(0.6 0.08 25);
-  --primary-foreground: oklch(0.12 0.02 20);
+  /* Camel as premium brand color */
+  --primary: oklch(0.765 0.046 64);
+  --primary-foreground: oklch(0.21 0.017 45);
 
-  --secondary: oklch(0.25 0.03 25);
-  --secondary-foreground: oklch(0.95 0.01 20);
+  /* Cocoa surface */
+  --secondary: oklch(0.347 0.036 45);
+  --secondary-foreground: oklch(0.959 0.01 82);
 
-  --accent: oklch(0.55 0.07 25);
-  --accent-foreground: oklch(0.12 0.02 20);
+  /* Khaki accent for warm contrast */
+  --accent: oklch(0.843 0.028 73);
+  --accent-foreground: oklch(0.21 0.017 45);
 
-  --muted: oklch(0.25 0.02 25);
-  --muted-foreground: oklch(0.65 0.03 20);
+  --muted: oklch(0.30 0.028 45);
+  --muted-foreground: oklch(0.765 0.046 64);
 
-  --border: oklch(0.28 0.02 25);
-  --input: oklch(0.28 0.02 25);
-  --ring: oklch(0.6 0.08 25);
+  --destructive: oklch(0.62 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
 
-  --sidebar: oklch(0.12 0.02 20);
-  --sidebar-foreground: oklch(0.95 0.01 20);
-  --sidebar-primary: oklch(0.6 0.08 25);
-  --sidebar-primary-foreground: oklch(0.12 0.02 20);
+  --border: oklch(0.347 0.036 45);
+  --input: oklch(0.347 0.036 45);
+  --ring: oklch(0.765 0.046 64);
+
+  --chart-1: oklch(0.765 0.046 64);
+  --chart-2: oklch(0.843 0.028 73);
+  --chart-3: oklch(0.638 0.06 54);
+  --chart-4: oklch(0.499 0.057 53);
+  --chart-5: oklch(0.959 0.01 82);
+
+  --sidebar: oklch(0.18 0.016 45);
+  --sidebar-foreground: oklch(0.959 0.01 82);
+
+  --sidebar-primary: oklch(0.765 0.046 64);
+  --sidebar-primary-foreground: oklch(0.21 0.017 45);
+
+  --sidebar-accent: oklch(0.30 0.028 45);
+  --sidebar-accent-foreground: oklch(0.959 0.01 82);
+
+  --sidebar-border: oklch(0.347 0.036 45);
+  --sidebar-ring: oklch(0.765 0.046 64);
 }
 
 @theme inline {
   --font-sans: 'Geist', 'Geist Fallback';
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
+
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
