@@ -22,7 +22,7 @@
 
           <div className="w-1/2 h-full flex items-center justify-center z-20">
             <img
-              src="/public/logo_nuevo.png"
+              src="/logo_nuevo.png"
               className="max-w-lg "
               alt="logo"
             />
