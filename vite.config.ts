@@ -4,6 +4,11 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+
+  preview: {
+    host: "0.0.0.0",
+    allowedHosts: [".up.railway.app"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -17,7 +22,7 @@ export default defineConfig({
 
       // capa común UI (si es tu design system)
       "@ui": path.resolve(__dirname, "src/shared/components"),
-      
+
       // librerías internas
       "@lib": path.resolve(__dirname, "src/lib"),
 
