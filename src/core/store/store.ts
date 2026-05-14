@@ -5,17 +5,17 @@ import { baseApi } from "../api/baseApi";
 // inyección global del legacy baseApi
 import "../api/injectedEndpoints";
 
-import { commercialApi } from "@/features/commercial/api/commercialApi";
+
 
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
-    [commercialApi.reducerPath]: commercialApi.reducer,
+
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       baseApi.middleware,
-      commercialApi.middleware   // ← FALTABA ESTO
+
     ),
 });
 

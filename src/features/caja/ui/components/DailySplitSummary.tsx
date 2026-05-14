@@ -1,8 +1,9 @@
-import { CalendarDays, Sparkles, Stethoscope, Wallet } from "lucide-react";
+import { Sparkles, Stethoscope, Wallet } from "lucide-react";
 
 import { Card, CardContent } from "@/shared/components/ui/card";
-import { Input } from "@/shared/components/ui/input";
+
 import { Label } from "@/shared/components/ui/label";
+import { DatePicker } from "@/shared/components/ui/date-picker";
 
 type Props = {
   date: string;
@@ -44,18 +45,14 @@ export function DailySplitSummary({
             </p>
           </div>
 
-          <div className="w-full space-y-2 sm:w-56">
+          <div className="w-full space-y-2 sm:w-64">
             <Label htmlFor="daily-split-date">Fecha</Label>
-            <div className="relative">
-              <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="daily-split-date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+            <DatePicker
+              id="daily-split-date"
+              value={date}
+              onChange={setDate}
+              placeholder="Seleccionar fecha"
+            />
           </div>
         </CardContent>
       </Card>

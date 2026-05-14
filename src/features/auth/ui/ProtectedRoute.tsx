@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/core/auth/context/AuthProvider";
-import RolePending from "@/features/auth/ui/RolePending"
+
 interface Props {
   children: ReactNode;
 }
@@ -28,8 +28,6 @@ export default function ProtectedRoute({ children }: Props) {
     return <>{children}</>;
   }
 
-  if (authState.roles.includes("PENDING")) {
-    return <RolePending />;
-  }
+
   return <>{children}</>;
 }

@@ -1,21 +1,16 @@
-import { useState } from "react";
 
 import {
   Package,
   DollarSign,
   Receipt,
-  Search,
+  
   TrendingUp,
   Calendar,
   ArrowUpRight,
   Home,
 } from "lucide-react";
 
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/shared/components/ui/input-group";
+
 import { BentoGrid } from "@/shared/components/bento-grid";
 import {
   BentoNavCard,
@@ -40,7 +35,7 @@ function formatDate(): string {
 }
 
 export default function HomeConsultorio() {
-  const [searchQuery, setSearchQuery] = useState("");
+
 
   return (
     <div className="min-h-full bg-background text-foreground">

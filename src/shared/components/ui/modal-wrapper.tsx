@@ -9,7 +9,7 @@ interface ModalWrapperProps {
     maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl"
 }
 
-const ModalWrapper: React.FC<ModalWrapperProps> = ({ open, onClose, title, children, maxWidth = "xl" }) => {
+const ModalWrapper: React.FC<ModalWrapperProps> = ({ open, onClose, title, children }) => {
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="!max-w-6xl w-full flex flex-col max-h-[90vh]">

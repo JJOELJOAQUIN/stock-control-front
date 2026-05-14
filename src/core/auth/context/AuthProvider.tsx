@@ -16,6 +16,7 @@ interface AuthState {
   user: User | null;
   checkingAuth: boolean;
   roles: Roles;
+
 }
 
 interface AuthContextType {
@@ -23,6 +24,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
+  
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

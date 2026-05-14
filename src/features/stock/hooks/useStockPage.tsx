@@ -16,8 +16,8 @@ import type {
   PaymentMethod,
   ProductScanResponse,
   UpdateProductRequest,
-
 } from "../types/stock.types";
+import type { CashActor } from "@/features/caja/types/cash.types";
 
 export function useStockPage() {
   const { context } = useBusinessContext();
@@ -134,6 +134,7 @@ export function useStockPage() {
     amount: number;
     paymentMethod: PaymentMethod;
     comment?: string;
+    performedBy?: CashActor;
   }) => {
     if (!context) {
       toast.error("Seleccioná un contexto");
@@ -143,6 +144,7 @@ export function useStockPage() {
     await sellByBarcode({
       ...payload,
       context,
+      performedBy: payload.performedBy ?? "MEDICA",
     }).unwrap();
 
     toast.success("Venta registrada correctamente");

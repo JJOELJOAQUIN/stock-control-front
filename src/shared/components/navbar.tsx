@@ -27,7 +27,7 @@ import React from "react";
 
 export function Navbar() {
   const { logout } = useAuth();
-  const {claims, loading} = useFirebaseClaims();
+  const {claims} = useFirebaseClaims();
 
   const location = useLocation();
 

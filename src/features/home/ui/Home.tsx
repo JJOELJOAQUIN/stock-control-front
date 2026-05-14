@@ -1,7 +1,7 @@
 import { Banner } from "@/shared/components/ui/banner";
 import { CTACard } from "@/shared/components/ui/charts/cta-card";
 import { useBusinessContext } from "@/core/context/business-context";
-import { Store, Stethoscope } from "lucide-react";
+import {  Stethoscope } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {

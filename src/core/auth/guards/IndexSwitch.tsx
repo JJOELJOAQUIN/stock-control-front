@@ -6,21 +6,21 @@ import Home from "@/features/home/ui/Home";
 
 export default function IndexSwitch() {
   const { authState } = useAuth();
-  const { role, checkingAuth } = authState;
+  const { roles, checkingAuth } = authState;
 
   if (checkingAuth) {
     return <div>Cargando...</div>;
   }
 
-  if (role === "PROVEEDOR") {
+  if (roles.includes("PROVEEDOR")) {
     return <Navigate to="stock" replace />;
   }
 
   if (
-    role === "ADMIN" ||
-    role === "USER" ||
-    role === "OBRA_SOCIAL" ||
-    role === "ADMIN_VENTAS"
+    roles.includes("ADMIN") ||
+    roles.includes("USER") ||
+    roles.includes("OBRA_SOCIAL") ||
+    roles.includes("ADMIN_VENTAS")
   ) {
     return <Home />;
   }
