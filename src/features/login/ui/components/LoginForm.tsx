@@ -75,8 +75,7 @@ export default function LoginForm() {
 
             <Button
               type="submit"
-              className="w-full bg-button-gradient text-white"
-            >
+              className="w-full bg-button-gradient shadow-md transition-all hover:shadow-lg"            >
               Entrar
             </Button>
           </form>
