@@ -109,7 +109,7 @@ export default function HomeConsultorio() {
             description="Historial de transacciones"
           />
 
-          <BentoStatCard
+          {/* <BentoStatCard
             href="/inicio/stock"
             label="Total Productos"
             value="98"
@@ -127,7 +127,7 @@ export default function HomeConsultorio() {
             changePositive
             icon={<TrendingUp className="h-4 w-4" />}
                         variant="brandMuted"
-          />
+          /> */}
         </BentoGrid>
 
         {/* Quick Stats Footer */}
