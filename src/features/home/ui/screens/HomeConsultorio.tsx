@@ -4,7 +4,7 @@ import {
   DollarSign,
   Receipt,
   
-  TrendingUp,
+  
   Calendar,
   ArrowUpRight,
   Home,
@@ -15,7 +15,7 @@ import { BentoGrid } from "@/shared/components/bento-grid";
 import {
   BentoNavCard,
   BentoSectionCard,
-  BentoStatCard,
+  
 } from "@/shared/components/bento-card";
 
 function getGreeting(): string {
