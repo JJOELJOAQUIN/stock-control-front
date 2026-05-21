@@ -11,6 +11,16 @@ import {
 
 type Roles = string[];
 
+type AppRole = "ADMIN" | "USER" | "COSMETOLOGA" | "PENDING";
+
+interface BackendUser {
+  id: string;
+  firebaseUid: string;
+  email: string;
+  role: AppRole;
+  enabled: boolean;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
@@ -24,7 +34,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
-  
+
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,12 +61,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
-      setAuthState({
-        isAuthenticated: true,
-        user: firebaseUser,
-        checkingAuth: false,
-        roles: [],
-      });
+      try {
+        const token = await firebaseUser.getIdToken(true);
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch authenticated user");
+        }
+
+        const backendUser: BackendUser = await response.json();
+
+        setAuthState({
+          isAuthenticated: true,
+          user: firebaseUser,
+          checkingAuth: false,
+          roles: [backendUser.role],
+        });
+      } catch (error) {
+        console.error(error);
+
+        setAuthState({
+          isAuthenticated: false,
+          user: null,
+          checkingAuth: false,
+          roles: [],
+        });
+      }
     });
 
     return () => unsub();
