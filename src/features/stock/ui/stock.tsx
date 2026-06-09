@@ -79,6 +79,9 @@ export default function StockPage() {
     quantity: "",
     amount: "",
     comment: "",
+    updateCostPrice: true,
+    updateSalePrice: false,
+    newSalePrice: "",
   });
 
   const [sellForm, setSellForm] = useState({
@@ -106,6 +109,9 @@ export default function StockPage() {
       quantity: "",
       amount: "",
       comment: "",
+      updateCostPrice: true,
+      updateSalePrice: false,
+      newSalePrice: "",
     });
     setIsPurchaseOpen(true);
   };
@@ -206,7 +212,21 @@ export default function StockPage() {
         quantity,
         amount,
         comment: purchaseForm.comment.trim(),
+        updateCostPrice: purchaseForm.updateCostPrice,
+        updateSalePrice: purchaseForm.updateSalePrice,
+        newSalePrice: purchaseForm.updateSalePrice
+          ? Number(purchaseForm.newSalePrice)
+          : null,
       });
+
+      if (purchaseForm.updateSalePrice) {
+        const newSalePrice = Number(purchaseForm.newSalePrice);
+
+        if (!Number.isFinite(newSalePrice) || newSalePrice <= 0) {
+          toast.error("El nuevo precio de venta debe ser mayor a cero");
+          return;
+        }
+      }
 
       setIsPurchaseOpen(false);
       setSelectedProduct(null);
@@ -377,6 +397,9 @@ export default function StockPage() {
         setForm={setPurchaseForm}
         isSubmitting={isPurchasing}
         onSubmit={onSubmitPurchase}
+        costPrice={selectedProduct?.costPrice}
+        salePrice={selectedProduct?.salePrice}
+        defaultMarkupPercentage={selectedProduct?.defaultMarkupPercentage}
       />
 
       <SellDialog
@@ -387,6 +410,7 @@ export default function StockPage() {
         setForm={setSellForm}
         isSubmitting={isSelling}
         onSubmit={onSubmitSell}
+        product={scannedProduct}
       />
 
       <EditProductDialog

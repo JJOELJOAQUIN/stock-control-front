@@ -1,6 +1,6 @@
-
+import { useEffect } from "react";
 import { Barcode, DollarSign, Package } from "lucide-react";
-import type { CreateProductRequest, ProductScope } from "../types/stock.types";
+import type { CreateProductRequest } from "../types/stock.types";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
@@ -35,11 +35,7 @@ const PRODUCT_BRANDS = [
   "BIOFARMACY",
 ] as const;
 
-const PRODUCT_SCOPES = [
-  { value: "LOCAL", label: "Local" },
-  { value: "CONSULTORIO", label: "Consultorio" },
-  { value: "BOTH", label: "Ambos" },
-] as const;
+
 
 type Props = {
   open: boolean;
@@ -58,6 +54,48 @@ export function CreateProductDialog({
   isSubmitting,
   onSubmit,
 }: Props) {
+
+  const handleCostOrMarkupChange = (
+    field: "costPrice" | "defaultMarkupPercentage",
+    value: number
+  ) => {
+    setForm((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+      }
+
+      const costPrice =
+        field === "costPrice" ? value : Number(prev.costPrice)
+
+      const markup =
+        field === "defaultMarkupPercentage"
+          ? value
+          : Number(prev.defaultMarkupPercentage)
+
+      if (
+        Number.isFinite(costPrice) &&
+        costPrice > 0 &&
+        Number.isFinite(markup) &&
+        markup >= 0
+      ) {
+        next.salePrice = Number(
+          (costPrice + costPrice * (markup / 100)).toFixed(2)
+        )
+      }
+
+      return next
+    })
+  }
+
+  useEffect(() => {
+    if (!open) return;
+
+    setForm((prev) => ({
+      ...prev,
+      scope: "CONSULTORIO",
+    }));
+  }, [open, setForm]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
@@ -75,7 +113,7 @@ export function CreateProductDialog({
           <Field className="md:col-span-2">
             <FieldLabel>Nombre del producto</FieldLabel>
             <Input
-              placeholder="Ej: Crema Hidratante 50ml"
+
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             />
@@ -116,7 +154,46 @@ export function CreateProductDialog({
                 placeholder="0.00"
                 value={form.costPrice}
                 onChange={(e) =>
-                  setForm((p) => ({ ...p, costPrice: Number(e.target.value) }))
+                  handleCostOrMarkupChange("costPrice", Number(e.target.value))
+                }
+              />
+            </InputGroup>
+          </Field>
+
+          <Field>
+            <FieldLabel>Margen sugerido %</FieldLabel>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Ej: 50"
+              value={form.defaultMarkupPercentage ?? ""}
+              onChange={(e) =>
+                handleCostOrMarkupChange(
+                  "defaultMarkupPercentage",
+                  Number(e.target.value)
+                )
+              }
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel>Precio venta público</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <DollarSign className="h-4 w-4" />
+              </InputGroupAddon>
+              <InputGroupInput
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={form.salePrice ?? ""}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    salePrice: Number(e.target.value),
+                  }))
                 }
               />
             </InputGroup>
@@ -162,21 +239,9 @@ export function CreateProductDialog({
 
           <Field>
             <FieldLabel>Disponibilidad</FieldLabel>
-            <Select
-              value={form.scope}
-              onValueChange={(value) => setForm((p) => ({ ...p, scope: value as ProductScope }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {PRODUCT_SCOPES.map((scope) => (
-                  <SelectItem key={scope.value} value={scope.value}>
-                    {scope.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium text-muted-foreground">
+              Consultorio
+            </div>
           </Field>
 
           <Field>

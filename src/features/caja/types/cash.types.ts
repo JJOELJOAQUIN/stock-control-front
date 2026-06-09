@@ -89,7 +89,7 @@ export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
   },
   {
     code: "HYDRA",
-    label: "Hydra",
+    label: "Hydra Lips",
     amount: 19000,
   },
   {
@@ -97,6 +97,17 @@ export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
     label: "Espalda",
     amount: 40600,
   },
+  {
+   code: "EXOSOMAS",
+   label: "Limpieza + hidratacion jelly",
+   amount: 0,
+   },
+      {
+    code: "PEELING_PROFUNDO",
+    label: "Peeling profundo",
+    amount: 40000,
+  },
+
 ];
 
 export type CashDailySplitResponse = {
@@ -113,16 +124,89 @@ export const MEDICA_PROCEDURES: ProcedureOption[] = [
   {
     code: "CONSULTA",
     label: "Consulta",
-    amount: 30000,
+    amount: 40000,
   },
   {
     code: "PRP_CAPILAR",
     label: "PRP capilar",
-    amount: 58500,
+    amount: 65000,
   },
   {
     code: "PRP_FACIAL",
     label: "PRP facial",
-    amount: 76500,
+    amount: 85000,
   },
+
+ {
+    code: "MESOTERAPIA",
+    label: "Mesoterapia",
+    amount: 58000,
+  },
+
+   {
+    code: "PEELING_PROFUNDO",
+    label: "Peeling profundo",
+    amount: 130000,
+  },
+
+     {
+    code: "PEELING_SUPERFICIAL_DERMATOLOFICO",
+    label: "Peeling superficial dermatológico",
+    amount: 60000,
+  },
+     {
+    code: "ILUMINACION_FACIAL_ANTIOXIDANTE",
+    label: "Iluminación facial antioxidadante VIT C",
+    amount: 70000,
+  },
+
+       {
+    code: "BIOESTIMULACION_OLIGOELEMENTOS",
+    label: "Bioestimulación con oligoelementos",
+    amount: 75000,
+  },
+         {
+    code: "OJERAS_NCTF",
+    label: "Ojeras con NCTF",
+    amount: 185000,
+  },
+
+        {
+    code: "HIDRATACION_INTENSIVA_ANTIAGE",
+    label: "Hidratación intensiva antiage",
+    amount: 85000,
+  },
+
+          {
+    code: "SKINBOOSTER_ALTA_HIDRATACION",
+    label: "Skinbooster alta hidratación",
+    amount: 240000,
+  },
+
+            {
+    code: "SKINBOOSTER_REGENERATIVO_PDRN",
+    label: "Skinbooster regenerativo PDRN",
+    amount: 180000,
+  },
+
+              {
+    code: "CICATRICEZ_ACNE",
+    label: "PRP + DERMAPEN MÉDICO",
+    amount: 130000,
+  },
+
+               {
+    code: "SKIN_MARK",
+    label: "REACTIVACION CELULAR SKIN MARK",
+    amount: 90000,
+  },
+
+                 {
+    code: "ELECTROCOAGULACION",
+    label: "Electrocoagulación",
+    amount: 40000,
+  },
+
+
+
 ];

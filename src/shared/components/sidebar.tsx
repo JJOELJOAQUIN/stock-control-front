@@ -13,6 +13,7 @@ import {
   User,
   Moon,
   Sun,
+  User2,
 } from "lucide-react"
 
 import { useTheme } from "@/core/context/theme-provider"
@@ -57,6 +58,12 @@ const menuItems: MenuItem[] = [
     icon: Receipt,
     label: "Movimientos Consultorio",
     href: "/inicio/movimientos-consultorio",
+  },
+
+    {
+    icon: User2,
+    label: "Usuarios",
+    href: "/inicio/usuarios",
   },
 ]
 

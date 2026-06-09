@@ -1,120 +1,88 @@
 // UsersPage.tsx
-import { useState } from "react"
 import { Banner } from "@/shared/components/ui/banner"
-import { Button } from "@/shared/components/ui/button"
-import { Pencil, Trash, MoreHorizontal, Plus } from "lucide-react"
 import TableWrapper from "@/shared/components/ui/table-wrapper"
+
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/shared/components/ui/dropdown-menu"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select"
 
-import { DeleteUserDialog } from "@/shared/components/ui/users-delete-dialog"
-import UserCrudModal from "@/shared/components/ui/user-crud-modal"
+import { useUsers, type UserTableRow } from "@/features/users/hooks/use-users"
+import type { AppRole } from "@/features/users/models/app-user"
 
-import { useModal } from "@/shared/hooks/use-modal"
-import { useUsers } from "@/features/users/hooks/use-users"
-
-import type { UserData } from "@/features/tracking/models/afiliate"
-import { toast } from "sonner"
+const ROLES: AppRole[] = ["ADMIN", "USER", "COSMETOLOGA", "PENDING"]
 
 export default function UsersPage() {
-  const { open, openModal, closeModal } = useModal()
-
   const {
     data,
-    handleDeleteUser,
-    handleChangePage,
-    handleChangeRowsPerPage,
     error,
     isLoading,
+    isUpdatingRole,
     page,
     rowsPerPage,
     totalCount,
     refetchUsers,
-    handleCreateUser,
-    handleUpdateUser,
-    reloadFirstPage,
+    handleChangePage,
+    handleChangeRowsPerPage,
+    handleUpdateUserRole,
   } = useUsers()
 
-  const [editingUser, setEditingUser] = useState<UserData | null>(null)
-  const [deletingUser, setDeletingUser] = useState<UserData | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  const openCreate = () => {
-    setEditingUser(null)
-    openModal()
-  }
-
-  const openEdit = (row: UserData) => {
-    setEditingUser(row)
-    openModal()
-  }
-
-  const confirmDelete = async () => {
-    if (!deletingUser) return
-
-    try {
-      setIsDeleting(true)
-      await handleDeleteUser(deletingUser.f_uid)
-      toast.success("Usuario eliminado correctamente")
-      setDeletingUser(null)
-    } catch (error) {
-      toast.error("Error al eliminar el usuario")
-      console.error(error)
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
   const userColumns = [
-    { field: "name", headerName: "Nombre" },
-    { field: "lastname", headerName: "Apellido" },
-    { field: "email", headerName: "Email" },
-    { field: "role", headerName: "Rol" },
     {
-      field: "filters",
-      headerName: "Card Codes",
-      render: (_: any, row: UserData) =>
-        row.filters?.card_codes?.join(", ") || "-",
+      field: "email",
+      headerName: "Email",
     },
     {
-      field: "actions",
-      headerName: "Acciones",
-      render: (_: any, row: UserData) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => openEdit(row)}>
-              <Pencil className="h-4 w-4 mr-2" /> Editar
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              className="text-red-600"
-              onClick={() => setDeletingUser(row)}
-            >
-              <Trash className="h-4 w-4 mr-2" /> Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      field: "firebaseUid",
+      headerName: "Firebase UID",
+      render: (_: any, row: UserTableRow) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.firebaseUid}
+        </span>
       ),
+    },
+    {
+      field: "role",
+      headerName: "Rol",
+      render: (_: any, row: UserTableRow) => (
+        <Select
+          value={row.role}
+          disabled={isUpdatingRole}
+          onValueChange={(value) =>
+            handleUpdateUserRole(row.firebaseUid, value as AppRole)
+          }
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Seleccionar rol" />
+          </SelectTrigger>
+
+          <SelectContent>
+            {ROLES.map((role) => (
+              <SelectItem key={role} value={role}>
+                {role}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ),
+    },
+    {
+      field: "enabled",
+      headerName: "Estado",
+      render: (_: any, row: UserTableRow) =>
+        row.enabled ? "Activo" : "Inactivo",
     },
   ]
 
   return (
     <>
-      <Banner title="Usuarios" description="Administración del Backoffice.">
-        <Button className="bg-button-gradient" onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" /> Agregar Usuario
-        </Button>
-      </Banner>
+      <Banner
+        title="Usuarios"
+        description="Administración de roles y accesos del sistema."
+      />
 
       <TableWrapper
         columns={userColumns}
@@ -127,23 +95,6 @@ export default function UsersPage() {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         onRetry={refetchUsers}
-      />
-
-      <UserCrudModal
-        open={open}
-        onClose={closeModal}
-        editingUser={editingUser}
-        handleCreateUser={handleCreateUser}
-        handleUpdateUser={handleUpdateUser}
-        reloadFirstPage={reloadFirstPage}
-      />
-
-      <DeleteUserDialog
-        open={!!deletingUser}
-        onClose={() => setDeletingUser(null)}
-        onConfirm={confirmDelete}
-        user={deletingUser}
-        isLoading={isDeleting}
       />
     </>
   )

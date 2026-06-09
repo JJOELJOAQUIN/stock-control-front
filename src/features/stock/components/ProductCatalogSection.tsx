@@ -106,7 +106,10 @@ export function ProductCatalogSection({
                   <TableHead className="font-semibold">Marca</TableHead>
                   <TableHead className="font-semibold">Categoria</TableHead>
                   <TableHead className="text-center font-semibold">Stock</TableHead>
+
                   <TableHead className="text-center font-semibold">Costo</TableHead>
+                  <TableHead className="text-center font-semibold">Venta</TableHead>
+                  <TableHead className="text-center font-semibold">Margen</TableHead>
                   <TableHead className="text-center font-semibold">Estado</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
@@ -142,16 +145,18 @@ export function ProductCatalogSection({
                     <TableCell className="transition-colors group-hover:bg-primary/5">
                       <div className="flex flex-col items-center gap-1">
                         <span
-                          className={`text-lg font-bold tabular-nums ${
-                            product.belowMinimum
-                              ? "text-destructive"
-                              : "text-foreground"
-                          }`}
+                          className={`text-lg font-bold tabular-nums ${product.belowMinimum
+                            ? "text-destructive"
+                            : "text-foreground"
+                            }`}
                         >
                           {product.currentStock}
                         </span>
                         {product.belowMinimum && (
-                          <Badge variant="destructive" className="text-[10px]">
+                          <Badge
+                            variant="destructive"
+                            className="text-[10px] text-black dark:text-white"
+                          >
                             Min: {product.minimumStock}
                           </Badge>
                         )}
@@ -160,6 +165,18 @@ export function ProductCatalogSection({
 
                     <TableCell className="transition-colors text-center group-hover:bg-primary/5">
                       {formatCurrency(product.costPrice)}
+                    </TableCell>
+
+
+
+                    <TableCell className="transition-colors text-center group-hover:bg-primary/5">
+                      {formatCurrency(product.salePrice)}
+                    </TableCell>
+
+                    <TableCell className="transition-colors text-center group-hover:bg-primary/5">
+                      {product.defaultMarkupPercentage != null
+                        ? `${product.defaultMarkupPercentage}%`
+                        : "-"}
                     </TableCell>
 
                     <TableCell className="transition-colors text-center group-hover:bg-primary/5">

@@ -109,6 +109,9 @@ export function useStockPage() {
     quantity: number;
     amount: number;
     comment?: string;
+    updateCostPrice?: boolean;
+    updateSalePrice?: boolean;
+    newSalePrice?: number | null;
   }) => {
     if (!context) {
       toast.error("Seleccioná un contexto");

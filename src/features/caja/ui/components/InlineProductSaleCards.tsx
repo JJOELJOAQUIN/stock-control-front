@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Barcode, Search, ShoppingBag, Package } from "lucide-react";
 
@@ -119,6 +119,18 @@ export function InlineProductSaleCard({
     setComment("");
   };
 
+
+  useEffect(() => {
+    if (!scannedProduct) return
+
+    const qty = Number(quantity)
+    const unitPrice = Number(scannedProduct.salePrice ?? 0)
+
+    if (Number.isFinite(qty) && qty > 0 && unitPrice > 0) {
+      setAmount((qty * unitPrice).toFixed(2))
+    }
+  }, [scannedProduct, quantity])
+
   return (
     <Card className="border-emerald-200/30 dark:border-emerald-800/30">
       <CardHeader>
@@ -205,7 +217,7 @@ export function InlineProductSaleCard({
                 </Field>
 
                 <Field>
-                  <FieldLabel>Monto</FieldLabel>
+                  <FieldLabel>Monto Final</FieldLabel>
                   <Input
                     type="number"
                     min="0"
@@ -215,6 +227,35 @@ export function InlineProductSaleCard({
                     placeholder="0"
                   />
                 </Field>
+
+                <div className="mb-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                  <div className="rounded-lg border bg-background p-3">
+                    <p className="text-muted-foreground">Costo</p>
+                    <p className="font-semibold">
+                      {scannedProduct.costPrice != null
+                        ? `$${scannedProduct.costPrice}`
+                        : "-"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border bg-background p-3">
+                    <p className="text-muted-foreground">Precio público</p>
+                    <p className="font-semibold">
+                      {scannedProduct.salePrice != null
+                        ? `$${scannedProduct.salePrice}`
+                        : "-"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border bg-background p-3">
+                    <p className="text-muted-foreground">Margen sugerido</p>
+                    <p className="font-semibold">
+                      {scannedProduct.defaultMarkupPercentage != null
+                        ? `${scannedProduct.defaultMarkupPercentage}%`
+                        : "-"}
+                    </p>
+                  </div>
+                </div>
 
                 <Field>
                   <FieldLabel>Método de pago</FieldLabel>

@@ -178,6 +178,9 @@ export function useCashConsultorioPage() {
     comment?: string;
     expirationDate?: string | null;
     lotNumber?: string | null;
+    updateCostPrice?: boolean;
+    updateSalePrice?: boolean;
+    newSalePrice?: number | null;
   }) => {
     try {
       await purchaseProduct({
@@ -188,6 +191,9 @@ export function useCashConsultorioPage() {
         comment: payload.comment,
         expirationDate: payload.expirationDate ?? null,
         lotNumber: payload.lotNumber ?? null,
+        updateCostPrice: payload.updateCostPrice ?? false,
+        updateSalePrice: payload.updateSalePrice ?? false,
+        newSalePrice: payload.newSalePrice ?? null,
       }).unwrap();
 
       toast.success("Compra de producto registrada");

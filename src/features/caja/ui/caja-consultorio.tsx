@@ -36,6 +36,7 @@ export default function CajaConsultorioPage() {
     registerProcedureIncome,
     registerExpense,
     products,
+    
     purchaseProductFromCash,
     isPurchasingProduct,
     splitDate,

@@ -18,6 +18,8 @@ export type Product = {
   barcode?: string | null;
   scope: ProductScope;
   costPrice?: number | null;
+  salePrice?: number | null
+  defaultMarkupPercentage?: number | null
 };
 
 export type CreateProductRequest = {
@@ -30,6 +32,8 @@ export type CreateProductRequest = {
   scope: ProductScope;
   barcode?: string;
   costPrice: number;
+  salePrice?: number | null
+  defaultMarkupPercentage?: number | null
 };
 
 export type ProductScanResponse = {
@@ -39,6 +43,9 @@ export type ProductScanResponse = {
   scope: ProductScope;
   currentStock: number;
   belowMinimum: boolean;
+  costPrice?: number | null
+  salePrice?: number | null
+  defaultMarkupPercentage?: number | null
 };
 
 export type PurchaseProductRequest = {
@@ -49,6 +56,11 @@ export type PurchaseProductRequest = {
   comment?: string;
   expirationDate?: string | null;
   lotNumber?: string | null;
+  updateCostPrice?: boolean;
+  updateSalePrice?: boolean;
+  newSalePrice?: number | null;
+  updateMarkupPercentage?: boolean;
+  newDefaultMarkupPercentage?: number | null;
 };
 
 export type SellByBarcodeRequest = {
@@ -73,6 +85,8 @@ export type ProductWithStock = {
   belowMinimum: boolean;
   active: boolean;
   costPrice?: number | null;
+  salePrice?: number | null;
+  defaultMarkupPercentage?: number | null;
 };
 
 export type UpdateProductRequest = {
@@ -84,6 +98,8 @@ export type UpdateProductRequest = {
   expirable?: boolean;
   active?: boolean;
   costPrice: number;
+  salePrice?: number | null;
+  defaultMarkupPercentage?: number | null;
 };
 
 export type PatchProductRequest = {

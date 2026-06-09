@@ -1,66 +1,32 @@
-import { baseApi } from "@/core/api/baseApi";
-import type { GenericResponse } from "@/features/tracking/models/afiliate";
-import type { UserData } from "@/features/tracking/models/afiliate";
+import { baseApi } from "@/core/api/baseApi"
+import type { AppRole, AppUser } from "../models/app-user"
 
 export const usersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getUsers: builder.query<AppUser[], void>({
+      query: () => ({
+        url: "/api/admin/users",
+        method: "GET",
+      }),
+      providesTags: ["Users"],
+    }),
 
-    // CREATE
-    createUser: builder.mutation<
-      GenericResponse,
-      { formData: Partial<UserData> }
+    updateUserRole: builder.mutation<
+      void,
+      { firebaseUid: string; role: AppRole }
     >({
-      query: ({ formData }) => ({
-        url: "/api/backoffice/",
+      query: ({ firebaseUid, role }) => ({
+        url: `/api/admin/users/${firebaseUid}/role`,
         method: "POST",
-        body: formData,
+        body: { role },
       }),
+      invalidatesTags: ["Users"],
     }),
-
-    // LIST
-    getUsers: builder.mutation<
-      GenericResponse,
-      { page?: number; per_page?: number }
-    >({
-      query: ({ page = 0, per_page = 100 }) => ({
-        url: "/api/backoffice/list",
-        method: "POST",
-        body: {
-          limit: per_page,
-          offset: page,
-        },
-      }),
-    }),
-
-    // UPDATE
-    updateUser: builder.mutation<
-      GenericResponse,
-      { userId: string; formData: Partial<UserData> }
-    >({
-      query: ({ userId, formData }) => ({
-        url: `/api/backoffice/${userId}`,
-        method: "PUT",
-        body: formData,
-      }),
-    }),
-
-    // DELETE
-    deleteUser: builder.mutation<
-      GenericResponse,
-      { userId: string }
-    >({
-      query: ({ userId }) => ({
-        url: `/api/backoffice/${userId}`,
-        method: "DELETE",
-      }),
-    }),
-
   }),
-});
+  overrideExisting: false,
+})
 
 export const {
-  useCreateUserMutation,
-  useGetUsersMutation,
-  useUpdateUserMutation,
-  useDeleteUserMutation,
-} = usersApi;
+  useGetUsersQuery,
+  useUpdateUserRoleMutation,
+} = usersApi
