@@ -319,7 +319,7 @@ export function InlineProductSaleCard({
               </div>
 
               <div className="mt-4 flex justify-end">
-                <Button onClick={handleSell} disabled={isSelling}>
+                <Button onClick={() => void handleSell()} disabled={isSelling}>
                   {isSelling && <Spinner />}
                   Registrar venta
                 </Button>

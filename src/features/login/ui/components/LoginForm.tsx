@@ -32,12 +32,12 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="w-full h-screen flex items-center justify-center">
-      <Card className="h-screen w-full flex flex-col items-center justify-center bg-card dark:bg-card/90 shadow-lg border-none rounded-none">
+    <div className="w-full min-h-screen md:h-screen flex items-center justify-center p-4 md:p-0">
+      <Card className="min-h-screen md:h-screen w-full flex flex-col items-center justify-center bg-card dark:bg-card/90 shadow-lg border-none rounded-none md:rounded-none">
         <img
           src="/logo_nuevo.png"
           alt="Logo"
-          className="max-w-64 mx-auto mb-6"
+          className="max-w-40 md:max-w-64 mx-auto mb-6"
         />
 
         <CardContent className="w-full max-w-sm space-y-4">

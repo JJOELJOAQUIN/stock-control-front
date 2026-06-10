@@ -15,15 +15,15 @@
           <DarkModeToggle />
         </div>
 
-        <div className="flex w-full h-full">
-          <div className="w-1/2 h-full flex items-center justify-center z-20">
+        <div className="flex flex-col md:flex-row w-full h-full">
+          <div className="w-full md:w-1/2 h-auto md:h-full flex items-center justify-center z-20">
             <LoginForm />
           </div>
 
-          <div className="w-1/2 h-full flex items-center justify-center z-20">
+          <div className="hidden md:flex w-full md:w-1/2 h-full flex-col items-center justify-center z-20">
             <img
               src="/logo_nuevo.png"
-              className="max-w-lg "
+              className="max-w-lg"
               alt="logo"
             />
           </div>
