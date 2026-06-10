@@ -74,7 +74,8 @@ const SelectContent = React.forwardRef<
         className={cn(
           "bg-card p-1",
           position === "popper" &&
-          "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+
+          "w-full min-w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]"
         )}
       >
         {children}
@@ -120,7 +121,10 @@ const SelectItem = React.forwardRef<
       </SelectPrimitive.ItemIndicator>
     </span>
 
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    {/* 👇 trunca en una línea con ellipsis */}
+    <SelectPrimitive.ItemText className="block min-w-0 flex-1 truncate">
+      {children}
+    </SelectPrimitive.ItemText>
   </SelectPrimitive.Item>
 ));
 

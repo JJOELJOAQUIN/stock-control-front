@@ -59,7 +59,7 @@ export default function StockPage() {
     category: "COSMETICO_VENTA",
     brand: "LIDHERMA",
     expirable: false,
-    scope: "BOTH",
+    scope: "CONSULTORIO",
     barcode: "",
     costPrice: 0,
   });
@@ -73,6 +73,8 @@ export default function StockPage() {
     expirable: false,
     active: true,
     costPrice: 0,
+    salePrice: 0,
+    defaultMarkupPercentage: 0,
   });
 
   const [purchaseForm, setPurchaseForm] = useState({
@@ -82,6 +84,8 @@ export default function StockPage() {
     updateCostPrice: true,
     updateSalePrice: false,
     newSalePrice: "",
+    updateMarkupPercentage: false,
+    newDefaultMarkupPercentage: "",
   });
 
   const [sellForm, setSellForm] = useState({
@@ -112,6 +116,8 @@ export default function StockPage() {
       updateCostPrice: true,
       updateSalePrice: false,
       newSalePrice: "",
+      updateMarkupPercentage: false,
+      newDefaultMarkupPercentage: "",
     });
     setIsPurchaseOpen(true);
   };
@@ -142,6 +148,8 @@ export default function StockPage() {
       expirable: false,
       active: product.active,
       costPrice: Number(product.costPrice ?? 0),
+      salePrice: Number(product.salePrice ?? 0),
+      defaultMarkupPercentage: Number(product.defaultMarkupPercentage ?? 0),
     });
     setIsEditOpen(true);
   };
@@ -165,6 +173,7 @@ export default function StockPage() {
 
       await handleCreateProduct({
         ...newProduct,
+        scope: "CONSULTORIO",
         name: newProduct.name.trim(),
         description: newProduct.description?.trim() || "",
         barcode: newProduct.barcode?.trim() || "",
@@ -206,7 +215,14 @@ export default function StockPage() {
         toast.error("El monto debe ser mayor a cero");
         return;
       }
+      if (purchaseForm.updateSalePrice) {
+        const newSalePrice = Number(purchaseForm.newSalePrice);
 
+        if (!Number.isFinite(newSalePrice) || newSalePrice <= 0) {
+          toast.error("El nuevo precio de venta debe ser mayor a cero");
+          return;
+        }
+      }
       await handlePurchase({
         productId: selectedProduct.id,
         quantity,
@@ -219,14 +235,7 @@ export default function StockPage() {
           : null,
       });
 
-      if (purchaseForm.updateSalePrice) {
-        const newSalePrice = Number(purchaseForm.newSalePrice);
 
-        if (!Number.isFinite(newSalePrice) || newSalePrice <= 0) {
-          toast.error("El nuevo precio de venta debe ser mayor a cero");
-          return;
-        }
-      }
 
       setIsPurchaseOpen(false);
       setSelectedProduct(null);

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { skipToken } from "@reduxjs/toolkit/query";
+
 import { toast } from "sonner";
-import { useBusinessContext } from "@/core/context/business-context";
+
 import {
   useCreateProductMutation,
   useDeactivateProductMutation,
@@ -20,7 +20,7 @@ import type {
 import type { CashActor } from "@/features/caja/types/cash.types";
 
 export function useStockPage() {
-  const { context } = useBusinessContext();
+  const context: "CONSULTORIO" = "CONSULTORIO";
 
   const [search, setSearch] = useState("");
   const [barcodeQuery, setBarcodeQuery] = useState("");
@@ -31,7 +31,7 @@ export function useStockPage() {
     isLoading,
     refetch,
   } = useGetProductsWithStockQuery(
-    context ? { context } : skipToken,
+    { context },
     {
       refetchOnMountOrArgChange: true,
     }

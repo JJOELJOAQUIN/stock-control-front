@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Barcode, Search, ShoppingBag, Package } from "lucide-react";
+import { Barcode, Search, ShoppingBag, Package, Coins, Tag, TrendingUp } from "lucide-react";
 
 import type {
   PaymentMethod,
@@ -39,6 +39,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { PriceStat } from "./PriceStat";
+import { currencyFormatter } from "@/lib/currencyFormatter";
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "CASH", label: "Efectivo" },
@@ -84,7 +86,7 @@ export function InlineProductSaleCard({
   const [performedBy, setPerformedBy] = useState<CashActor>("COSMETOLOGA");
   const [comment, setComment] = useState("");
 
-  const handleSell = async () => {
+  const handleSell = async (): Promise<void> => {
     if (!scannedProduct?.barcode) {
       toast.error("Primero escaneá un producto");
       return;
@@ -228,33 +230,38 @@ export function InlineProductSaleCard({
                   />
                 </Field>
 
-                <div className="mb-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="text-muted-foreground">Costo</p>
-                    <p className="font-semibold">
-                      {scannedProduct.costPrice != null
-                        ? `$${scannedProduct.costPrice}`
-                        : "-"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="text-muted-foreground">Precio público</p>
-                    <p className="font-semibold">
-                      {scannedProduct.salePrice != null
-                        ? `$${scannedProduct.salePrice}`
-                        : "-"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="text-muted-foreground">Margen sugerido</p>
-                    <p className="font-semibold">
-                      {scannedProduct.defaultMarkupPercentage != null
+                <div className="col-span-full grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <PriceStat
+                    icon={Coins}
+                    label="Costo"
+                    accent="neutral"
+                    value={
+                      scannedProduct.costPrice != null
+                        ? currencyFormatter.format(scannedProduct.costPrice)
+                        : "—"
+                    }
+                  />
+                  <PriceStat
+                    icon={Tag}
+                    label="Precio público"
+                    accent="emerald"
+                    value={
+                      scannedProduct.salePrice != null
+                        ? currencyFormatter.format(scannedProduct.salePrice)
+                        : "—"
+                    }
+                  />
+                  <PriceStat
+                    icon={TrendingUp}
+                    label="Margen sugerido"
+                    accent="amber"
+                    value={
+                      scannedProduct.defaultMarkupPercentage != null
                         ? `${scannedProduct.defaultMarkupPercentage}%`
-                        : "-"}
-                    </p>
-                  </div>
+                        : "—"
+                    }
+                    hint="sobre el costo"
+                  />
                 </div>
 
                 <Field>

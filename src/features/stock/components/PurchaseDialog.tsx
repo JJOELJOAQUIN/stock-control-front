@@ -24,6 +24,8 @@ type PurchaseForm = {
   updateCostPrice: boolean;
   updateSalePrice: boolean;
   newSalePrice: string;
+  updateMarkupPercentage: boolean;
+  newDefaultMarkupPercentage: string;
 };
 
 type Props = {
