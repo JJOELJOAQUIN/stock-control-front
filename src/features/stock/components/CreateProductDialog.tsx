@@ -33,6 +33,7 @@ const PRODUCT_BRANDS = [
   "CARTHAGE",
   "FORTBENTON",
   "BIOFARMACY",
+  "MIRA DROR"
 ] as const;
 
 
