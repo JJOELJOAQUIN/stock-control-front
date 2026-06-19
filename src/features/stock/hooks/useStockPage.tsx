@@ -15,6 +15,7 @@ import type {
   CreateProductRequest,
   PaymentMethod,
   ProductScanResponse,
+  PurchaseOrderRequest,
   UpdateProductRequest,
 } from "../types/stock.types";
 import type { CashActor } from "@/features/caja/types/cash.types";
@@ -104,22 +105,16 @@ export function useStockPage() {
     await runScan(barcodeQuery, context);
   };
 
-  const handlePurchase = async (payload: {
-    productId: string;
-    quantity: number;
-    amount: number;
-    comment?: string;
-    updateCostPrice?: boolean;
-    updateSalePrice?: boolean;
-    newSalePrice?: number | null;
-  }) => {
+  const handlePurchase = async (
+    order: Omit<PurchaseOrderRequest, "context">
+  ) => {
     if (!context) {
       toast.error("Seleccioná un contexto");
       return;
     }
 
     await purchaseProduct({
-      ...payload,
+      ...order,
       context,
     }).unwrap();
 

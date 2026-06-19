@@ -48,12 +48,10 @@ export type ProductScanResponse = {
   defaultMarkupPercentage?: number | null
 };
 
-export type PurchaseProductRequest = {
+export type PurchaseItem = {
   productId: string;
   quantity: number;
-  amount: number;
-  context: BusinessContext;
-  comment?: string;
+  unitCost: number;
   expirationDate?: string | null;
   lotNumber?: string | null;
   updateCostPrice?: boolean;
@@ -61,6 +59,14 @@ export type PurchaseProductRequest = {
   newSalePrice?: number | null;
   updateMarkupPercentage?: boolean;
   newDefaultMarkupPercentage?: number | null;
+};
+
+export type PurchaseOrderRequest = {
+  context: BusinessContext;
+  comment?: string;
+  paymentMethod: PaymentMethod;
+  expectedTotal: number;
+  items: PurchaseItem[];
 };
 
 export type SellByBarcodeRequest = {
@@ -123,3 +129,35 @@ export type ProductBatchExpiration = {
   daysToExpire: number;
   context: "LOCAL" | "CONSULTORIO";
 }
+
+/**
+ * Marcas de producto disponibles. Debe mantenerse en sincronía con el enum
+ * ProductBrand del backend (com.jowi.stock.product.enums.ProductBrand).
+ * Fuente única: importar desde acá en todos los componentes que listen marcas.
+ */
+export const PRODUCT_BRANDS = [
+  "LIDHERMA",
+  "IDRAET",
+  "EXEL",
+  "BIOBELLUS",
+  "OXAPHARMA",
+  "MESOESTETIC",
+  "GENERICO",
+  "PRODERMIC",
+  "HDM",
+  "LACA",
+  "CARTHAGE",
+  "FORTBENTON",
+  "BIOFARMACY",
+  "LACROZE",
+  "VIP",
+  "MAURE",
+  "DERMASSI",
+  "U_DERM",
+  "BEAUTY_NOW",
+  "MIRADROR",
+  "UVANZA",
+  "EXODERMAL",
+] as const;
+
+export type ProductBrand = (typeof PRODUCT_BRANDS)[number];

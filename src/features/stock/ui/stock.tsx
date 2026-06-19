@@ -8,6 +8,7 @@ import type {
   CreateProductRequest,
   PaymentMethod,
   ProductWithStock,
+  PurchaseOrderRequest,
   UpdateProductRequest,
 } from "../types/stock.types";
 import { StockSummary } from "../components/StockSumary";
@@ -77,17 +78,6 @@ export default function StockPage() {
     defaultMarkupPercentage: 0,
   });
 
-  const [purchaseForm, setPurchaseForm] = useState({
-    quantity: "",
-    amount: "",
-    comment: "",
-    updateCostPrice: true,
-    updateSalePrice: false,
-    newSalePrice: "",
-    updateMarkupPercentage: false,
-    newDefaultMarkupPercentage: "",
-  });
-
   const [sellForm, setSellForm] = useState({
     quantity: "",
     amount: "",
@@ -109,16 +99,6 @@ export default function StockPage() {
 
   const openPurchaseDialog = (product: ProductWithStock) => {
     setSelectedProduct(product);
-    setPurchaseForm({
-      quantity: "",
-      amount: "",
-      comment: "",
-      updateCostPrice: true,
-      updateSalePrice: false,
-      newSalePrice: "",
-      updateMarkupPercentage: false,
-      newDefaultMarkupPercentage: "",
-    });
     setIsPurchaseOpen(true);
   };
 
@@ -196,49 +176,12 @@ export default function StockPage() {
     }
   };
 
-  const onSubmitPurchase = async () => {
+  const onSubmitPurchase = async (
+    order: Omit<PurchaseOrderRequest, "context">
+  ) => {
     try {
-      if (!selectedProduct) {
-        toast.error("Seleccioná un producto");
-        return;
-      }
-
-      const quantity = Number(purchaseForm.quantity);
-      const amount = Number(purchaseForm.amount);
-
-      if (!Number.isFinite(quantity) || quantity <= 0) {
-        toast.error("La cantidad debe ser mayor a cero");
-        return;
-      }
-
-      if (!Number.isFinite(amount) || amount <= 0) {
-        toast.error("El monto debe ser mayor a cero");
-        return;
-      }
-      if (purchaseForm.updateSalePrice) {
-        const newSalePrice = Number(purchaseForm.newSalePrice);
-
-        if (!Number.isFinite(newSalePrice) || newSalePrice <= 0) {
-          toast.error("El nuevo precio de venta debe ser mayor a cero");
-          return;
-        }
-      }
-      await handlePurchase({
-        productId: selectedProduct.id,
-        quantity,
-        amount,
-        comment: purchaseForm.comment.trim(),
-        updateCostPrice: purchaseForm.updateCostPrice,
-        updateSalePrice: purchaseForm.updateSalePrice,
-        newSalePrice: purchaseForm.updateSalePrice
-          ? Number(purchaseForm.newSalePrice)
-          : null,
-      });
-
-
-
+      await handlePurchase(order);
       setIsPurchaseOpen(false);
-      setSelectedProduct(null);
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar la compra");
     }
@@ -401,14 +344,10 @@ export default function StockPage() {
       <PurchaseDialog
         open={isPurchaseOpen}
         onOpenChange={setIsPurchaseOpen}
-        productName={selectedProduct?.name ?? ""}
-        form={purchaseForm}
-        setForm={setPurchaseForm}
+        products={filteredProducts}
+        initialProduct={selectedProduct}
         isSubmitting={isPurchasing}
         onSubmit={onSubmitPurchase}
-        costPrice={selectedProduct?.costPrice}
-        salePrice={selectedProduct?.salePrice}
-        defaultMarkupPercentage={selectedProduct?.defaultMarkupPercentage}
       />
 
       <SellDialog

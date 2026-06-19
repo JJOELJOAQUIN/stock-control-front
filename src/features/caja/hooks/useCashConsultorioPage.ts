@@ -21,7 +21,7 @@ import {
   useSellByBarcodeMutation,
 } from "@/features/stock/api/stockApi";
 
-import type { ProductScanResponse } from "@/features/stock/types/stock.types";
+import type { ProductScanResponse, PurchaseOrderRequest } from "@/features/stock/types/stock.types";
 
 function getTodayISODate() {
   return new Date().toISOString().slice(0, 10);
@@ -171,29 +171,13 @@ export function useCashConsultorioPage() {
     }
   };
 
-  const purchaseProductFromCash = async (payload: {
-    productId: string;
-    quantity: number;
-    amount: number;
-    comment?: string;
-    expirationDate?: string | null;
-    lotNumber?: string | null;
-    updateCostPrice?: boolean;
-    updateSalePrice?: boolean;
-    newSalePrice?: number | null;
-  }) => {
+  const purchaseProductFromCash = async (
+    order: Omit<PurchaseOrderRequest, "context">
+  ) => {
     try {
       await purchaseProduct({
-        productId: payload.productId,
-        quantity: payload.quantity,
-        amount: payload.amount,
+        ...order,
         context: "CONSULTORIO",
-        comment: payload.comment,
-        expirationDate: payload.expirationDate ?? null,
-        lotNumber: payload.lotNumber ?? null,
-        updateCostPrice: payload.updateCostPrice ?? false,
-        updateSalePrice: payload.updateSalePrice ?? false,
-        newSalePrice: payload.newSalePrice ?? null,
       }).unwrap();
 
       toast.success("Compra de producto registrada");

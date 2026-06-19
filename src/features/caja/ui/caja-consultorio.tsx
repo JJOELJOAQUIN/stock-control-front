@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Building2 } from "lucide-react";
+import { ArrowLeft, Building2, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
@@ -12,12 +13,12 @@ import {
   MEDICA_PROCEDURES,
 } from "../types/cash.types";
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
-import { InlineProductPurchaseCard } from "./components/InlinePurchaseCard";
+import { PurchaseDialog } from "@/features/stock/components/PurchaseDialog";
 import { DailySplitSummary } from "./components/DailySplitSummary";
 import { ProductExpirationAlerts } from "./components/ProductExpirationAlerts";
 
 export default function CajaConsultorioPage() {
-
+  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
 
   const {
     data,
@@ -117,10 +118,21 @@ export default function CajaConsultorioPage() {
             onSell={sellProductFromCash}
           />
 
-          <InlineProductPurchaseCard
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => setIsPurchaseOpen(true)}
+          >
+            <ShoppingCart className="size-4" />
+            Registrar compra de productos
+          </Button>
+
+          <PurchaseDialog
+            open={isPurchaseOpen}
+            onOpenChange={setIsPurchaseOpen}
             products={products}
             isSubmitting={isPurchasingProduct}
-            onPurchase={purchaseProductFromCash}
+            onSubmit={purchaseProductFromCash}
           />
 
           <ProcedureIncomeCard

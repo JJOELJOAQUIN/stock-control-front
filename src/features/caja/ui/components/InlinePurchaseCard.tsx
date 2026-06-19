@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PackagePlus } from "lucide-react";
 
@@ -23,6 +23,12 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
+import {
+  calcSuggestedSalePrice,
+  calcTotalAmount,
+  currencyFormatter,
+  validatePurchase,
+} from "@/shared/lib/purchase";
 
 type Props = {
   products: ProductWithStock[];
@@ -37,15 +43,8 @@ type Props = {
     updateCostPrice?: boolean;
     updateSalePrice?: boolean;
     newSalePrice?: number | null;
-    updateMarkupPercentage: boolean;
-newDefaultMarkupPercentage: string;
   }) => Promise<void>;
 };
-
-const currencyFormatter = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-});
 
 export function InlineProductPurchaseCard({
   products,
@@ -54,7 +53,7 @@ export function InlineProductPurchaseCard({
 }: Props) {
   const [productId, setProductId] = useState("");
   const [quantity, setQuantity] = useState("1");
-  const [amount, setAmount] = useState("");
+  const [unitCost, setUnitCost] = useState("");
   const [comment, setComment] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
   const [lotNumber, setLotNumber] = useState("");
@@ -65,18 +64,29 @@ export function InlineProductPurchaseCard({
 
   const selectedProduct = products.find((product) => product.id === productId);
 
+  // Al cambiar de producto, pre-rellenamos el costo unitario con el costo
+  // guardado del producto (si tiene). El usuario puede ajustarlo después;
+  // el efecto solo se dispara al cambiar productId, no pisa ediciones manuales.
+  useEffect(() => {
+    if (!selectedProduct) {
+      setUnitCost("");
+      return;
+    }
+
+    const savedCost = selectedProduct.costPrice;
+    setUnitCost(savedCost != null && savedCost > 0 ? String(savedCost) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
+
   const parsedQuantity = Number(quantity) || 0;
-  const parsedAmount = Number(amount) || 0;
+  const parsedUnitCost = Number(unitCost) || 0;
 
-  const unitCost =
-    parsedQuantity > 0 && parsedAmount > 0
-      ? parsedAmount / parsedQuantity
-      : 0;
+  const totalAmount = calcTotalAmount(parsedUnitCost, parsedQuantity);
 
-  const suggestedSalePrice =
-    unitCost > 0 && selectedProduct?.defaultMarkupPercentage != null
-      ? unitCost + unitCost * (selectedProduct.defaultMarkupPercentage / 100)
-      : 0;
+  const suggestedSalePrice = calcSuggestedSalePrice(
+    parsedUnitCost,
+    selectedProduct?.defaultMarkupPercentage
+  );
 
   const handleUpdateSalePriceChange = (checked: boolean) => {
     setUpdateSalePrice(checked);
@@ -96,29 +106,22 @@ export function InlineProductPurchaseCard({
       return;
     }
 
-    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
-      toast.error("La cantidad debe ser mayor a cero");
+    const validationError = validatePurchase({
+      quantity: parsedQuantity,
+      unitCost: parsedUnitCost,
+      updateSalePrice,
+      newSalePrice: Number(newSalePrice),
+    });
+
+    if (validationError) {
+      toast.error(validationError);
       return;
-    }
-
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      toast.error("El monto debe ser mayor a cero");
-      return;
-    }
-
-    if (updateSalePrice) {
-      const parsedNewSalePrice = Number(newSalePrice);
-
-      if (!Number.isFinite(parsedNewSalePrice) || parsedNewSalePrice <= 0) {
-        toast.error("El nuevo precio de venta debe ser mayor a cero");
-        return;
-      }
     }
 
     await onPurchase({
       productId,
       quantity: parsedQuantity,
-      amount: parsedAmount,
+      amount: totalAmount,
       comment: comment.trim() || "Compra de producto desde caja consultorio",
       expirationDate: expirationDate || null,
       lotNumber: lotNumber.trim() || null,
@@ -128,13 +131,11 @@ export function InlineProductPurchaseCard({
         updateSalePrice && Number(newSalePrice) > 0
           ? Number(newSalePrice)
           : null,
-      updateMarkupPercentage: false,
-      newDefaultMarkupPercentage: "0",
     });
 
     setProductId("");
     setQuantity("1");
-    setAmount("");
+    setUnitCost("");
     setComment("");
     setExpirationDate("");
     setLotNumber("");
@@ -191,18 +192,6 @@ export function InlineProductPurchaseCard({
             </Field>
 
             <Field>
-              <FieldLabel>Monto total compra</FieldLabel>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-              />
-            </Field>
-
-            <Field>
               <FieldLabel>Número de lote</FieldLabel>
               <Input
                 value={lotNumber}
@@ -229,6 +218,17 @@ export function InlineProductPurchaseCard({
               />
             </Field>
           </div>
+
+          {parsedQuantity > 0 && parsedUnitCost > 0 && (
+            <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30">
+              <p className="text-sm text-muted-foreground">
+                Total de la compra
+              </p>
+              <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                {currencyFormatter.format(totalAmount)}
+              </span>
+            </div>
+          )}
 
           {selectedProduct && (
             <div className="grid grid-cols-1 gap-3 rounded-lg border bg-muted/30 p-3 text-sm md:grid-cols-4">
@@ -260,13 +260,34 @@ export function InlineProductPurchaseCard({
               </div>
 
               <div>
-                <p className="text-muted-foreground">Costo unitario calculado</p>
+                <p className="text-muted-foreground">Total de la compra</p>
                 <p className="font-semibold">
-                  {unitCost > 0 ? currencyFormatter.format(unitCost) : "-"}
+                  {totalAmount > 0
+                    ? currencyFormatter.format(totalAmount)
+                    : "-"}
                 </p>
               </div>
             </div>
           )}
+
+          <div className="rounded-lg border p-3">
+            <Field>
+              <FieldLabel>Costo unitario</FieldLabel>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={unitCost}
+                onChange={(e) => setUnitCost(e.target.value)}
+                placeholder="0.00"
+                disabled={!productId}
+              />
+              <p className="text-xs text-muted-foreground">
+                Se completa con el costo guardado del producto. Modificalo solo
+                si cambió el precio de compra.
+              </p>
+            </Field>
+          </div>
 
           <div className="space-y-3 rounded-lg border p-3">
             <label className="flex items-center gap-2 text-sm">

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Barcode, DollarSign, Package } from "lucide-react";
 import type { CreateProductRequest } from "../types/stock.types";
+import { PRODUCT_BRANDS } from "../types/stock.types";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
@@ -15,26 +16,6 @@ const PRODUCT_CATEGORIES = [
   { value: "INSUMO_DESCARTABLE", label: "Insumo Descartable" },
   { value: "MESOTERAPIA", label: "Mesoterapia" },
   { value: "OTRO", label: "Otro" },
-] as const;
-
-const PRODUCT_BRANDS = [
-  "LIDHERMA",
-  "IDRAET",
-  "EXEL",
-  "SOLENIL",
-  "BIOBELLUS",
-  "MAGISTRALES",
-  "OXAPHARMA",
-  "MESOESTETIC",
-  "GENERICO",
-  "PRODERMIC",
-  "HDM",
-  "LACA",
-  "CARTHAGE",
-  "FORTBENTON",
-  "BIOFARMACY",
-  "MIRADROR",
-   "LACROZE"
 ] as const;
 
 
@@ -111,6 +92,7 @@ export function CreateProductDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 overflow-y-auto px-1">
         <FieldGroup className="grid grid-cols-1 gap-5 py-4 md:grid-cols-2">
           <Field className="md:col-span-2">
             <FieldLabel>Nombre del producto</FieldLabel>
@@ -260,8 +242,9 @@ export function CreateProductDialog({
             </InputGroup>
           </Field>
         </FieldGroup>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

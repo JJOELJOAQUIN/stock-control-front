@@ -216,7 +216,7 @@ export function SellDialog({
                 <Input
                   type="number"
                   min="1"
-                  placeholder="0"
+              
                   value={form.quantity}
                   onChange={(e) =>
                     setForm((prev) => ({

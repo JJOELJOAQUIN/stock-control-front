@@ -1,5 +1,6 @@
 import { Barcode, DollarSign, Pencil, Percent } from "lucide-react";
 import type { ProductWithStock, UpdateProductRequest } from "../types/stock.types";
+import { PRODUCT_BRANDS } from "../types/stock.types";
 import {
   Dialog,
   DialogContent,
@@ -32,24 +33,6 @@ const PRODUCT_CATEGORIES = [
   { value: "INSUMO_DESCARTABLE", label: "Insumo Descartable" },
   { value: "MESOTERAPIA", label: "Mesoterapia" },
   { value: "OTRO", label: "Otro" },
-] as const;
-
-const PRODUCT_BRANDS = [
-  "LIDHERMA",
-  "IDRAET",
-  "EXEL",
-  "SOLENIL",
-  "BIOBELLUS",
-  "MAGISTRALES",
-  "OXAPHARMA",
-  "MESOESTETIC",
-  "GENERICO",
-  "PRODERMIC",
-  "HDM",
-  "LACA",
-  "CARTHAGE",
-  "FORTBENTON",
-  "BIOFARMACY",
 ] as const;
 
 type Props = {

@@ -201,7 +201,7 @@ export function CajaView({
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="$0.00"
+           
                 />
               </div>
               <div className="space-y-2">
@@ -259,10 +259,10 @@ export function CajaView({
                 <Input
                   type="number"
                   min="0"
-                  step="0.01"
+
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="$0.00"
+              
                 />
               </div>
               <div className="space-y-2">

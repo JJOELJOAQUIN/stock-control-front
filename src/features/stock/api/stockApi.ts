@@ -5,7 +5,7 @@ import {
   type Product,
   type ProductScanResponse,
   type ProductWithStock,
-  type PurchaseProductRequest,
+  type PurchaseOrderRequest,
   type SellByBarcodeRequest,
   type UpdateProductRequest,
 } from "../types/stock.types";
@@ -72,7 +72,7 @@ export const stockApi = baseApi.injectEndpoints({
       providesTags: ["Stock"],
     }),
 
-    purchaseProduct: builder.mutation<void, PurchaseProductRequest>({
+    purchaseProduct: builder.mutation<void, PurchaseOrderRequest>({
       query: (body) => ({
         url: "/api/business/purchase",
         method: "POST",
