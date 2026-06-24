@@ -16,6 +16,7 @@ import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
 import { PurchaseDialog } from "@/features/stock/components/PurchaseDialog";
 import { DailySplitSummary } from "./components/DailySplitSummary";
 import { ProductExpirationAlerts } from "./components/ProductExpirationAlerts";
+import { BusinessTotals } from "./components/BusinessTotals";
 
 export default function CajaConsultorioPage() {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function CajaConsultorioPage() {
     registerProcedureIncome,
     registerExpense,
     products,
-    
+
     purchaseProductFromCash,
     isPurchasingProduct,
     splitDate,
@@ -46,6 +47,8 @@ export default function CajaConsultorioPage() {
     isLoadingDailySplit,
     expiringProducts,
     isLoadingExpiringProducts,
+    salesTotals,
+    stockValue,
 
   } = useCashConsultorioPage();
 
@@ -85,6 +88,14 @@ export default function CajaConsultorioPage() {
             </p>
           </div>
         </div>
+
+
+        <BusinessTotals
+          stockAtCost={stockValue?.atCost ?? 0}
+          stockAtSale={stockValue?.atSale ?? 0}
+          productSales={Number(salesTotals?.productSales ?? 0)}
+          procedureIncome={Number(salesTotals?.procedureIncome ?? 0)}
+        />
 
         <DailySplitSummary
           date={splitDate}

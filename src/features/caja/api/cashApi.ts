@@ -3,6 +3,7 @@ import type {
   CashContext,
   CashDailySplitResponse,
   CashMovementResponse,
+  CashSalesTotalsResponse,
   CreateCashMovementRequest,
   PageResponse,
 } from "../types/cash.types";
@@ -20,7 +21,6 @@ export const cashApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Cash"],
     }),
-
 
     getDailyCashSplit: builder.query<
       CashDailySplitResponse,
@@ -58,6 +58,22 @@ export const cashApi = baseApi.injectEndpoints({
       },
       providesTags: ["Cash"],
     }),
+
+    getSalesTotals: builder.query<
+      CashSalesTotalsResponse,
+      { context: CashContext }
+    >({
+      query: ({ context }) => {
+        const params = new URLSearchParams();
+        params.set("context", context);
+
+        return {
+          url: `/api/cash-movements/sales-totals?${params.toString()}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["Cash"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -65,5 +81,6 @@ export const cashApi = baseApi.injectEndpoints({
 export const {
   useCreateCashMovementMutation,
   useGetCashMovementsQuery,
-  useGetDailyCashSplitQuery
+  useGetDailyCashSplitQuery,
+  useGetSalesTotalsQuery,
 } = cashApi;

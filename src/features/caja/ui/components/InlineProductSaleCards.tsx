@@ -123,15 +123,26 @@ export function InlineProductSaleCard({
 
 
   useEffect(() => {
-    if (!scannedProduct) return
+    if (!scannedProduct) return;
 
-    const qty = Number(quantity)
-    const unitPrice = Number(scannedProduct.salePrice ?? 0)
+    const qty = Number(quantity);
+    const unitPrice = Number(scannedProduct.salePrice ?? 0);
 
     if (Number.isFinite(qty) && qty > 0 && unitPrice > 0) {
-      setAmount((qty * unitPrice).toFixed(2))
+      const subtotal = qty * unitPrice;
+      const discountPercent = paymentMethod === "CASH" ? 10 : 0;
+      const finalAmount = discountPercent > 0 ? subtotal * (1 - discountPercent / 100) : subtotal;
+
+      setAmount(finalAmount.toFixed(2));
     }
-  }, [scannedProduct, quantity])
+  }, [scannedProduct, quantity, paymentMethod])
+
+  const parsedQty = Number(quantity);
+  const unitPrice = Number(scannedProduct?.salePrice ?? 0);
+  const subtotal = Number.isFinite(parsedQty) && parsedQty > 0 && unitPrice > 0 ? parsedQty * unitPrice : 0;
+  const discountPercent = paymentMethod === "CASH" ? 10 : 0;
+  const discountAmount = subtotal * (discountPercent / 100);
+  const finalTotal = subtotal - discountAmount;
 
   return (
     <Card className="border-emerald-200/30 dark:border-emerald-800/30">
@@ -251,7 +262,7 @@ export function InlineProductSaleCard({
                         : "—"
                     }
                   />
-                  <PriceStat
+                  {/* <PriceStat
                     icon={TrendingUp}
                     label="Margen sugerido"
                     accent="amber"
@@ -261,8 +272,48 @@ export function InlineProductSaleCard({
                         : "—"
                     }
                     hint="sobre el costo"
-                  />
+                  /> */}
                 </div>
+
+                {parsedQty > 0 && unitPrice > 0 && (
+                  <div className="md:col-span-5">
+                    <div className="flex flex-col gap-1 rounded-lg bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30">
+                      <p className="text-sm text-muted-foreground">Monto calculado</p>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Subtotal</span>
+                        <span className="text-sm font-medium">
+                          {currencyFormatter.format(subtotal)}
+                        </span>
+                      </div>
+
+                      {discountPercent > 0 && (
+                        <>
+                          <div className="flex items-center justify-between text-sm text-rose-600">
+                            <span>-{discountPercent}% off</span>
+                            <span>-{currencyFormatter.format(discountAmount)}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-sm text-muted-foreground">Total</span>
+                            <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                              {currencyFormatter.format(finalTotal)}
+                            </span>
+                          </div>
+                        </>
+                      )}
+
+                      {discountPercent === 0 && (
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-muted-foreground">Monto total</span>
+                          <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                            {currencyFormatter.format(finalTotal)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <Field>
                   <FieldLabel>Método de pago</FieldLabel>

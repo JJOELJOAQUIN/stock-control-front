@@ -5,6 +5,9 @@ import {
   useCreateCashMovementMutation,
   useGetCashMovementsQuery,
   useGetDailyCashSplitQuery,
+  useGetSalesTotalsQuery,
+
+
 } from "../api/cashApi";
 
 import type {
@@ -69,7 +72,11 @@ export function useCashConsultorioPage() {
     refetch: refetchExpiringProducts,
   } = useGetExpiringProductBatchesQuery({
     context: "CONSULTORIO",
-    days: 90,
+    days: 120,
+  });
+
+  const { data: salesTotals } = useGetSalesTotalsQuery({
+    context: "CONSULTORIO",
   });
 
   const [createCashMovement, { isLoading: isCreating }] =
@@ -110,6 +117,19 @@ export function useCashConsultorioPage() {
       }
     );
   }, [items]);
+
+  // Valor del stock (productos del contexto CONSULTORIO), a costo y a venta.
+  const stockValue = useMemo(() => {
+    return products.reduce(
+      (acc, p) => {
+        const qty = Number(p.currentStock ?? 0);
+        acc.atCost += qty * Number(p.costPrice ?? 0);
+        acc.atSale += qty * Number(p.salePrice ?? 0);
+        return acc;
+      },
+      { atCost: 0, atSale: 0 }
+    );
+  }, [products]);
 
   const refetchCaja = async () => {
     await refetchCash();
@@ -281,6 +301,8 @@ export function useCashConsultorioPage() {
     isPurchasingProduct,
 
     summary,
+    salesTotals,
+    stockValue,
 
     barcodeQuery,
     setBarcodeQuery,

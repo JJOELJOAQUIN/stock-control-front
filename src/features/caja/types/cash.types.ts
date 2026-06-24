@@ -98,16 +98,15 @@ export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
     amount: 40600,
   },
   {
-   code: "EXOSOMAS",
-   label: "Limpieza + hidratacion jelly",
-   amount: 0,
-   },
-      {
+    code: "EXOSOMAS",
+    label: "Limpieza + hidratacion jelly",
+    amount: 0,
+  },
+  {
     code: "PEELING_PROFUNDO",
     label: "Peeling profundo",
     amount: 40000,
   },
-
 ];
 
 export type CashDailySplitResponse = {
@@ -118,95 +117,103 @@ export type CashDailySplitResponse = {
   cosmetologistTotal: number;
 };
 
+export type CashSalesTotalsResponse = {
+  context: CashContext;
+  productSales: number;
+  procedureIncome: number;
+};
+
 export type CashActor = "MEDICA" | "COSMETOLOGA";
 
 export const MEDICA_PROCEDURES: ProcedureOption[] = [
   {
     code: "CONSULTA",
-    label: "Consulta",
+    label: "CONSULTA DERMATOLOGICA",
     amount: 40000,
   },
   {
     code: "PRP_CAPILAR",
-    label: "PRP capilar",
+    label: "PRP CAPILAR",
     amount: 65000,
   },
   {
-    code: "PRP_FACIAL",
-    label: "PRP facial",
-    amount: 85000,
-  },
-
- {
     code: "MESOTERAPIA",
-    label: "Mesoterapia",
+    label: "MESOTERAPIA CAPILAR",
     amount: 58000,
   },
-
-   {
-    code: "PEELING_PROFUNDO",
-    label: "Peeling profundo",
-    amount: 130000,
-  },
-
-     {
-    code: "PEELING_SUPERFICIAL_DERMATOLOFICO",
-    label: "Peeling superficial dermatológico",
-    amount: 60000,
-  },
-     {
-    code: "ILUMINACION_FACIAL_ANTIOXIDANTE",
-    label: "Iluminación facial antioxidadante VIT C",
-    amount: 70000,
-  },
-
-       {
-    code: "BIOESTIMULACION_OLIGOELEMENTOS",
-    label: "Bioestimulación con oligoelementos",
-    amount: 75000,
-  },
-         {
-    code: "OJERAS_NCTF",
-    label: "Ojeras con NCTF",
-    amount: 185000,
-  },
-
-        {
-    code: "HIDRATACION_INTENSIVA_ANTIAGE",
-    label: "Hidratación intensiva antiage",
+  {
+    code: "PRP_FACIAL",
+    label: "PRP FACIAL",
     amount: 85000,
   },
-
-          {
-    code: "SKINBOOSTER_ALTA_HIDRATACION",
-    label: "Skinbooster alta hidratación",
-    amount: 240000,
-  },
-
-            {
-    code: "SKINBOOSTER_REGENERATIVO_PDRN",
-    label: "Skinbooster regenerativo PDRN",
-    amount: 180000,
-  },
-
-              {
+  {
     code: "CICATRICEZ_ACNE",
-    label: "PRP + DERMAPEN MÉDICO",
+    label: "PRP + DERMAPEN MÉDICO CICATRICES ACNE",
     amount: 130000,
   },
-
-               {
+  {
     code: "SKIN_MARK",
-    label: "REACTIVACION CELULAR SKIN MARK",
-    amount: 90000,
+    label: "SKIN MARK REACTIVACIÓN X-DNA + DERMAPEN",
+    amount: 110000,
   },
-
-                 {
+  {
+    code: "PEELING_PROFUNDO_PROTOCOLO",
+    label: "PROTOCOLO PEELING PROFUNDO",
+    amount: 170000,
+  },
+  {
+    code: "PEELING_SUPERFICIAL_DERMATOLOFICO",
+    label: "PEELING SUPERFICIAL DERMATOLÓGICO",
+    amount: 60000,
+  },
+  {
+    code: "OJERAS_NCTF",
+    label: "OJERAS NCTF",
+    amount: 185000,
+  },
+  {
+    code: "OJERAS_SURCOS_NCTF",
+    label: "OJERAS + SURCOS NASOGENIANOS NCTF",
+    amount: 350000,
+  },
+  {
+    code: "ILUMINACION_FACIAL_ANTIOXIDANTE",
+    label: "VITAMINA C MESOTERAPIA",
+    amount: 70000,
+  },
+  {
+    code: "BIOESTIMULACION_OLIGOELEMENTOS",
+    label: "BIOESTIMULACION CON OLIGOELEMENTOS",
+    amount: 75000,
+  },
+  {
+    code: "HIDRATACION_INTENSIVA_ANTIAGE",
+    label: "HIDRATACION INTENSIVA ANTIAGE DMAE",
+    amount: 85000,
+  },
+  {
+    code: "SKINBOOSTER_ALTA_HIDRATACION",
+    label: "SKINBOOSTER ALTA HIDRATACION REDENX",
+    amount: 240000,
+  },
+  {
+    code: "SKINBOOSTER_REGENERATIVO_PDRN",
+    label: "SKINBOOSTER REGENERATIVO PDRN DE SALMÓN",
+    amount: 180000,
+  },
+  {
     code: "ELECTROCOAGULACION",
-    label: "Electrocoagulación",
-    amount: 40000,
+    label: "ELECTROCOAGULACIÓN",
+    amount: 45000,
   },
-
-
-
+  {
+    code: "MELILOT_BOLSAS_DRENANTE",
+    label: "MELILOT MESOTERAPIA BOLSAS DRENANTE",
+    amount: 70000,
+  },
+  {
+    code: "FRAX_FACE",
+    label: "FRAX FACE DERMATOLÓGICO",
+    amount: 165000,
+  },
 ];
