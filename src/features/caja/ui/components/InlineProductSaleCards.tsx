@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Barcode, Search, ShoppingBag, Package, Coins, Tag, TrendingUp } from "lucide-react";
+import { Barcode, Search, ShoppingBag, Package, Coins, Tag } from "lucide-react";
 
 import type {
   PaymentMethod,
