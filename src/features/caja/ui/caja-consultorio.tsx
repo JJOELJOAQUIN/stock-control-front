@@ -7,7 +7,7 @@ import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
 // import { CashSummary } from "./components/CashSummary";
 import { ProcedureIncomeCard } from "./components/ProcedureIncomeCard";
 import { ExpenseCard } from "./components/ExpenseCard";
-// import { CashTable } from "./components/CashTable";
+import { CashTable } from "./components/CashTable";
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
 import { PurchaseDialog } from "@/features/stock/components/PurchaseDialog";
 import { DailySplitSummary } from "./components/DailySplitSummary";
@@ -23,10 +23,10 @@ export default function CajaConsultorioPage() {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
 
   const {
-    // data,
-    // page,
-    // setPage,
-    // isLoading,
+    data,
+    page,
+    setPage,
+    isLoading,
     isCreating,
     isScanning,
     isSellingProduct,
@@ -184,7 +184,7 @@ export default function CajaConsultorioPage() {
             />
           </div>
 
-          {/* <CashTable data={data} isLoading={isLoading} page={page} setPage={setPage} /> */}
+          <CashTable data={data} isLoading={isLoading} page={page} setPage={setPage} />
         </section>
       </div>
     </div>
