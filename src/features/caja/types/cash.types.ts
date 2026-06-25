@@ -59,53 +59,68 @@ export type ProcedureOption = {
 export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
   {
     code: "DERMAPEN_DERMAPLANING",
-    label: "Dermapen con Dermaplaning",
+    label: "DERMAPEN CON DERMAPLANING",
     amount: 54500,
   },
   {
     code: "DERMAPEN_DERMAPLANING_LIMPIEZA_PREMIUM",
-    label: "Dermapen con Dermaplaning y limpieza premium",
+    label: "DERMAPEN CON DERMAPLANING Y LIMPIEZA PREMIUM",
     amount: 61500,
   },
   {
-    code: "SIMPLE",
-    label: "Simple",
+    code: "LIMPIEZA_SIMPLE",
+    label: "LIMPIEZA SIMPLE",
     amount: 33600,
   },
   {
-    code: "PREMIUM",
-    label: "Premium",
+    code: "LIMPIEZA_PREMIUM",
+    label: "LIMPIEZA PREMIUM",
     amount: 37600,
   },
   {
+    code: "LIMPIEZA_PREMIUM_HIDRATACION",
+    label: "LIMPIEZA PREMIUM HIDRATACIÓN INTENSIVA",
+    amount: 42900,
+  },
+  {
     code: "DERMAPLANING",
-    label: "Dermaplaning",
+    label: "DERMAPLANING",
     amount: 35300,
   },
   {
     code: "DERMAPEN",
-    label: "Dermapen",
+    label: "DERMAPEN",
     amount: 47500,
   },
   {
+    code: "EXOSOMAS",
+    label: "EXOSOMAS",
+    amount: 65000,
+  },
+  {
     code: "HYDRA",
-    label: "Hydra Lips",
+    label: "HYDRA LIPS",
     amount: 19000,
   },
   {
     code: "ESPALDA",
-    label: "Espalda",
-    amount: 40600,
+    label: "LIMPIEZA ESPALDA",
+    amount: 45000,
   },
   {
-    code: "EXOSOMAS",
-    label: "Limpieza + hidratacion jelly",
+    code: "PEELING_COSMETOLOGICO",
+    label: "PEELING COSMETOLÓGICO",
+    amount: 42300,
+  },
+  {
+    code: "FRAX_FACE_COSMETOLOGICO",
+    label: "FRAX FACE COSMETOLÓGICO",
     amount: 0,
   },
   {
-    code: "PEELING_PROFUNDO",
-    label: "Peeling profundo",
-    amount: 40000,
+    code: "FRAX_FACE_COSMETOLOGICO_EXOSOMAS",
+    label: "FRAX FACE COSMETOLÓGICO + EXOSOMAS",
+    amount: 0,
   },
 ];
 

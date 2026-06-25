@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -6,8 +6,6 @@ import {
   useGetCashMovementsQuery,
   useGetDailyCashSplitQuery,
   useGetSalesTotalsQuery,
-
-
 } from "../api/cashApi";
 
 import type {
@@ -24,7 +22,11 @@ import {
   useSellByBarcodeMutation,
 } from "@/features/stock/api/stockApi";
 
-import type { ProductScanResponse, PurchaseOrderRequest } from "@/features/stock/types/stock.types";
+import type {
+  ProductScanResponse,
+  ProductWithStock,
+  PurchaseOrderRequest,
+} from "@/features/stock/types/stock.types";
 
 function getTodayISODate() {
   return new Date().toISOString().slice(0, 10);
@@ -39,6 +41,7 @@ export function useCashConsultorioPage() {
   const [barcodeQuery, setBarcodeQuery] = useState("");
   const [scannedProduct, setScannedProduct] =
     useState<ProductScanResponse | null>(null);
+  const [nameResults, setNameResults] = useState<ProductScanResponse[]>([]);
 
   const {
     data,
@@ -136,23 +139,73 @@ export function useCashConsultorioPage() {
     await refetchDailySplit();
   };
 
+  // Limpia el producto escaneado/seleccionado, el query y los resultados.
+  // Se usa al cerrar el modal de venta para que no quede "pegado".
+  const clearScannedProduct = useCallback(() => {
+    setScannedProduct(null);
+    setNameResults([]);
+    setBarcodeQuery("");
+  }, []);
+
+  // Mapea un producto de la lista (ProductWithStock) al formato que usa
+  // la tarjeta de venta (ProductScanResponse).
+  const toScanResponse = (p: ProductWithStock): ProductScanResponse => ({
+    id: p.id,
+    name: p.name,
+    barcode: p.barcode ?? "",
+    scope: p.scope as ProductScanResponse["scope"],
+    currentStock: p.currentStock,
+    belowMinimum: p.belowMinimum,
+    costPrice: p.costPrice ?? null,
+    salePrice: p.salePrice ?? null,
+    defaultMarkupPercentage: p.defaultMarkupPercentage ?? null,
+  });
+
   const scanProduct = async () => {
-    if (!barcodeQuery.trim()) {
-      toast.error("Ingresá un código de barras");
+    const term = barcodeQuery.trim();
+
+    if (!term) {
+      toast.error("Ingresá un código o nombre de producto");
       return;
     }
 
+    const isNumeric = /^\d+$/.test(term);
+
+    // Texto -> búsqueda por nombre en memoria, muestra lista de resultados.
+    if (!isNumeric) {
+      const matches = products
+        .filter((p) => p.barcode) // solo vendibles por barcode
+        .filter((p) => p.name.toLowerCase().includes(term.toLowerCase()))
+        .map(toScanResponse);
+
+      setNameResults(matches);
+      setScannedProduct(null);
+
+      if (matches.length === 0) {
+        toast.error("No se encontraron productos con ese nombre");
+      }
+      return;
+    }
+
+    // Numérico -> scan por barcode exacto (comportamiento original).
     try {
       const product = await triggerScan({
-        barcode: barcodeQuery.trim(),
+        barcode: term,
         context: "CONSULTORIO",
       }).unwrap();
 
+      setNameResults([]);
       setScannedProduct(product);
     } catch (error: any) {
       setScannedProduct(null);
       toast.error(error?.data?.message || "No se pudo encontrar el producto");
     }
+  };
+
+  // Selecciona un producto de los resultados de búsqueda por nombre.
+  const selectProductByName = (product: ProductScanResponse) => {
+    setScannedProduct(product);
+    setNameResults([]);
   };
 
   const sellProductFromCash = async (payload: {
@@ -180,44 +233,34 @@ export function useCashConsultorioPage() {
       await refetchProducts();
       await refetchExpiringProducts();
 
-      const updatedProduct = await triggerScan({
-        barcode: payload.barcode,
-        context: "CONSULTORIO",
-      }).unwrap();
-
-      setScannedProduct(updatedProduct);
+      // Antes se re-escaneaba y se volvía a setear scannedProduct, lo que
+      // reabría el modal. Ahora limpiamos para que el modal se cierre.
+      clearScannedProduct();
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar la venta");
     }
   };
 
-  const purchaseProductFromCash = async (
-    order: Omit<PurchaseOrderRequest, "context">
-  ) => {
-    try {
-      await purchaseProduct({
-        ...order,
-        context: "CONSULTORIO",
-      }).unwrap();
+const purchaseProductFromCash = async (
+  order: Omit<PurchaseOrderRequest, "context">
+) => {
+  try {
+    await purchaseProduct({
+      ...order,
+      context: "CONSULTORIO",
+    }).unwrap();
 
-      toast.success("Compra de producto registrada");
+    toast.success("Compra de producto registrada");
 
-      await refetchCaja();
-      await refetchProducts();
-      await refetchExpiringProducts();
+    await refetchCaja();
+    await refetchProducts();
+    await refetchExpiringProducts();
 
-      if (scannedProduct?.barcode) {
-        const updatedProduct = await triggerScan({
-          barcode: scannedProduct.barcode,
-          context: "CONSULTORIO",
-        }).unwrap();
-
-        setScannedProduct(updatedProduct);
-      }
-    } catch (error: any) {
-      toast.error(error?.data?.message || "No se pudo registrar la compra");
-    }
-  };
+    clearScannedProduct();
+  } catch (error: any) {
+    toast.error(error?.data?.message || "No se pudo registrar la compra");
+  }
+};
 
   const registerProcedureIncome = async (payload: {
     procedure: ProcedureOption;
@@ -308,6 +351,9 @@ export function useCashConsultorioPage() {
     setBarcodeQuery,
     scannedProduct,
     scanProduct,
+    nameResults,
+    selectProductByName,
+    clearScannedProduct,
 
     sellProductFromCash,
     purchaseProductFromCash,
