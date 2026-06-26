@@ -1,12 +1,13 @@
 import { Barcode, DollarSign, ShoppingCart, ScanLine, Package } from "lucide-react";
 
-import type { BusinessContext, ProductScanResponse } from "../types/stock.types";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/shared/components/ui/input-group";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Badge } from "@/shared/components/ui/badge";
+import type { BusinessContext, ProductScanResponse } from "@/features/stock/types/stock.types";
 
 type Props = {
   context: BusinessContext | null;

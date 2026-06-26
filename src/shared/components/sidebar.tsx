@@ -1,11 +1,7 @@
-import React, { useState } from "react"
+import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import {
-
-  Package,
-  Wallet,
-  Receipt,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -13,11 +9,11 @@ import {
   User,
   Moon,
   Sun,
-  User2,
 } from "lucide-react"
 
 import { useTheme } from "@/core/context/theme-provider"
 import { useAuth } from "@/core/auth/context/AuthProvider"
+import { NAV_ITEMS, filterNavByRoles, type NavItem } from "@/shared/navigation/nav-items"
 
 import {
   DropdownMenu,
@@ -28,55 +24,17 @@ import {
 } from "@/shared/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar"
 import { Button } from "@/shared/components/ui/button"
-import { HomeIcon } from 'lucide-react';
-
-/* =========================
-   MENU CONFIG
-========================= */
-
-export interface MenuItem {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  href: string
-  submenu?: MenuItem[]
-}
-
-const menuItems: MenuItem[] = [
-  {  
-   
-       icon: HomeIcon, label: "Home", href: "/inicio"
-  
-  },
-  { icon: Package, label: "Stock", href: "/inicio/stock" },
-  {
-    icon: Wallet,
-    label: "Caja",
-    href: "/inicio/caja/consultorio",
-
-  },
-  {
-    icon: Receipt,
-    label: "Movimientos Consultorio",
-    href: "/inicio/movimientos-consultorio",
-  },
-
-    {
-    icon: User2,
-    label: "Usuarios",
-    href: "/inicio/usuarios",
-  },
-]
 
 /* =========================
    HELPERS
 ========================= */
 
 interface ActiveInfo {
-  activeItem: MenuItem | null
+  activeItem: NavItem | null
   parents: string[]
 }
 
-function findActivePath(pathname: string, items: MenuItem[]): ActiveInfo | null {
+function findActivePath(pathname: string, items: NavItem[]): ActiveInfo | null {
   for (const item of items) {
     if (item.href === pathname) {
       return { activeItem: item, parents: [] }
@@ -119,7 +77,7 @@ function MenuItemComponent({
   expandedMenus,
   toggleExpand,
 }: {
-  item: MenuItem
+  item: NavItem
   activeInfo: ActiveInfo
   isCollapsed: boolean
   expandedMenus: string[]
@@ -202,6 +160,9 @@ export function Sidebar({
   const user = authState.user
   const role = authState.roles
 
+  // Navegación filtrada por rol (fuente única en nav-items.ts)
+  const menuItems = filterNavByRoles(NAV_ITEMS, authState.roles)
+
   const activeInfo =
     findActivePath(location.pathname, menuItems) || {
       activeItem: null,
@@ -227,7 +188,6 @@ export function Sidebar({
         isCollapsed ? "w-16" : "w-64"
       )}
     >
-      {/* Header */}
       {/* Header */}
       <div className="flex h-16 items-center justify-between border-b border-border px-3">
         <Link
@@ -268,7 +228,6 @@ export function Sidebar({
           {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
         </Button>
       </div>
-
 
       {/* Menu */}
       <nav className="flex-1 space-y-1 p-3">
@@ -318,7 +277,7 @@ export function Sidebar({
                   <p className="font-medium">{user?.displayName ?? "Usuario"}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                   <p className="text-[10px] uppercase text-muted-foreground">
-                    {role}
+                    {role.join(", ")}
                   </p>
                 </div>
               )}

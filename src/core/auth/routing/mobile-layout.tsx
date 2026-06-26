@@ -1,33 +1,24 @@
-// src/shared/layouts/MobileLayout.tsx
+// src/core/auth/routing/mobile-layout.tsx
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, Package, DollarSign, Users, Activity } from "lucide-react";
 
 import { useAuth } from "@/core/auth/context/AuthProvider";
 import { MobileTopNav } from "@/shared/components/mobile-top-nav";
 import { MobileBottomNav } from "@/shared/components/mobile-bottom-nav";
-
-const ADMIN_NAV_ITEMS = [
-  { id: "/inicio", icon: Home, label: "Inicio" },
-  { id: "/inicio/stock", icon: Package, label: "Stock" },
-  { id: "/inicio/caja/consultorio", icon: DollarSign, label: "Caja" },
-  { id: "/inicio/movimientos-consultorio", icon: Activity, label: "Mov." },
-  { id: "/inicio/usuarios", icon: Users, label: "Usuarios" },
-];
-
-const COSMETOLOGA_NAV_ITEMS = [
-  { id: "/inicio", icon: Home, label: "Inicio" },
-  { id: "/inicio/caja/consultorio", icon: DollarSign, label: "Caja" },
-  { id: "/inicio/movimientos-consultorio", icon: Activity, label: "Mov." },
-];
+import { NAV_ITEMS, filterNavByRoles } from "@/shared/navigation/nav-items";
 
 export function MobileLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { authState } = useAuth();
 
-  const isAdmin = authState.roles.includes("ADMIN");
-
-  const navItems = isAdmin ? ADMIN_NAV_ITEMS : COSMETOLOGA_NAV_ITEMS;
+  // Misma fuente única que el sidebar desktop => sin drift entre layouts.
+  const navItems = filterNavByRoles(NAV_ITEMS, authState.roles)
+    .filter((item) => item.showInMobile !== false)
+    .map((item) => ({
+      id: item.href,
+      icon: item.mobileIcon ?? item.icon,
+      label: item.mobileLabel ?? item.label,
+    }));
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

@@ -14,6 +14,9 @@ import { DailySplitSummary } from "./components/DailySplitSummary";
 import { ProductExpirationAlerts } from "./components/ProductExpirationAlerts";
 import { BusinessTotals } from "./components/BusinessTotals";
 import { COSMETOLOGIA_PROCEDURES, MEDICA_PROCEDURES } from "../types/cash.types";
+import { useHasRole } from "@/features/auth/hooks/useRoles";
+import { RoleGate } from "@/features/auth/ui/RoleGate";
+
 
 // Repartos por especialidad (doctor / cosmetóloga).
 const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
@@ -53,6 +56,9 @@ export default function CajaConsultorioPage() {
     selectProductByName,
   } = useCashConsultorioPage();
 
+  // Permisos de UI: COSMETOLOGA no ve KPIs/costos, neto, ni registra compras.
+  const canViewFinancials = useHasRole(["ADMIN", "USER"]);
+
   // const netCash = summary.netIncome - summary.netExpense;
 
   return (
@@ -83,12 +89,14 @@ export default function CajaConsultorioPage() {
 
         {/* Métricas del negocio */}
         <section className="space-y-6" aria-label="Resumen del negocio">
-          <BusinessTotals
-            stockAtCost={stockValue?.atCost ?? 0}
-            stockAtSale={stockValue?.atSale ?? 0}
-            productSales={Number(salesTotals?.productSales ?? 0)}
-            procedureIncome={Number(salesTotals?.procedureIncome ?? 0)}
-          />
+          <RoleGate allow={["ADMIN", "USER"]}>
+            <BusinessTotals
+              stockAtCost={stockValue?.atCost ?? 0}
+              stockAtSale={stockValue?.atSale ?? 0}
+              productSales={Number(salesTotals?.productSales ?? 0)}
+              procedureIncome={Number(salesTotals?.procedureIncome ?? 0)}
+            />
+          </RoleGate>
 
           <DailySplitSummary
             date={splitDate}
@@ -97,41 +105,51 @@ export default function CajaConsultorioPage() {
             doctorTotal={Number(dailySplit?.doctorTotal ?? 0)}
             cosmetologistTotal={Number(dailySplit?.cosmetologistTotal ?? 0)}
             isLoading={isLoadingDailySplit}
+            showNetIncome={canViewFinancials}
           />
 
           {/* items-stretch + h-full: el botón iguala el alto de la tarjeta de alertas */}
-          <div
-            className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2"
-            aria-label="Acciones de caja"
-          >
-            <Button
-              variant="outline"
-              onClick={() => setIsPurchaseOpen(true)}
-              className="flex h-full min-h-[10rem] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+          {canViewFinancials ? (
+            <div
+              className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2"
+              aria-label="Acciones de caja"
             >
-              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                <ShoppingCart className="size-6" />
-              </span>
-              <span className="text-sm font-semibold">Registrar compra de productos</span>
-            </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsPurchaseOpen(true)}
+                className="flex h-full min-h-[10rem] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+              >
+                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                  <ShoppingCart className="size-6" />
+                </span>
+                <span className="text-sm font-semibold">Registrar compra de productos</span>
+              </Button>
 
+              <ProductExpirationAlerts
+                items={expiringProducts}
+                isLoading={isLoadingExpiringProducts}
+              />
+            </div>
+          ) : (
             <ProductExpirationAlerts
               items={expiringProducts}
               isLoading={isLoadingExpiringProducts}
             />
-          </div>
+          )}
 
           {/* El diálogo va fuera del grid: no ocupa celda ni descuadra columnas */}
-          <PurchaseDialog
-            open={isPurchaseOpen}
-            onOpenChange={setIsPurchaseOpen}
-            products={products}
-            isSubmitting={isPurchasingProduct}
-            onSubmit={async (order) => {
-              await purchaseProductFromCash(order);
-              setIsPurchaseOpen(false);
-            }}
-          />
+          {canViewFinancials && (
+            <PurchaseDialog
+              open={isPurchaseOpen}
+              onOpenChange={setIsPurchaseOpen}
+              products={products}
+              isSubmitting={isPurchasingProduct}
+              onSubmit={async (order) => {
+                await purchaseProductFromCash(order);
+                setIsPurchaseOpen(false);
+              }}
+            />
+          )}
         </section>
 
         {/* Operaciones de caja */}

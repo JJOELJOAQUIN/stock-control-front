@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
 import ProtectedRoute from "@/features/auth/ui/ProtectedRoute";
+import RoleGuard from "@/core/auth/guards/RoleGuard";
 import Login from "@/features/login/ui/screens/Login";
 import Tracking from "@/features/tracking/ui/screens/Tracking";
 import Users from "@/features/users/ui/screens/Users";
@@ -32,8 +33,13 @@ export default function Router() {
         <Route path="seguimiento" element={<Tracking />} />
         <Route path="stock" element={<StockPage />} />
         <Route path="caja/consultorio" element={<CajaConsultorioPage />} />
-        <Route path="movimientos-consultorio" element={<MovimientosConsultorioPage />} />
-        <Route path="usuarios" element={<Users />} />
+
+        {/* Rutas restringidas: ocultas en el menú para COSMETOLOGA
+            y bloqueadas también por URL (si la tipea, vuelve a /inicio). */}
+        <Route element={<RoleGuard allowedRoles={["ADMIN", "USER"]} redirectPath="/inicio" />}>
+          <Route path="movimientos-consultorio" element={<MovimientosConsultorioPage />} />
+          <Route path="usuarios" element={<Users />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFound404 />} />

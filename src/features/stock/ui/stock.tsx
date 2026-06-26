@@ -4,6 +4,7 @@ import { ArrowLeft, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/components/ui/button";
 import { useStockPage } from "../hooks/useStockPage";
+
 import type {
   CreateProductRequest,
   PaymentMethod,
@@ -18,6 +19,7 @@ import { CreateProductDialog } from "../components/CreateProductDialog";
 import { PurchaseDialog } from "../components/PurchaseDialog";
 import { SellDialog } from "../components/SellDialog";
 import { EditProductDialog } from "../components/EditProductDialog";
+import { useHasRole } from "@/features/auth/hooks/useRoles";
 
 type NewProductForm = CreateProductRequest;
 
@@ -44,6 +46,12 @@ export default function StockPage() {
     handleUpdateProduct,
     handleDeactivateProduct,
   } = useStockPage();
+
+  // Permisos de UI: COSMETOLOGA no ve costos ni registra compras.
+  const canViewCosts = useHasRole(["ADMIN", "USER"]);
+  const canRegisterPurchase = useHasRole(["ADMIN", "USER"]);
+  // Crear / editar / desactivar productos es solo ADMIN (igual que el backend).
+  const canManageProducts = useHasRole(["ADMIN"]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
@@ -306,6 +314,7 @@ export default function StockPage() {
         isScanning={isScanning}
         onScan={handleScan}
         onOpenSell={openSellDialog}
+        canPurchase={canRegisterPurchase}
         onOpenPurchaseFromScan={() => {
           const product = filteredProducts.find(
             (item) => item.id === scannedProduct?.id
@@ -330,6 +339,9 @@ export default function StockPage() {
         onOpenEdit={openEditDialog}
         onDeactivate={onDeactivateProduct}
         isDeactivating={isDeactivatingProduct}
+        showCost={canViewCosts}
+        canPurchase={canRegisterPurchase}
+        canManageProducts={canManageProducts}
       />
 
       <CreateProductDialog

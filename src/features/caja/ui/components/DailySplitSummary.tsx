@@ -12,6 +12,8 @@ type Props = {
   cosmetologistTotal: number;
   netIncome: number;
   isLoading?: boolean;
+  /** Muestra la tarjeta "Neto ingresos". Default: true. */
+  showNetIncome?: boolean;
 };
 
 export function DailySplitSummary({
@@ -21,6 +23,7 @@ export function DailySplitSummary({
   cosmetologistTotal,
   netIncome,
   isLoading = false,
+  showNetIncome = true,
 }: Props) {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("es-AR", {
@@ -57,23 +60,29 @@ export function DailySplitSummary({
         </CardContent>
       </Card>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-          <CardContent className="flex items-center gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Wallet className="size-6" />
-            </div>
+      <section
+        className={`grid grid-cols-1 gap-4 ${
+          showNetIncome ? "sm:grid-cols-3" : "sm:grid-cols-2"
+        }`}
+      >
+        {showNetIncome && (
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+            <CardContent className="flex items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Wallet className="size-6" />
+              </div>
 
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-muted-foreground">
-                Neto ingresos
-              </span>
-              <span className="text-2xl font-bold tracking-tight text-primary">
-                {displayValue(netIncome)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Neto ingresos
+                </span>
+                <span className="text-2xl font-bold tracking-tight text-primary">
+                  {displayValue(netIncome)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-background">
           <CardContent className="flex items-center gap-4">

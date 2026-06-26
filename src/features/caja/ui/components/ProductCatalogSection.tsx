@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import type { ProductWithStock } from "../types/stock.types";
+
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/shared/components/ui/input-group";
 import { MoreHorizontal, Pencil, Plus, Search, ShoppingCart, XCircle } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
@@ -15,6 +15,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/components/ui/dropdown-menu";
 import { DropdownMenuContent } from "@radix-ui/react-dropdown-menu";
 import { Spinner } from "@/shared/components/ui/spinner";
+import type { ProductWithStock } from "@/features/stock/types/stock.types";
 
 type Props = {
   products: ProductWithStock[];
@@ -30,8 +31,6 @@ type Props = {
   showCost?: boolean;
   /** Habilita la acción "Registrar compra" por fila. Default: true. */
   canPurchase?: boolean;
-  /** Habilita crear / editar / desactivar productos. Default: true. */
-  canManageProducts?: boolean;
 };
 
 const formatCurrency = (value: number | string | null | undefined) => {
@@ -56,10 +55,7 @@ export function ProductCatalogSection({
   isDeactivating = false,
   showCost = true,
   canPurchase = true,
-  canManageProducts = true,
 }: Props) {
-  const hasRowActions = canManageProducts || canPurchase;
-
   return (
     <Card className="border-border/50 shadow-sm">
       <CardHeader className="pb-4">
@@ -78,12 +74,10 @@ export function ProductCatalogSection({
               />
             </InputGroup>
 
-            {canManageProducts && (
-              <Button className="gap-2 whitespace-nowrap" onClick={onOpenCreate}>
-                <Plus className="h-4 w-4" />
-                Nuevo Producto
-              </Button>
-            )}
+            <Button className="gap-2 whitespace-nowrap" onClick={onOpenCreate}>
+              <Plus className="h-4 w-4" />
+              Nuevo Producto
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -104,12 +98,10 @@ export function ProductCatalogSection({
             <EmptyDescription>
               No se encontraron productos para este contexto o busqueda.
             </EmptyDescription>
-            {canManageProducts && (
-              <Button onClick={onOpenCreate} className="mt-3">
-                <Plus className="h-4 w-4" />
-                Crear producto
-              </Button>
-            )}
+            <Button onClick={onOpenCreate} className="mt-3">
+              <Plus className="h-4 w-4" />
+              Crear producto
+            </Button>
           </Empty>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
@@ -211,51 +203,43 @@ export function ProductCatalogSection({
                     </TableCell>
 
                     <TableCell className="transition-colors group-hover:bg-primary/5">
-                      {hasRowActions && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 "
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Acciones</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            {canManageProducts && (
-                              <DropdownMenuItem onClick={() => onOpenEdit(product)}>
-                                <Pencil className="h-4 w-4" />
-                                Editar producto
-                              </DropdownMenuItem>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 "
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Acciones</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => onOpenEdit(product)}>
+                            <Pencil className="h-4 w-4" />
+                            Editar producto
+                          </DropdownMenuItem>
+                          {canPurchase && (
+                            <DropdownMenuItem onClick={() => onOpenPurchase(product)}>
+                              <ShoppingCart className="h-4 w-4" />
+                              Registrar compra
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => onDeactivate(product)}
+                            disabled={!product.active || isDeactivating}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            {isDeactivating ? (
+                              <Spinner className="h-4 w-4" />
+                            ) : (
+                              <XCircle className="h-4 w-4" />
                             )}
-                            {canPurchase && (
-                              <DropdownMenuItem onClick={() => onOpenPurchase(product)}>
-                                <ShoppingCart className="h-4 w-4" />
-                                Registrar compra
-                              </DropdownMenuItem>
-                            )}
-                            {canManageProducts && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => onDeactivate(product)}
-                                  disabled={!product.active || isDeactivating}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  {isDeactivating ? (
-                                    <Spinner className="h-4 w-4" />
-                                  ) : (
-                                    <XCircle className="h-4 w-4" />
-                                  )}
-                                  Desactivar
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                            Desactivar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
