@@ -35,6 +35,8 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Badge } from "@/shared/components/ui/badge";
+import { useHasRole } from "@/features/auth/hooks/useRoles";
+
 
 const PAYMENT_METHODS: {
   value: PaymentMethod;
@@ -100,6 +102,9 @@ export function SellDialog({
 
   const unitSalePrice = Number(product?.salePrice ?? 0);
   const unitCostPrice = Number(product?.costPrice ?? 0);
+
+  // COSMETOLOGA no ve costo ni ganancia estimada.
+  const canViewCost = useHasRole(["ADMIN", "USER"]);
 
   const suggestedAmount =
     quantity > 0 && unitSalePrice > 0 ? quantity * unitSalePrice : 0;
@@ -176,15 +181,17 @@ export function SellDialog({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
-                  <div className="rounded-lg border bg-background p-3">
-                    <p className="text-muted-foreground">Costo</p>
-                    <p className="font-semibold">
-                      {product.costPrice != null
-                        ? currencyFormatter.format(product.costPrice)
-                        : "-"}
-                    </p>
-                  </div>
+                <div className={`grid grid-cols-1 gap-3 text-sm ${canViewCost ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+                  {canViewCost && (
+                    <div className="rounded-lg border bg-background p-3">
+                      <p className="text-muted-foreground">Costo</p>
+                      <p className="font-semibold">
+                        {product.costPrice != null
+                          ? currencyFormatter.format(product.costPrice)
+                          : "-"}
+                      </p>
+                    </div>
+                  )}
 
                   <div className="rounded-lg border bg-background p-3">
                     <p className="text-muted-foreground">Precio público</p>
@@ -251,7 +258,7 @@ export function SellDialog({
             </div>
 
             {product && (
-              <div className="grid grid-cols-1 gap-3 rounded-lg border bg-muted/30 p-3 text-sm md:grid-cols-2">
+              <div className={`grid grid-cols-1 gap-3 rounded-lg border bg-muted/30 p-3 text-sm ${canViewCost ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
                 <div>
                   <p className="text-muted-foreground">
                     Monto sugerido por precio público
@@ -263,14 +270,16 @@ export function SellDialog({
                   </p>
                 </div>
 
-                <div>
-                  <p className="text-muted-foreground">Ganancia estimada</p>
-                  <p className="font-semibold">
-                    {estimatedProfit > 0
-                      ? currencyFormatter.format(estimatedProfit)
-                      : "-"}
-                  </p>
-                </div>
+                {canViewCost && (
+                  <div>
+                    <p className="text-muted-foreground">Ganancia estimada</p>
+                    <p className="font-semibold">
+                      {estimatedProfit > 0
+                        ? currencyFormatter.format(estimatedProfit)
+                        : "-"}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

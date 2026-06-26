@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { Coins, Package, ShoppingBag, Tag } from "lucide-react";
@@ -29,6 +28,8 @@ import {
 import { PriceStat } from "./PriceStat";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import { calcSale, PAYMENT_METHODS, SALE_ACTORS } from "@/lib/sale";
+import { useHasRole } from "@/features/auth/hooks/useRoles";
+
 
 
 
@@ -64,6 +65,9 @@ export function ProductSaleDialog({
 
     const sale = calcSale(product, quantity, paymentMethod);
     const showSummary = sale.qty > 0 && sale.unitPrice > 0;
+
+    // COSMETOLOGA no ve el costo de referencia.
+    const canViewCost = useHasRole(["ADMIN", "USER"]);
 
     // Resetea el formulario cada vez que se abre el modal con un producto nuevo.
     useEffect(() => {
@@ -164,17 +168,19 @@ export function ProductSaleDialog({
                     </div>
 
                     {/* Precios de referencia */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <PriceStat
-                            icon={Coins}
-                            label="Costo"
-                            accent="neutral"
-                            value={
-                                product.costPrice != null
-                                    ? currencyFormatter.format(product.costPrice)
-                                    : "—"
-                            }
-                        />
+                    <div className={`grid gap-3 ${canViewCost ? "grid-cols-2" : "grid-cols-1"}`}>
+                        {canViewCost && (
+                            <PriceStat
+                                icon={Coins}
+                                label="Costo"
+                                accent="neutral"
+                                value={
+                                    product.costPrice != null
+                                        ? currencyFormatter.format(product.costPrice)
+                                        : "—"
+                                }
+                            />
+                        )}
                         <PriceStat
                             icon={Tag}
                             label="Precio público"

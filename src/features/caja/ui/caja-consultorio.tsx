@@ -58,6 +58,8 @@ export default function CajaConsultorioPage() {
 
   // Permisos de UI: COSMETOLOGA no ve KPIs/costos, neto, ni registra compras.
   const canViewFinancials = useHasRole(["ADMIN", "USER"]);
+  // La médica (ADMIN) no ve el card de procedimientos de cosmetología.
+  const showCosmetologiaProcedures = useHasRole(["USER", "COSMETOLOGA"]);
 
   // const netCash = summary.netIncome - summary.netExpense;
 
@@ -106,6 +108,7 @@ export default function CajaConsultorioPage() {
             cosmetologistTotal={Number(dailySplit?.cosmetologistTotal ?? 0)}
             isLoading={isLoadingDailySplit}
             showNetIncome={canViewFinancials}
+            showDoctorTotal={canViewFinancials}
           />
 
           {/* items-stretch + h-full: el botón iguala el alto de la tarjeta de alertas */}
@@ -176,7 +179,9 @@ export default function CajaConsultorioPage() {
           </div>
 
           <div
-            className="grid grid-cols-1 items-start gap-6 md:grid-cols-2"
+            className={`grid grid-cols-1 items-start gap-6 ${
+              showCosmetologiaProcedures ? "md:grid-cols-2" : ""
+            }`}
             aria-label="Ingresos por procedimientos"
           >
             <ProcedureIncomeCard
@@ -190,19 +195,23 @@ export default function CajaConsultorioPage() {
               onSubmit={registerProcedureIncome}
             />
 
-            <ProcedureIncomeCard
-              title="Ingresos cosmetología"
-              description="Registrar procedimientos de cosmetología"
-              procedures={COSMETOLOGIA_PROCEDURES}
-              doctorSharePercent={COSMETOLOGIA_SHARE.doctor}
-              cosmetologistSharePercent={COSMETOLOGIA_SHARE.cosmetologist}
-              isSubmitting={isCreating}
-              variant="cosmetologia"
-              onSubmit={registerProcedureIncome}
-            />
+            {showCosmetologiaProcedures && (
+              <ProcedureIncomeCard
+                title="Ingresos cosmetología"
+                description="Registrar procedimientos de cosmetología"
+                procedures={COSMETOLOGIA_PROCEDURES}
+                doctorSharePercent={COSMETOLOGIA_SHARE.doctor}
+                cosmetologistSharePercent={COSMETOLOGIA_SHARE.cosmetologist}
+                isSubmitting={isCreating}
+                variant="cosmetologia"
+                onSubmit={registerProcedureIncome}
+              />
+            )}
           </div>
 
-          <CashTable data={data} isLoading={isLoading} page={page} setPage={setPage} />
+          <RoleGate allow={["ADMIN", "USER"]}>
+            <CashTable data={data} isLoading={isLoading} page={page} setPage={setPage} />
+          </RoleGate>
         </section>
       </div>
     </div>

@@ -14,6 +14,8 @@ type Props = {
   isLoading?: boolean;
   /** Muestra la tarjeta "Neto ingresos". Default: true. */
   showNetIncome?: boolean;
+  /** Muestra la tarjeta "Médica". Default: true. */
+  showDoctorTotal?: boolean;
 };
 
 export function DailySplitSummary({
@@ -24,6 +26,7 @@ export function DailySplitSummary({
   netIncome,
   isLoading = false,
   showNetIncome = true,
+  showDoctorTotal = true,
 }: Props) {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("es-AR", {
@@ -34,6 +37,16 @@ export function DailySplitSummary({
 
   const displayValue = (value: number) =>
     isLoading ? "..." : formatCurrency(value);
+
+  // La tarjeta de Cosmetóloga siempre se muestra; el resto es opcional.
+  const visibleCards =
+    1 + (showNetIncome ? 1 : 0) + (showDoctorTotal ? 1 : 0);
+  const gridColsClass =
+    visibleCards === 3
+      ? "sm:grid-cols-3"
+      : visibleCards === 2
+        ? "sm:grid-cols-2"
+        : "sm:grid-cols-1";
 
   return (
     <section className="space-y-4">
@@ -60,11 +73,7 @@ export function DailySplitSummary({
         </CardContent>
       </Card>
 
-      <section
-        className={`grid grid-cols-1 gap-4 ${
-          showNetIncome ? "sm:grid-cols-3" : "sm:grid-cols-2"
-        }`}
-      >
+      <section className={`grid grid-cols-1 gap-4 ${gridColsClass}`}>
         {showNetIncome && (
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
             <CardContent className="flex items-center gap-4">
@@ -84,22 +93,24 @@ export function DailySplitSummary({
           </Card>
         )}
 
-        <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-background">
-          <CardContent className="flex items-center gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <Stethoscope className="size-6" />
-            </div>
+        {showDoctorTotal && (
+          <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-background">
+            <CardContent className="flex items-center gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                <Stethoscope className="size-6" />
+              </div>
 
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-muted-foreground">
-                Médica
-              </span>
-              <span className="text-2xl font-bold tracking-tight text-accent">
-                {displayValue(doctorTotal)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Médica
+                </span>
+                <span className="text-2xl font-bold tracking-tight text-accent">
+                  {displayValue(doctorTotal)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-secondary bg-gradient-to-br from-secondary/70 to-background">
           <CardContent className="flex items-center gap-4">
