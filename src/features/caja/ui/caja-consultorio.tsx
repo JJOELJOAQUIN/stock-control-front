@@ -11,12 +11,12 @@ import { CashTable } from "./components/CashTable";
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
 import { PurchaseDialog } from "@/features/stock/components/PurchaseDialog";
 import { DailySplitSummary } from "./components/DailySplitSummary";
+import { CosmetologistSplitCard } from "./components/CosmetologistSplitCard";
 import { ProductExpirationAlerts } from "./components/ProductExpirationAlerts";
 import { BusinessTotals } from "./components/BusinessTotals";
 import { COSMETOLOGIA_PROCEDURES, MEDICA_PROCEDURES } from "../types/cash.types";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
-
 
 // Repartos por especialidad (doctor / cosmetóloga).
 const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
@@ -100,16 +100,20 @@ export default function CajaConsultorioPage() {
             />
           </RoleGate>
 
-          <DailySplitSummary
-            date={splitDate}
-            setDate={setSplitDate}
-            netIncome={Number(dailySplit?.netIncome ?? 0)}
-            doctorTotal={Number(dailySplit?.doctorTotal ?? 0)}
-            cosmetologistTotal={Number(dailySplit?.cosmetologistTotal ?? 0)}
-            isLoading={isLoadingDailySplit}
-            showNetIncome={canViewFinancials}
-            showDoctorTotal={canViewFinancials}
-          />
+          {canViewFinancials ? (
+            <DailySplitSummary
+              date={splitDate}
+              setDate={setSplitDate}
+              netIncome={Number(dailySplit?.netIncome ?? 0)}
+              doctorTotal={Number(dailySplit?.doctorTotal ?? 0)}
+              cosmetologistTotal={Number(dailySplit?.cosmetologistTotal ?? 0)}
+              isLoading={isLoadingDailySplit}
+              showNetIncome={canViewFinancials}
+              showDoctorTotal={canViewFinancials}
+            />
+          ) : (
+            <CosmetologistSplitCard date={splitDate} setDate={setSplitDate} />
+          )}
 
           {/* items-stretch + h-full: el botón iguala el alto de la tarjeta de alertas */}
           {canViewFinancials ? (

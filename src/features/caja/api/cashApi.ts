@@ -2,6 +2,7 @@ import { baseApi } from "@/core/api/baseApi";
 import type {
   CashContext,
   CashDailySplitResponse,
+  CashCosmetologistSplitResponse,
   CashMovementResponse,
   CashSalesTotalsResponse,
   CreateCashMovementRequest,
@@ -34,6 +35,24 @@ export const cashApi = baseApi.injectEndpoints({
 
         return {
           url: `/api/cash-movements/daily-split?${params.toString()}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["Cash"],
+    }),
+
+    getCosmetologistDailySplit: builder.query<
+      CashCosmetologistSplitResponse,
+      { context: CashContext; date?: string }
+    >({
+      query: ({ context, date }) => {
+        const params = new URLSearchParams();
+
+        params.set("context", context);
+        if (date) params.set("date", date);
+
+        return {
+          url: `/api/cash-movements/daily-split/cosmetologist?${params.toString()}`,
           method: "GET",
         };
       },
@@ -82,5 +101,6 @@ export const {
   useCreateCashMovementMutation,
   useGetCashMovementsQuery,
   useGetDailyCashSplitQuery,
+  useGetCosmetologistDailySplitQuery,
   useGetSalesTotalsQuery,
 } = cashApi;

@@ -132,6 +132,15 @@ export type CashDailySplitResponse = {
   cosmetologistTotal: number;
 };
 
+export type CashCosmetologistSplitResponse = {
+  date: string;
+  context: CashContext;
+  procedureCosmetologist: number;
+  procedureDoctor: number;
+  salesCosmetologist: number;
+  salesDoctor: number;
+};
+
 export type CashSalesTotalsResponse = {
   context: CashContext;
   productSales: number;
