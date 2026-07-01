@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -12,6 +12,8 @@ import type {
   PaymentMethod,
   ProcedureOption,
   CashActor,
+  CashMovementType,
+  CashSource,
 } from "../types/cash.types";
 
 import {
@@ -38,19 +40,51 @@ export function useCashConsultorioPage() {
 
   const size = 10;
 
+  // Filtros de la tabla de movimientos (en memoria, estilo tabla de stock).
+  const [typeFilter, setTypeFilter] = useState<CashMovementType | undefined>(
+    undefined
+  );
+  const [sourceFilter, setSourceFilter] = useState<CashSource | undefined>(
+    undefined
+  );
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [commentQuery, setCommentQuery] = useState("");
+
+  // Cualquier cambio de filtro vuelve a la primera página.
+  useEffect(() => {
+    setPage(0);
+  }, [typeFilter, sourceFilter, dateFrom, dateTo, commentQuery]);
+
+  const clearFilters = useCallback(() => {
+    setTypeFilter(undefined);
+    setSourceFilter(undefined);
+    setDateFrom("");
+    setDateTo("");
+    setCommentQuery("");
+  }, []);
+
+  const hasActiveFilters =
+    !!typeFilter ||
+    !!sourceFilter ||
+    !!dateFrom ||
+    !!dateTo ||
+    commentQuery.trim().length > 0;
+
   const [barcodeQuery, setBarcodeQuery] = useState("");
   const [scannedProduct, setScannedProduct] =
     useState<ProductScanResponse | null>(null);
   const [nameResults, setNameResults] = useState<ProductScanResponse[]>([]);
 
   const {
-    data,
+    data: allData,
     isLoading,
     refetch: refetchCash,
   } = useGetCashMovementsQuery({
     context: "CONSULTORIO",
-    page,
-    size,
+    page: 0,
+    // Traemos todo y filtramos en memoria (como la tabla de stock).
+    size: 1000,
   });
 
   const {
@@ -94,7 +128,54 @@ export function useCashConsultorioPage() {
   const [purchaseProduct, { isLoading: isPurchasingProduct }] =
     usePurchaseProductMutation();
 
-  const items = data?.content ?? [];
+  const allMovements = allData?.content ?? [];
+
+  // Filtrado en memoria (instantáneo), igual que la tabla de stock.
+  const filteredMovements = useMemo(() => {
+    const q = commentQuery.trim().toLowerCase();
+
+    return allMovements.filter((m) => {
+      if (typeFilter && m.type !== typeFilter) return false;
+      if (sourceFilter && m.source !== sourceFilter) return false;
+
+      const day = (m.createdAt ?? "").slice(0, 10);
+      if (dateFrom && day < dateFrom) return false;
+      if (dateTo && day > dateTo) return false;
+
+      if (q) {
+        const haystack = `${m.comment ?? ""} ${m.detail ?? ""}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [allMovements, typeFilter, sourceFilter, dateFrom, dateTo, commentQuery]);
+
+  // Paginación client-side sobre el resultado ya filtrado.
+  const totalPages = Math.max(1, Math.ceil(filteredMovements.length / size));
+  const safePage = Math.min(page, totalPages - 1);
+
+  const pageItems = useMemo(
+    () => filteredMovements.slice(safePage * size, safePage * size + size),
+    [filteredMovements, safePage, size]
+  );
+
+  // Objeto con forma de PageResponse para la tabla (sin cambiarle la interfaz).
+  const data = useMemo(
+    () => ({
+      content: pageItems,
+      totalElements: filteredMovements.length,
+      totalPages,
+      size,
+      number: safePage,
+      first: safePage === 0,
+      last: safePage >= totalPages - 1,
+    }),
+    [pageItems, filteredMovements.length, totalPages, safePage, size]
+  );
+
+  // `items` = todo lo filtrado (para que el resumen refleje el filtro actual).
+  const items = filteredMovements;
 
   const summary = useMemo(() => {
     return items.reduce(
@@ -281,6 +362,7 @@ const purchaseProductFromCash = async (
         comment:
           payload.comment?.trim() ||
           `Procedimiento: ${payload.procedure.label}`,
+        detail: payload.procedure.label,
         referenceId: null,
         doctorSharePercent: payload.doctorSharePercent,
         cosmetologistSharePercent: payload.cosmetologistSharePercent,
@@ -326,6 +408,20 @@ const purchaseProductFromCash = async (
     page,
     setPage,
     size,
+
+    // Filtros de la tabla de movimientos
+    typeFilter,
+    setTypeFilter,
+    sourceFilter,
+    setSourceFilter,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
+    commentQuery,
+    setCommentQuery,
+    clearFilters,
+    hasActiveFilters,
 
     splitDate,
     setSplitDate,

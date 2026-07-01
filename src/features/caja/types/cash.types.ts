@@ -23,6 +23,7 @@ export type CashMovementResponse = {
   doctorShare?: number | null;
   cosmetologistShare?: number | null;
   comment?: string | null;
+  detail?: string | null;
   referenceId?: string | null;
   createdAt: string;
 };
@@ -45,9 +46,18 @@ export type CreateCashMovementRequest = {
   amount: number;
   retentionPercent?: number | null;
   comment?: string;
+  detail?: string | null;
   referenceId?: string | null;
   doctorSharePercent?: number | null;
   cosmetologistSharePercent?: number | null;
+};
+
+export type CashMovementFilters = {
+  type?: CashMovementType;
+  source?: CashSource;
+  dateFrom?: string;
+  dateTo?: string;
+  q?: string;
 };
 
 export type ProcedureOption = {

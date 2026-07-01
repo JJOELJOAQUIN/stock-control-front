@@ -18,6 +18,7 @@ import { COSMETOLOGIA_PROCEDURES, MEDICA_PROCEDURES } from "../types/cash.types"
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
 
+
 // Repartos por especialidad (doctor / cosmetóloga).
 const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
 const MEDICA_SHARE = { doctor: 1, cosmetologist: 0 } as const;
@@ -30,6 +31,18 @@ export default function CajaConsultorioPage() {
     page,
     setPage,
     isLoading,
+    typeFilter,
+    setTypeFilter,
+    sourceFilter,
+    setSourceFilter,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
+    commentQuery,
+    setCommentQuery,
+    clearFilters,
+    hasActiveFilters,
     isCreating,
     isScanning,
     isSellingProduct,
@@ -189,7 +202,7 @@ export default function CajaConsultorioPage() {
             aria-label="Ingresos por procedimientos"
           >
             <ProcedureIncomeCard
-              title="Ingresos médica"
+              title="PROCEDIMIENTOS MEDICA"
               description="Registrar procedimientos médicos"
               procedures={MEDICA_PROCEDURES}
               doctorSharePercent={MEDICA_SHARE.doctor}
@@ -201,7 +214,7 @@ export default function CajaConsultorioPage() {
 
             {showCosmetologiaProcedures && (
               <ProcedureIncomeCard
-                title="Ingresos cosmetología"
+                title="PROCEDIMIENTOS COSMETOLOGIA"
                 description="Registrar procedimientos de cosmetología"
                 procedures={COSMETOLOGIA_PROCEDURES}
                 doctorSharePercent={COSMETOLOGIA_SHARE.doctor}
@@ -214,7 +227,24 @@ export default function CajaConsultorioPage() {
           </div>
 
           <RoleGate allow={["ADMIN", "USER"]}>
-            <CashTable data={data} isLoading={isLoading} page={page} setPage={setPage} />
+            <CashTable
+              data={data}
+              isLoading={isLoading}
+              page={page}
+              setPage={setPage}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+              sourceFilter={sourceFilter}
+              setSourceFilter={setSourceFilter}
+              dateFrom={dateFrom}
+              setDateFrom={setDateFrom}
+              dateTo={dateTo}
+              setDateTo={setDateTo}
+              commentQuery={commentQuery}
+              setCommentQuery={setCommentQuery}
+              clearFilters={clearFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
           </RoleGate>
         </section>
       </div>

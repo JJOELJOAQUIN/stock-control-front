@@ -4,11 +4,11 @@ import {
   HomeIcon,
   Package,
   Wallet,
-  Receipt,
+  // Receipt,
   User2,
   Home as HomeMobileIcon,
   DollarSign,
-  Activity,
+  // Activity,
   Users as UsersMobileIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -61,14 +61,14 @@ export const NAV_ITEMS: NavItem[] = [
     mobileLabel: "Caja",
     mobileIcon: DollarSign,
   },
-  {
-    href: "/inicio/movimientos-consultorio",
-    label: "Movimientos Consultorio",
-    icon: Receipt,
-    mobileLabel: "Mov.",
-    mobileIcon: Activity,
-    roles: ["ADMIN", "USER"], // oculto para COSMETOLOGA
-  },
+  // {
+  //   href: "/inicio/movimientos-consultorio",
+  //   label: "Movimientos Consultorio",
+  //   icon: Receipt,
+  //   mobileLabel: "Mov.",
+  //   mobileIcon: Activity,
+  //   roles: ["ADMIN", "USER"], // oculto para COSMETOLOGA
+  // },
   {
     href: "/inicio/usuarios",
     label: "Usuarios",

@@ -4,6 +4,8 @@ import type {
   CashDailySplitResponse,
   CashCosmetologistSplitResponse,
   CashMovementResponse,
+  CashMovementType,
+  CashSource,
   CashSalesTotalsResponse,
   CreateCashMovementRequest,
   PageResponse,
@@ -61,14 +63,29 @@ export const cashApi = baseApi.injectEndpoints({
 
     getCashMovements: builder.query<
       PageResponse<CashMovementResponse>,
-      { context?: CashContext; page?: number; size?: number }
+      {
+        context?: CashContext;
+        page?: number;
+        size?: number;
+        type?: CashMovementType;
+        source?: CashSource;
+        dateFrom?: string;
+        dateTo?: string;
+        q?: string;
+      }
     >({
-      query: ({ context, page = 0, size = 10 }) => {
+      query: ({ context, page = 0, size = 10, type, source, dateFrom, dateTo, q }) => {
         const params = new URLSearchParams();
 
         if (context) params.set("context", context);
         params.set("page", String(page));
         params.set("size", String(size));
+
+        if (type) params.set("type", type);
+        if (source) params.set("source", source);
+        if (dateFrom) params.set("dateFrom", dateFrom);
+        if (dateTo) params.set("dateTo", dateTo);
+        if (q && q.trim()) params.set("q", q.trim());
 
         return {
           url: `/api/cash-movements?${params.toString()}`,

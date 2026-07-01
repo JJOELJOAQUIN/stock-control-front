@@ -1,6 +1,6 @@
 "use client";
 
-import { Stethoscope, Syringe, ShoppingBag } from "lucide-react";
+import { Sparkles, Stethoscope, Syringe, ShoppingBag } from "lucide-react";
 
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Label } from "@/shared/components/ui/label";
@@ -15,8 +15,9 @@ type Props = {
 
 /**
  * Card exclusiva de la COSMETÓLOGA.
- * Muestra SOLO la ganancia que se lleva la médica del trabajo de la
- * cosmetóloga (su % de procedimientos + su % de ventas del día).
+ * Muestra el reparto de SU producción del día:
+ *  - Cuánto se lleva ella (su % de procedimientos + su % de ventas).
+ *  - Cuánto se lleva la médica de ese mismo trabajo.
  * No expone lo que gana la médica por su propio trabajo.
  */
 export function CosmetologistSplitCard({ date, setDate }: Props) {
@@ -31,14 +32,15 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
   const salesDoctor = Number(data?.salesDoctor ?? 0);
 
   const medicaTotal = procedureDoctor + salesDoctor;
+  const cosmetologistTotal = procedureCosmetologist + salesCosmetologist;
 
   const show = (value: number) =>
     isFetching ? "..." : currencyFormatter.format(value);
 
-  const doctorPercent = (mine: number, doctor: number) => {
-    const total = mine + doctor;
+  const percentOf = (part: number, other: number) => {
+    const total = part + other;
     if (total <= 0) return 0;
-    return Math.round((doctor / total) * 100);
+    return Math.round((part / total) * 100);
   };
 
   return (
@@ -47,9 +49,9 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
       <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-background">
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Ganancia de la médica</h2>
+            <h2 className="text-lg font-semibold tracking-tight">Reparto de ganancias diarias</h2>
             <p className="text-sm text-muted-foreground">
-              Lo que se lleva la médica de tu trabajo del día
+             Ganancias diarias
             </p>
           </div>
 
@@ -65,22 +67,42 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
         </CardContent>
       </Card>
 
-      {/* Total que se lleva la médica de tu trabajo */}
-      <Card className="border-accent/30 bg-gradient-to-br from-accent/15 to-background">
-        <CardContent className="flex items-center gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-            <Stethoscope className="size-6" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-muted-foreground">
-              La médica se lleva (de tu trabajo)
-            </span>
-            <span className="text-2xl font-bold tracking-tight text-accent">
-              {show(medicaTotal)}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Totales: cosmetóloga y médica */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Total que se lleva la cosmetóloga */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/15 to-background">
+          <CardContent className="flex items-center gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Sparkles className="size-6" />
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-muted-foreground">
+              Cosmetologa Total
+              </span>
+              <span className="text-2xl font-bold tracking-tight text-primary">
+                {show(cosmetologistTotal)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Total que se lleva la médica de tu trabajo */}
+        <Card className="border-accent/30 bg-gradient-to-br from-accent/15 to-background">
+          <CardContent className="flex items-center gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <Stethoscope className="size-6" />
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-muted-foreground">
+                Porcentaje total Pili
+              </span>
+              <span className="text-2xl font-bold tracking-tight text-accent">
+                {show(medicaTotal)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
       {/* Desglose por tipo */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -96,7 +118,16 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                Médica ({doctorPercent(procedureCosmetologist, procedureDoctor)}% de tus procedimientos)
+                Gise({percentOf(procedureCosmetologist, procedureDoctor)}%)
+              </span>
+              <span className="font-semibold text-primary">
+                {show(procedureCosmetologist)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+               Pili ({percentOf(procedureDoctor, procedureCosmetologist)}%)
               </span>
               <span className="font-semibold text-accent">
                 {show(procedureDoctor)}
@@ -117,7 +148,16 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                Médica ({doctorPercent(salesCosmetologist, salesDoctor)}% de tus ventas)
+               Gise ({percentOf(salesCosmetologist, salesDoctor)}%)
+              </span>
+              <span className="font-semibold text-primary">
+                {show(salesCosmetologist)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+              Pili ({percentOf(salesDoctor, salesCosmetologist)}%)
               </span>
               <span className="font-semibold text-accent">
                 {show(salesDoctor)}
