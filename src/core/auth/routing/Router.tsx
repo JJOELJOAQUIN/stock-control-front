@@ -9,6 +9,7 @@ import StockPage from "@/features/stock/ui/stock";
 
 import CajaConsultorioPage from "@/features/caja/ui/caja-consultorio";
 import MovimientosConsultorioPage from "@/features/movimientos/ui/movimientos-consultorio";
+import Tratamientos from "@/features/treatments/ui/screens/Tratamientos";
 import NotFound404 from "@/shared/screen/404";
 import HomeByContext from "@/features/home/ui/HomeByContext";
 import HomeConsultorio from "@/features/home/ui/screens/HomeConsultorio";
@@ -33,6 +34,11 @@ export default function Router() {
         <Route path="seguimiento" element={<Tracking />} />
         <Route path="stock" element={<StockPage />} />
         <Route path="caja/consultorio" element={<CajaConsultorioPage />} />
+
+        {/* Tratamientos: médica (ADMIN) y cosmetóloga. */}
+        <Route element={<RoleGuard allowedRoles={["ADMIN", "COSMETOLOGA"]} redirectPath="/inicio" />}>
+          <Route path="tratamientos" element={<Tratamientos />} />
+        </Route>
 
         {/* Rutas restringidas: ocultas en el menú para COSMETOLOGA
             y bloqueadas también por URL (si la tipea, vuelve a /inicio). */}

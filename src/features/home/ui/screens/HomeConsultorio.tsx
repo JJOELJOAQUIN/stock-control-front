@@ -1,11 +1,7 @@
 
 import {
   Package,
-  DollarSign,
-  Receipt,
-  
-  
-  Calendar,
+  DollarSign,  Calendar,
   ArrowUpRight,
   Home,
 } from "lucide-react";
@@ -100,14 +96,14 @@ export default function HomeConsultorio() {
             description="Flujo de dinero y pagos"
           />
 
-          <BentoNavCard
+          {/* <BentoNavCard
             href="/inicio/movimientos-consultorio"
             variant="brandMuted"
             className="col-span-1 sm:col-span-2 lg:col-span-1"
             icon={<Receipt className="h-6 w-6" />}
             title="Movimientos"
             description="Historial de transacciones"
-          />
+          /> */}
 
           {/* <BentoStatCard
             href="/inicio/stock"
