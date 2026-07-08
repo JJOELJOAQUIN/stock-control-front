@@ -1,4 +1,3 @@
-// features/treatments/ui/components/RegisterTreatmentDialog.tsx
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -25,15 +24,21 @@ import { currencyFormatter } from "@/lib/currencyFormatter";
 import type { PaymentMethod } from "@/features/caja/types/cash.types";
 
 import { PatientPicker } from "./PatientPicker";
-import { DEFAULT_COSMETOLOGIST_FIXED_SHARE, type CreateTreatmentRequest, PEELING_PROFUNDO, type Patient } from "../models/treatment";
-
+import {
+  DEFAULT_COSMETOLOGIST_FIXED_SHARE,
+  PEELING_PROFUNDO,
+  type Patient,
+} from "../models/treatment";
+import type { RegisterTreatmentInput } from "../hooks/useTreatmentsPage";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (body: CreateTreatmentRequest) => Promise<boolean>;
+  onSubmit: (input: RegisterTreatmentInput) => Promise<boolean>;
   isSubmitting: boolean;
 };
+
+const DEFAULT_PEELING_TOTAL = 170000;
 
 export function RegisterTreatmentDialog({
   open,
@@ -42,25 +47,28 @@ export function RegisterTreatmentDialog({
   isSubmitting,
 }: Props) {
   const [patient, setPatient] = useState<Patient | null>(null);
-  const [total, setTotal] = useState("");
-  const [fixedShare, setFixedShare] = useState(
-    String(DEFAULT_COSMETOLOGIST_FIXED_SHARE)
-  );
+  const [total, setTotal] = useState(String(DEFAULT_PEELING_TOTAL));
+  const [fixedShare, setFixedShare] = useState(String(DEFAULT_COSMETOLOGIST_FIXED_SHARE));
   const [firstAmount, setFirstAmount] = useState("");
   const [firstMethod, setFirstMethod] = useState<PaymentMethod>("CASH");
+  const [attempted, setAttempted] = useState(false);
+
 
   const reset = () => {
     setPatient(null);
-    setTotal("");
+    setTotal(String(DEFAULT_PEELING_TOTAL));
     setFixedShare(String(DEFAULT_COSMETOLOGIST_FIXED_SHARE));
     setFirstAmount("");
     setFirstMethod("CASH");
+    setAttempted(false);
   };
 
   const totalNum = Number(total) || 0;
   const firstNum = Number(firstAmount) || 0;
+  const patientError = attempted && !patient;
 
   const handleSubmit = async () => {
+    setAttempted(true);
     if (!patient) {
       toast.error("El peeling profundo requiere un paciente");
       return;
@@ -74,18 +82,19 @@ export function RegisterTreatmentDialog({
       return;
     }
 
-    const body: CreateTreatmentRequest = {
-      procedureCode: PEELING_PROFUNDO.code,
-      procedureLabel: PEELING_PROFUNDO.label,
-      patientId: patient.id,
-      context: "CONSULTORIO",
-      totalAmount: totalNum,
-      cosmetologistFixedShare: Number(fixedShare) || null,
+    const ok = await onSubmit({
+      treatment: {
+        patientId: patient.id,
+        code: PEELING_PROFUNDO.code,
+        description: PEELING_PROFUNDO.label,
+        totalAmount: totalNum,
+        cosmetologistFixedShare: Number(fixedShare) || null,
+        maxInstallments: 2,
+      },
       firstPaymentAmount: firstNum > 0 ? firstNum : null,
       firstPaymentMethod: firstNum > 0 ? firstMethod : null,
-    };
+    });
 
-    const ok = await onSubmit(body);
     if (ok) {
       reset();
       onOpenChange(false);
@@ -100,18 +109,24 @@ export function RegisterTreatmentDialog({
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Registrar peeling profundo</DialogTitle>
           <DialogDescription>
             Protocolo con paciente obligatorio y parte fija de la cosmetóloga.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        {/* Cuerpo scrolleable */}
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
           <div className="space-y-1.5">
             <Label>Paciente</Label>
             <PatientPicker selected={patient} onSelect={setPatient} />
+            {patientError && (
+              <span className="text-xs font-light text-destructive">
+                Elegí o creá un paciente
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -148,15 +163,12 @@ export function RegisterTreatmentDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Método</Label>
-                <Select
-                  value={firstMethod}
-                  onValueChange={(v) => setFirstMethod(v as PaymentMethod)}
-                >
+                <Select value={firstMethod} onValueChange={(v) => setFirstMethod(v as PaymentMethod)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PAYMENT_METHODS.map((m) => (
+                    {PAYMENT_METHODS.map((m: { value: string; label: string }) => (
                       <SelectItem key={m.value} value={m.value}>
                         {m.label}
                       </SelectItem>
@@ -174,14 +186,15 @@ export function RegisterTreatmentDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        {/* Footer fijo */}
+        <div className="flex justify-end gap-2 border-t px-6 py-4">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             Registrar
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

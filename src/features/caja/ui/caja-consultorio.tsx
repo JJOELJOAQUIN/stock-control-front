@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Building2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Building2, ShoppingBag, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
@@ -17,6 +17,7 @@ import { BusinessTotals } from "./components/BusinessTotals";
 import { COSMETOLOGIA_PROCEDURES, MEDICA_PROCEDURES } from "../types/cash.types";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
+import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
 
 
 // Repartos por especialidad (doctor / cosmetóloga).
@@ -25,6 +26,7 @@ const MEDICA_SHARE = { doctor: 1, cosmetologist: 0 } as const;
 
 export default function CajaConsultorioPage() {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
+ const [combinedOpen, setCombinedOpen] = useState(false);
 
   const {
     data,
@@ -73,7 +75,12 @@ export default function CajaConsultorioPage() {
   const canViewFinancials = useHasRole(["ADMIN", "USER"]);
   // La médica (ADMIN) no ve el card de procedimientos de cosmetología.
   const showCosmetologiaProcedures = useHasRole(["USER", "COSMETOLOGA"]);
-
+const allProcedures = useMemo(
+  () => Array.from(
+    new Map([...MEDICA_PROCEDURES, ...COSMETOLOGIA_PROCEDURES].map((p) => [p.code, p])).values()
+  ),
+  []
+);
   // const netCash = summary.netIncome - summary.netExpense;
 
   return (
@@ -172,7 +179,7 @@ export default function CajaConsultorioPage() {
           )}
         </section>
 
-        {/* Operaciones de caja */}
+        {/* 7de caja */}
         <section className="flex flex-col gap-6" aria-label="Operaciones de caja">
           {/* <CashSummary income={summary.income} expense={summary.expense} net={netCash} /> */}
 
@@ -181,6 +188,24 @@ export default function CajaConsultorioPage() {
             className="grid grid-cols-1 items-start gap-6 md:grid-cols-2"
             aria-label="Venta y egreso"
           >
+
+            <Button onClick={() => setCombinedOpen(true)}           className="flex h-full min-h-[10rem] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+              >
+                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                  <ShoppingBag className="size-6" />
+                </span>
+                <span className="text-sm font-semibold">Venta combinada</span>
+            </Button>
+
+            <CombinedSaleDialog
+              open={combinedOpen}
+              onOpenChange={setCombinedOpen}
+              context="CONSULTORIO"
+              products={products}
+              procedures={allProcedures}
+              defaultDoctorSharePercent={0.6}
+              defaultCosmetologistSharePercent={0.4}
+            />
             <InlineProductSaleCard
               scannedProduct={scannedProduct}
               barcodeQuery={barcodeQuery}
@@ -196,9 +221,8 @@ export default function CajaConsultorioPage() {
           </div>
 
           <div
-            className={`grid grid-cols-1 items-start gap-6 ${
-              showCosmetologiaProcedures ? "md:grid-cols-2" : ""
-            }`}
+            className={`grid grid-cols-1 items-start gap-6 ${showCosmetologiaProcedures ? "md:grid-cols-2" : ""
+              }`}
             aria-label="Ingresos por procedimientos"
           >
             <ProcedureIncomeCard

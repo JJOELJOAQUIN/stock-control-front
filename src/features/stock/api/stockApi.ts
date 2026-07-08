@@ -9,7 +9,7 @@ import {
   type SellByBarcodeRequest,
   type UpdateProductRequest,
 } from "../types/stock.types";
-
+import type { CombinedSaleRequest } from "@/features/caja/types/combined-sale.types";
 
 export const stockApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -90,6 +90,15 @@ export const stockApi = baseApi.injectEndpoints({
       invalidatesTags: ["Products", "Stock", "Cash"],
     }),
 
+    combinedSale: builder.mutation<void, CombinedSaleRequest>({
+      query: (body) => ({
+        url: "/api/business/combined-sale",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Products", "Stock", "Cash"],
+    }),
+
     getExpiringProductBatches: builder.query<
       ProductBatchExpiration[],
       { context: "LOCAL" | "CONSULTORIO"; days?: number }
@@ -102,6 +111,9 @@ export const stockApi = baseApi.injectEndpoints({
     }),
   }),
   overrideExisting: false,
+
+
+  
 });
 
 export const {
@@ -114,4 +126,5 @@ export const {
   useUpdateProductMutation,
   useDeactivateProductMutation,
   useGetExpiringProductBatchesQuery,
+  useCombinedSaleMutation,
 } = stockApi;

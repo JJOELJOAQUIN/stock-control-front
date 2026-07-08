@@ -215,6 +215,12 @@ export function useCashConsultorioPage() {
     );
   }, [products]);
 
+  const lowStockProducts = useMemo(
+    () => products.filter((p) => p.belowMinimum),
+    [products]
+  );
+
+
   const refetchCaja = async () => {
     await refetchCash();
     await refetchDailySplit();
@@ -322,26 +328,26 @@ export function useCashConsultorioPage() {
     }
   };
 
-const purchaseProductFromCash = async (
-  order: Omit<PurchaseOrderRequest, "context">
-) => {
-  try {
-    await purchaseProduct({
-      ...order,
-      context: "CONSULTORIO",
-    }).unwrap();
+  const purchaseProductFromCash = async (
+    order: Omit<PurchaseOrderRequest, "context">
+  ) => {
+    try {
+      await purchaseProduct({
+        ...order,
+        context: "CONSULTORIO",
+      }).unwrap();
 
-    toast.success("Compra de producto registrada");
+      toast.success("Compra de producto registrada");
 
-    await refetchCaja();
-    await refetchProducts();
-    await refetchExpiringProducts();
+      await refetchCaja();
+      await refetchProducts();
+      await refetchExpiringProducts();
 
-    clearScannedProduct();
-  } catch (error: any) {
-    toast.error(error?.data?.message || "No se pudo registrar la compra");
-  }
-};
+      clearScannedProduct();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo registrar la compra");
+    }
+  };
 
   const registerProcedureIncome = async (payload: {
     procedure: ProcedureOption;
@@ -442,7 +448,7 @@ const purchaseProductFromCash = async (
     summary,
     salesTotals,
     stockValue,
-
+    lowStockProducts,
     barcodeQuery,
     setBarcodeQuery,
     scannedProduct,

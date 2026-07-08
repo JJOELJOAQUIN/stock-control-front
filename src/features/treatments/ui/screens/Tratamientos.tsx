@@ -1,6 +1,7 @@
-// features/treatments/ui/screens/Tratamientos.tsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
+
+import { Input } from "@/shared/components/ui/input";
 
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -10,16 +11,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { useTreatmentsPage } from "./hooks/useTreatmentsPage";
+
 import { TreatmentsTable } from "./components/TreatmentsTable";
+
+import { AddPaymentDialog } from "./components/AddPaymentDialog";
+import { useTreatmentsPage } from "./hooks/useTreatmentsPage";
+import type { Treatment } from "./models/treatment";
 import { RegisterTreatmentDialog } from "./components/RegisterTratmentDialog";
 
 
 export default function Tratamientos() {
-  const { canRegister, treatments, isLoading, isCreating, registerTreatment } =
-    useTreatmentsPage();
+  const {
+    canRegister,
+    treatments,
+    isLoading,
+    isCreating,
+    isPaying,
+    registerTreatment,
+    addPayment,
+  } = useTreatmentsPage();
+  const [search, setSearch] = useState("");
+
+  const filteredTreatments = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return treatments;
+    return treatments.filter((t) =>
+      t.patientName.toLowerCase().includes(q)
+    );
+  }, [treatments, search]);
 
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [payTarget, setPayTarget] = useState<Treatment | null>(null);
 
   return (
     <div className="space-y-6">
@@ -42,12 +64,24 @@ export default function Tratamientos() {
       <Card>
         <CardHeader>
           <CardTitle>Historial</CardTitle>
-          <CardDescription>
-            Tratamientos registrados y su saldo pendiente.
-          </CardDescription>
+          <CardDescription>Tratamientos registrados y su saldo pendiente.</CardDescription>
         </CardHeader>
         <CardContent>
-          <TreatmentsTable treatments={treatments} isLoading={isLoading} />
+
+          <div className="mb-4">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre de paciente..."
+              className="max-w-sm"
+            />
+          </div>
+          <TreatmentsTable
+            treatments={filteredTreatments}
+            isLoading={isLoading}
+            canRegister={canRegister}
+            onAddPayment={setPayTarget}
+          />
         </CardContent>
       </Card>
 
@@ -59,6 +93,14 @@ export default function Tratamientos() {
           isSubmitting={isCreating}
         />
       )}
+
+      <AddPaymentDialog
+        open={!!payTarget}
+        onOpenChange={(o) => !o && setPayTarget(null)}
+        treatment={payTarget}
+        isPaying={isPaying}
+        onPay={addPayment}
+      />
     </div>
   );
 }

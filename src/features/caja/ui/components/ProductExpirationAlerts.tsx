@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
+import { LowStockCard } from "@/features/stock/components/LowStockCard";
 
 
 type Props = {
@@ -83,6 +84,9 @@ export function ProductExpirationAlerts({ items, isLoading }: Props) {
             </Badge>
           </div>
         ))}
+
+
+
       </CardContent>
     </Card>
   );

@@ -20,6 +20,7 @@ export function PatientPicker({ selected, onSelect }: Props) {
   const [creating, setCreating] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [dni, setDni] = useState("");
   const [phone, setPhone] = useState("");
 
   const { data: results = [] } = useSearchPatientsQuery(
@@ -59,6 +60,7 @@ export function PatientPicker({ selected, onSelect }: Props) {
         const patient = await createPatient({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
+          dni: dni.trim() || undefined,
           phone: phone.trim() || undefined,
         }).unwrap();
         onSelect(patient);
@@ -85,9 +87,19 @@ export function PatientPicker({ selected, onSelect }: Props) {
             />
           </div>
         </div>
-        <div className="space-y-1">
-          <Label>Teléfono (opcional)</Label>
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label>DNI (opcional)</Label>
+            <Input
+              value={dni}
+              onChange={(e) => setDni(e.target.value)}
+              placeholder="Sin puntos"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Teléfono (opcional)</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
         </div>
         <div className="flex gap-2">
           <Button
@@ -120,7 +132,7 @@ export function PatientPicker({ selected, onSelect }: Props) {
       </div>
 
       {results.length > 0 && (
-        <ul className="max-h-48 overflow-y-auto rounded-md border">
+        <ul className="max-h-40 overflow-y-auto rounded-md border">
           {results.map((p) => (
             <li key={p.id}>
               <button
