@@ -20,6 +20,7 @@ import { PurchaseDialog } from "../components/PurchaseDialog";
 import { SellDialog } from "../components/SellDialog";
 import { EditProductDialog } from "../components/EditProductDialog";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
+import { LowStockCard } from "../components/LowStockCard";
 
 type NewProductForm = CreateProductRequest;
 
@@ -45,6 +46,7 @@ export default function StockPage() {
     handleSell,
     handleUpdateProduct,
     handleDeactivateProduct,
+    products
   } = useStockPage();
 
   // Permisos de UI: COSMETOLOGA no ve costos ni registra compras.
@@ -328,6 +330,8 @@ export default function StockPage() {
           openPurchaseDialog(product);
         }}
       />
+
+      <LowStockCard products={products} />
 
       <ProductCatalogSection
         products={filteredProducts}
