@@ -4,7 +4,6 @@ import { ArrowLeft, Building2, ShoppingBag, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
-// import { CashSummary } from "./components/CashSummary";
 import { ProcedureIncomeCard } from "./components/ProcedureIncomeCard";
 import { ExpenseCard } from "./components/ExpenseCard";
 import { CashTable } from "./components/CashTable";
@@ -18,15 +17,19 @@ import { COSMETOLOGIA_PROCEDURES, MEDICA_PROCEDURES } from "../types/cash.types"
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
 import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
-
+import { LowStockCard } from "@/features/stock/components/LowStockCard";
 
 // Repartos por especialidad (doctor / cosmetóloga).
 const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
 const MEDICA_SHARE = { doctor: 1, cosmetologist: 0 } as const;
 
+// Clases compartidas para los CTAs con borde punteado (consistencia visual).
+const ACTION_CTA_CLASS =
+  "flex h-full min-h-[10rem] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary";
+
 export default function CajaConsultorioPage() {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
- const [combinedOpen, setCombinedOpen] = useState(false);
+  const [combinedOpen, setCombinedOpen] = useState(false);
 
   const {
     data,
@@ -48,7 +51,6 @@ export default function CajaConsultorioPage() {
     isCreating,
     isScanning,
     isSellingProduct,
-    // summary,
     barcodeQuery,
     setBarcodeQuery,
     scannedProduct,
@@ -75,13 +77,16 @@ export default function CajaConsultorioPage() {
   const canViewFinancials = useHasRole(["ADMIN", "USER"]);
   // La médica (ADMIN) no ve el card de procedimientos de cosmetología.
   const showCosmetologiaProcedures = useHasRole(["USER", "COSMETOLOGA"]);
-const allProcedures = useMemo(
-  () => Array.from(
-    new Map([...MEDICA_PROCEDURES, ...COSMETOLOGIA_PROCEDURES].map((p) => [p.code, p])).values()
-  ),
-  []
-);
-  // const netCash = summary.netIncome - summary.netExpense;
+
+  const allProcedures = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          [...MEDICA_PROCEDURES, ...COSMETOLOGIA_PROCEDURES].map((p) => [p.code, p]),
+        ).values(),
+      ),
+    [],
+  );
 
   return (
     <div className="min-h-full bg-background text-foreground">
@@ -135,27 +140,29 @@ const allProcedures = useMemo(
             <CosmetologistSplitCard date={splitDate} setDate={setSplitDate} />
           )}
 
-          {/* items-stretch + h-full: el botón iguala el alto de la tarjeta de alertas */}
           {canViewFinancials ? (
+            // 2 tarjetas alineadas a igual altura + CTA a ancho completo debajo.
             <div
               className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2"
               aria-label="Acciones de caja"
             >
+              <LowStockCard products={products} />
+
+              <ProductExpirationAlerts
+                items={expiringProducts}
+                isLoading={isLoadingExpiringProducts}
+              />
+
               <Button
                 variant="outline"
                 onClick={() => setIsPurchaseOpen(true)}
-                className="flex h-full min-h-[10rem] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                className={`${ACTION_CTA_CLASS} md:col-span-2`}
               >
                 <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                   <ShoppingCart className="size-6" />
                 </span>
                 <span className="text-sm font-semibold">Registrar compra de productos</span>
               </Button>
-
-              <ProductExpirationAlerts
-                items={expiringProducts}
-                isLoading={isLoadingExpiringProducts}
-              />
             </div>
           ) : (
             <ProductExpirationAlerts
@@ -179,50 +186,53 @@ const allProcedures = useMemo(
           )}
         </section>
 
-        {/* 7de caja */}
+        {/* Operaciones de caja */}
         <section className="flex flex-col gap-6" aria-label="Operaciones de caja">
-          {/* <CashSummary income={summary.income} expense={summary.expense} net={netCash} /> */}
-
-          {/* items-start: cada tarjeta toma su alto natural y no se "estira" hacia abajo */}
+          {/* Fila de acciones: egreso + venta combinada a igual altura,
+              venta de producto a ancho completo debajo. */}
           <div
-            className="grid grid-cols-1 items-start gap-6 md:grid-cols-2"
+            className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2"
             aria-label="Venta y egreso"
           >
+            <ExpenseCard isSubmitting={isCreating} onSubmit={registerExpense} />
 
-            <Button onClick={() => setCombinedOpen(true)}           className="flex h-full min-h-[10rem] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-              >
-                <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-                  <ShoppingBag className="size-6" />
-                </span>
-                <span className="text-sm font-semibold">Venta combinada</span>
+            <Button onClick={() => setCombinedOpen(true)} className={ACTION_CTA_CLASS}>
+              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                <ShoppingBag className="size-6" />
+              </span>
+              <span className="text-sm font-semibold">Venta combinada</span>
             </Button>
 
-            <CombinedSaleDialog
-              open={combinedOpen}
-              onOpenChange={setCombinedOpen}
-              context="CONSULTORIO"
-              products={products}
-              procedures={allProcedures}
-              defaultDoctorSharePercent={0.6}
-              defaultCosmetologistSharePercent={0.4}
-            />
-            <InlineProductSaleCard
-              scannedProduct={scannedProduct}
-              barcodeQuery={barcodeQuery}
-              setBarcodeQuery={setBarcodeQuery}
-              isScanning={isScanning}
-              isSelling={isSellingProduct}
-              onScan={scanProduct}
-              onSell={sellProductFromCash}
-              nameResults={nameResults}
-              onSelectByName={selectProductByName}
-            />
-            <ExpenseCard isSubmitting={isCreating} onSubmit={registerExpense} />
+            <div className="md:col-span-2">
+              <InlineProductSaleCard
+                scannedProduct={scannedProduct}
+                barcodeQuery={barcodeQuery}
+                setBarcodeQuery={setBarcodeQuery}
+                isScanning={isScanning}
+                isSelling={isSellingProduct}
+                onScan={scanProduct}
+                onSell={sellProductFromCash}
+                nameResults={nameResults}
+                onSelectByName={selectProductByName}
+              />
+            </div>
           </div>
 
+          {/* Diálogo fuera del grid, igual que PurchaseDialog */}
+          <CombinedSaleDialog
+            open={combinedOpen}
+            onOpenChange={setCombinedOpen}
+            context="CONSULTORIO"
+            products={products}
+            procedures={allProcedures}
+            defaultDoctorSharePercent={0.6}
+            defaultCosmetologistSharePercent={0.4}
+          />
+
           <div
-            className={`grid grid-cols-1 items-start gap-6 ${showCosmetologiaProcedures ? "md:grid-cols-2" : ""
-              }`}
+            className={`grid grid-cols-1 items-stretch gap-6 ${
+              showCosmetologiaProcedures ? "md:grid-cols-2" : ""
+            }`}
             aria-label="Ingresos por procedimientos"
           >
             <ProcedureIncomeCard

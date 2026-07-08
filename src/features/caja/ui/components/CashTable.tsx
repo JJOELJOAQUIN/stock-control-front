@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, ListX, Search, X } from "lucide-react";
 import type {
   CashMovementResponse,
@@ -32,6 +33,38 @@ const SOURCE_LABELS: Record<CashSource, string> = {
   ADJUSTMENT: "Ajuste",
 };
 
+// Definición de columnas: key, label, ancho por defecto, alineación y ancho mínimo.
+type ColKey =
+  | "date"
+  | "type"
+  | "source"
+  | "method"
+  | "amount"
+  | "retention"
+  | "net"
+  | "doctor"
+  | "cosmetologist"
+  | "comment";
+
+const COLUMNS: {
+  key: ColKey;
+  label: string;
+  width: number;
+  min: number;
+  align?: "left" | "right";
+}[] = [
+  { key: "date", label: "Fecha", width: 150, min: 120 },
+  { key: "type", label: "Tipo", width: 110, min: 90 },
+  { key: "source", label: "Origen", width: 210, min: 140 },
+  { key: "method", label: "Método", width: 120, min: 90 },
+  { key: "amount", label: "Bruto", width: 120, min: 90, align: "right" },
+  { key: "retention", label: "Retención", width: 120, min: 90, align: "right" },
+  { key: "net", label: "Neto", width: 120, min: 90, align: "right" },
+  { key: "doctor", label: "Médica", width: 120, min: 90, align: "right" },
+  { key: "cosmetologist", label: "Cosmetóloga", width: 130, min: 100, align: "right" },
+  { key: "comment", label: "Comentario", width: 240, min: 140 },
+];
+
 type Props = {
   data?: PageResponse<CashMovementResponse>;
   isLoading: boolean;
@@ -51,6 +84,9 @@ type Props = {
   setCommentQuery: (value: string) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
+
+  // Permite redimensionar columnas arrastrando el borde derecho del encabezado.
+  resizable?: boolean;
 };
 
 const formatCurrency = (value: number) =>
@@ -86,12 +122,55 @@ export function CashTable({
   setCommentQuery,
   clearFilters,
   hasActiveFilters,
+  resizable = true,
 }: Props) {
+  // Anchos de columna controlados (para redimensionar).
+  const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() =>
+    COLUMNS.reduce(
+      (acc, c) => ({ ...acc, [c.key]: c.width }),
+      {} as Record<ColKey, number>,
+    ),
+  );
+
+  const handleResize = (key: ColKey, min: number) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = colWidths[key];
+
+    const onMove = (ev: PointerEvent) => {
+      const next = Math.max(min, startWidth + (ev.clientX - startX));
+      setColWidths((prev) => ({ ...prev, [key]: next }));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.style.userSelect = "";
+    };
+
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  // Lo más reciente primero, lo más viejo al final.
+  const rows = useMemo(() => {
+    const content = data?.content ?? [];
+    return [...content].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [data]);
+
+  const totalWidth = COLUMNS.reduce((sum, c) => sum + colWidths[c.key], 0);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Movimientos de caja</CardTitle>
-        <CardDescription>Historial de ingresos y egresos</CardDescription>
+        <CardDescription>
+          Historial de ingresos y egresos (más recientes primero)
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -194,19 +273,38 @@ export function CashTable({
 
         {/* Tabla */}
         <div className="overflow-x-auto rounded-lg border">
-          <Table>
+          <Table
+            className="table-fixed"
+            style={{ width: totalWidth, minWidth: "100%" }}
+          >
+            <colgroup>
+              {COLUMNS.map((c) => (
+                <col key={c.key} style={{ width: colWidths[c.key] }} />
+              ))}
+            </colgroup>
+
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Fecha</TableHead>
-                <TableHead className="font-semibold">Tipo</TableHead>
-                <TableHead className="font-semibold">Origen</TableHead>
-                <TableHead className="font-semibold">Método</TableHead>
-                <TableHead className="text-right font-semibold">Bruto</TableHead>
-                <TableHead className="text-right font-semibold">Retención</TableHead>
-                <TableHead className="text-right font-semibold">Neto</TableHead>
-                <TableHead className="text-right font-semibold">Médica</TableHead>
-                <TableHead className="text-right font-semibold">Cosmetóloga</TableHead>
-                <TableHead className="font-semibold">Comentario</TableHead>
+                {COLUMNS.map((c) => (
+                  <TableHead
+                    key={c.key}
+                    className={`relative select-none font-semibold ${
+                      c.align === "right" ? "text-right" : ""
+                    }`}
+                  >
+                    <span className="block truncate">{c.label}</span>
+
+                    {resizable && (
+                      <span
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label={`Redimensionar columna ${c.label}`}
+                        onPointerDown={handleResize(c.key, c.min)}
+                        className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize touch-none border-r-2 border-transparent hover:border-primary/60"
+                      />
+                    )}
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
 
@@ -214,29 +312,29 @@ export function CashTable({
               {isLoading &&
                 Array.from({ length: 4 }).map((_, i) => (
                   <TableRow key={`sk-${i}`}>
-                    <TableCell colSpan={10}>
+                    <TableCell colSpan={COLUMNS.length}>
                       <Skeleton className="h-8 w-full" />
                     </TableCell>
                   </TableRow>
                 ))}
 
               {!isLoading &&
-                data?.content?.map((item) => (
+                rows.map((item) => (
                   <TableRow
                     key={item.id}
                     className="transition-colors hover:bg-muted/30"
                   >
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="truncate text-muted-foreground">
                       {formatDate(item.createdAt)}
                     </TableCell>
 
                     <TableCell>
                       <Badge
-                        variant={item.type === "OUT" ? "destructive" : "default"}
+                        variant="outline"
                         className={
                           item.type === "IN"
-                            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-400"
-                            : ""
+                            ? "border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            : "border-red-500/60 bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400"
                         }
                       >
                         {item.type === "IN" ? "Ingreso" : "Egreso"}
@@ -244,57 +342,57 @@ export function CashTable({
                     </TableCell>
 
                     <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
+                      <div className="flex min-w-0 flex-col">
+                        <span className="truncate font-medium">
                           {SOURCE_LABELS[item.source] ?? item.source}
                         </span>
                         {item.detail && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="truncate text-xs text-muted-foreground">
                             {item.detail}
                           </span>
                         )}
                       </div>
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className="truncate">
                       <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium">
                         {item.paymentMethod}
                       </span>
                     </TableCell>
 
-                    <TableCell className="text-right tabular-nums">
+                    <TableCell className="truncate text-right tabular-nums">
                       {formatCurrency(Number(item.amount))}
                     </TableCell>
 
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
+                    <TableCell className="truncate text-right tabular-nums text-muted-foreground">
                       {formatCurrency(Number(item.retention))}
                     </TableCell>
 
-                    <TableCell className="text-right tabular-nums font-semibold">
+                    <TableCell className="truncate text-right font-semibold tabular-nums">
                       {formatCurrency(Number(item.netAmount))}
                     </TableCell>
 
-                    <TableCell className="text-right tabular-nums">
+                    <TableCell className="truncate text-right tabular-nums">
                       {item.doctorShare != null
                         ? formatCurrency(Number(item.doctorShare))
                         : "-"}
                     </TableCell>
 
-                    <TableCell className="text-right tabular-nums">
+                    <TableCell className="truncate text-right tabular-nums">
                       {item.cosmetologistShare != null
                         ? formatCurrency(Number(item.cosmetologistShare))
                         : "-"}
                     </TableCell>
 
-                    <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                    <TableCell className="truncate text-muted-foreground">
                       {item.comment || "-"}
                     </TableCell>
                   </TableRow>
                 ))}
 
-              {!isLoading && !data?.content?.length && (
+              {!isLoading && !rows.length && (
                 <TableRow>
-                  <TableCell colSpan={10}>
+                  <TableCell colSpan={COLUMNS.length}>
                     <Empty>
                       <ListX className="size-10 text-muted-foreground/50" />
                       <p className="text-muted-foreground">

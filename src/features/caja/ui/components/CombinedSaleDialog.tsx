@@ -1,8 +1,7 @@
-"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Search, Package, Sparkles, ShoppingBag, } from "lucide-react";
+import { Plus, Trash2, Search, Package, Sparkles, ShoppingBag } from "lucide-react";
 
 import type { CashActor, PaymentMethod, ProcedureOption } from "../../types/cash.types";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
@@ -34,6 +33,8 @@ import { currencyFormatter } from "@/lib/currencyFormatter";
 import { PAYMENT_METHODS, PEELING_PROTOCOLO_CODE } from "@/lib/peeling";
 
 type Context = "LOCAL" | "CONSULTORIO";
+
+const CASH_PRODUCT_DISCOUNT = 0.10;
 
 // Línea del carrito (unión discriminada por kind).
 type CartLine =
@@ -72,6 +73,9 @@ type Props = {
 let uidSeq = 0;
 const nextUid = () => `line-${uidSeq++}`;
 
+// Redondeo a 2 decimales.
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 export function CombinedSaleDialog({
     open,
     onOpenChange,
@@ -96,6 +100,16 @@ export function CombinedSaleDialog({
 
     const isConsultorio = context === "CONSULTORIO";
     const isCard = paymentMethod === "CREDIT" || paymentMethod === "DEBIT";
+    const isCashDiscount = paymentMethod === "CASH";
+
+    // Precio unitario efectivo (con descuento si es producto + efectivo).
+    const effectiveUnit = (l: CartLine) =>
+        isCashDiscount && l.kind === "PRODUCT"
+            ? round2(l.unitAmount * (1 - CASH_PRODUCT_DISCOUNT))
+            : l.unitAmount;
+
+    // Subtotal de una línea, con descuento aplicado si corresponde.
+    const lineSubtotal = (l: CartLine) => round2(l.quantity * effectiveUnit(l));
 
     // Procedimientos disponibles: excluimos peeling (flujo aparte).
     const availableProcedures = useMemo(
@@ -103,7 +117,6 @@ export function CombinedSaleDialog({
         [procedures]
     );
 
-    // Al agregar un ítem, baja al final del carrito para que se vea el nuevo.
     // Al agregar un ítem, baja al final del carrito para que se vea el nuevo.
     useEffect(() => {
         const el = scrollRef.current;
@@ -130,41 +143,70 @@ export function CombinedSaleDialog({
     );
 
     const total = useMemo(
-        () => lines.reduce((acc, l) => acc + l.quantity * l.unitAmount, 0),
-        [lines]
+        () => lines.reduce((acc, l) => acc + lineSubtotal(l), 0),
+        [lines, isCashDiscount]
     );
 
+    // Ahorro total por descuento efectivo (para mostrarlo).
+    const cashSavings = useMemo(() => {
+        if (!isCashDiscount) return 0;
+        return lines.reduce((acc, l) => {
+            if (l.kind !== "PRODUCT") return acc;
+            return acc + l.quantity * l.unitAmount * CASH_PRODUCT_DISCOUNT;
+        }, 0);
+    }, [lines, isCashDiscount]);
+
     const addProduct = (p: ProductWithStock) => {
-        setLines((prev) => [
-            ...prev,
-            {
-                uid: nextUid(),
-                kind: "PRODUCT",
-                productId: p.id,
-                description: p.name,
-                quantity: 1,
-                unitAmount: Number(p.salePrice ?? 0),
-                performedBy: null,
-            },
-        ]);
+        setLines((prev) => {
+            const existing = prev.find(
+                (l) => l.kind === "PRODUCT" && l.productId === p.id
+            );
+            if (existing) {
+                return prev.map((l) =>
+                    l.uid === existing.uid ? { ...l, quantity: l.quantity + 1 } : l
+                );
+            }
+            return [
+                ...prev,
+                {
+                    uid: nextUid(),
+                    kind: "PRODUCT",
+                    productId: p.id,
+                    description: p.name,
+                    quantity: 1,
+                    unitAmount: Number(p.salePrice ?? 0),
+                    performedBy: null,
+                },
+            ];
+        });
         setPickerOpen(false);
         setQuery("");
     };
 
     const addProcedure = (proc: ProcedureOption) => {
-        setLines((prev) => [
-            ...prev,
-            {
-                uid: nextUid(),
-                kind: "PROCEDURE",
-                procedureCode: proc.code,
-                description: proc.label,
-                quantity: 1,
-                unitAmount: Number(proc.amount ?? 0),
-                doctorSharePercent: defaultDoctorSharePercent,
-                cosmetologistSharePercent: defaultCosmetologistSharePercent,
-            },
-        ]);
+        setLines((prev) => {
+            const existing = prev.find(
+                (l) => l.kind === "PROCEDURE" && l.procedureCode === proc.code
+            );
+            if (existing) {
+                return prev.map((l) =>
+                    l.uid === existing.uid ? { ...l, quantity: l.quantity + 1 } : l
+                );
+            }
+            return [
+                ...prev,
+                {
+                    uid: nextUid(),
+                    kind: "PROCEDURE",
+                    procedureCode: proc.code,
+                    description: proc.label,
+                    quantity: 1,
+                    unitAmount: Number(proc.amount ?? 0),
+                    doctorSharePercent: defaultDoctorSharePercent,
+                    cosmetologistSharePercent: defaultCosmetologistSharePercent,
+                },
+            ];
+        });
         setPickerOpen(false);
         setQuery("");
     };
@@ -216,7 +258,9 @@ export function CombinedSaleDialog({
         }
 
         const items: CombinedSaleItemRequest[] = lines.map((l) => {
-            const subtotal = l.quantity * l.unitAmount;
+            const subtotal = lineSubtotal(l);
+            const unit = effectiveUnit(l);
+
             if (l.kind === "PRODUCT") {
                 return {
                     kind: "PRODUCT",
@@ -224,7 +268,7 @@ export function CombinedSaleDialog({
                     procedureCode: null,
                     description: l.description,
                     quantity: l.quantity,
-                    unitAmount: l.unitAmount,
+                    unitAmount: unit,
                     subtotal,
                     performedBy: l.performedBy,
                     doctorSharePercent: null,
@@ -250,7 +294,7 @@ export function CombinedSaleDialog({
             paymentMethod,
             comment: comment.trim() || null,
             performedBy: null,
-            expectedTotal: total,
+            expectedTotal: round2(total),
             items,
         };
 
@@ -364,7 +408,9 @@ export function CombinedSaleDialog({
                     ) : (
                         <div className="space-y-3">
                             {lines.map((l) => {
-                                const subtotal = l.quantity * l.unitAmount;
+                                const subtotal = lineSubtotal(l);
+                                const baseSubtotal = l.quantity * l.unitAmount;
+                                const hasDiscount = isCashDiscount && l.kind === "PRODUCT";
                                 const performerError = attempted && missingPerformer(l);
                                 return (
                                     <div
@@ -454,6 +500,11 @@ export function CombinedSaleDialog({
                                                 <div className="col-span-2 flex flex-col justify-end">
                                                     <span className="text-xs text-muted-foreground">Subtotal</span>
                                                     <span className="text-sm font-semibold">
+                                                        {hasDiscount && (
+                                                            <span className="mr-1 text-xs font-normal text-muted-foreground line-through">
+                                                                {currencyFormatter.format(baseSubtotal)}
+                                                            </span>
+                                                        )}
                                                         {currencyFormatter.format(subtotal)}
                                                     </span>
                                                 </div>
@@ -461,8 +512,13 @@ export function CombinedSaleDialog({
                                         </div>
 
                                         {l.kind === "PRODUCT" && isConsultorio && (
-                                            <div className="mt-2 flex justify-end text-sm">
-                                                <span className="text-muted-foreground">Subtotal:&nbsp;</span>
+                                            <div className="mt-2 flex items-center justify-end gap-1 text-sm">
+                                                <span className="text-muted-foreground">Subtotal:</span>
+                                                {hasDiscount && (
+                                                    <span className="text-xs font-normal text-muted-foreground line-through">
+                                                        {currencyFormatter.format(baseSubtotal)}
+                                                    </span>
+                                                )}
                                                 <span className="font-semibold">
                                                     {currencyFormatter.format(subtotal)}
                                                 </span>
@@ -507,6 +563,13 @@ export function CombinedSaleDialog({
 
                 {/* Footer fijo: total + acciones (siempre visible) */}
                 <div className="border-t px-6 py-4 space-y-3">
+                    {cashSavings > 0 && (
+                        <div className="flex items-center justify-between px-4 text-sm text-emerald-600 dark:text-emerald-400">
+                            <span>Descuento efectivo (10% productos)</span>
+                            <span>−{currencyFormatter.format(cashSavings)}</span>
+                        </div>
+                    )}
+
                     <div className="flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3">
                         <div className="flex flex-col">
                             <span className="text-sm text-muted-foreground">Total</span>
