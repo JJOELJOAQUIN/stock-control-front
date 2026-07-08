@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
-import { LowStockCard } from "@/features/stock/components/LowStockCard";
+
 
 
 type Props = {
