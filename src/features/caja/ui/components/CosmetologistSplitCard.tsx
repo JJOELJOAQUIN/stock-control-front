@@ -37,11 +37,7 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
   const show = (value: number) =>
     isFetching ? "..." : currencyFormatter.format(value);
 
-  const percentOf = (part: number, other: number) => {
-    const total = part + other;
-    if (total <= 0) return 0;
-    return Math.round((part / total) * 100);
-  };
+
 
   return (
     <section className="space-y-4">
@@ -51,7 +47,7 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Reparto de ganancias diarias</h2>
             <p className="text-sm text-muted-foreground">
-             Ganancias diarias
+              Ganancias diarias
             </p>
           </div>
 
@@ -77,7 +73,7 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-medium text-muted-foreground">
-              Cosmetologa Total
+                Cosmetologa Total
               </span>
               <span className="text-2xl font-bold tracking-tight text-primary">
                 {show(cosmetologistTotal)}
@@ -118,7 +114,7 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                Gise({percentOf(procedureCosmetologist, procedureDoctor)}%)
+                Gise (70%)
               </span>
               <span className="font-semibold text-primary">
                 {show(procedureCosmetologist)}
@@ -127,7 +123,7 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-               Pili ({percentOf(procedureDoctor, procedureCosmetologist)}%)
+                Pili (30%)
               </span>
               <span className="font-semibold text-accent">
                 {show(procedureDoctor)}
@@ -148,7 +144,7 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-               Gise ({percentOf(salesCosmetologist, salesDoctor)}%)
+                Gise (5%)
               </span>
               <span className="font-semibold text-primary">
                 {show(salesCosmetologist)}
@@ -157,7 +153,7 @@ export function CosmetologistSplitCard({ date, setDate }: Props) {
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-              Pili ({percentOf(salesDoctor, salesCosmetologist)}%)
+                Pili (95%)
               </span>
               <span className="font-semibold text-accent">
                 {show(salesDoctor)}
