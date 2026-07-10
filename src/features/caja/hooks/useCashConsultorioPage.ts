@@ -134,7 +134,7 @@ export function useCashConsultorioPage() {
   const filteredMovements = useMemo(() => {
     const q = commentQuery.trim().toLowerCase();
 
-    return allMovements.filter((m) => {
+    const filtered = allMovements.filter((m) => {
       if (typeFilter && m.type !== typeFilter) return false;
       if (sourceFilter && m.source !== sourceFilter) return false;
 
@@ -149,6 +149,12 @@ export function useCashConsultorioPage() {
 
       return true;
     });
+
+    // Más reciente primero, ANTES de paginar (la página 1 = lo más nuevo).
+    return filtered.sort(
+      (a, b) =>
+        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+    );
   }, [allMovements, typeFilter, sourceFilter, dateFrom, dateTo, commentQuery]);
 
   // Paginación client-side sobre el resultado ya filtrado.
