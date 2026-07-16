@@ -21,11 +21,10 @@ import { PurchaseDialog } from "../components/PurchaseDialog";
 import { SellDialog } from "../components/SellDialog";
 import { EditProductDialog } from "../components/EditProductDialog";
 
-
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { LowStockCard } from "../components/LowStockCard";
-import { InternalConsumptionDialog } from "@/features/caja/ui/components/InternalConsumptionDialog";
 import { ProductMultiSaleDialog } from "@/features/caja/ui/components/ProductMultiSaleDialog";
+import { InternalConsumptionDialog } from "@/features/caja/ui/components/InternalConsumptionDialog";
 
 type NewProductForm = CreateProductRequest;
 
@@ -65,6 +64,7 @@ export default function StockPage() {
     handlePurchase,
     handleSell,
     handleConsume,
+    performer,
     handleUpdateProduct,
     handleDeactivateProduct,
     refetch,
@@ -111,6 +111,9 @@ export default function StockPage() {
     amount: "",
     paymentMethod: "CASH" as PaymentMethod,
     comment: "",
+    // Arranca en el actor del usuario logueado; SellDialog lo bloquea si
+    // el rol no puede vender a nombre de otra persona.
+    performedBy: performer.actor,
   });
 
   const totalProducts = filteredProducts.length;
@@ -141,6 +144,7 @@ export default function StockPage() {
       amount: "",
       paymentMethod: "CASH",
       comment: "",
+      performedBy: performer.actor,
     });
     setIsSellOpen(true);
   };
@@ -245,6 +249,7 @@ export default function StockPage() {
         amount,
         paymentMethod: sellForm.paymentMethod,
         comment: sellForm.comment.trim(),
+        performedBy: sellForm.performedBy,
       });
 
       setIsSellOpen(false);

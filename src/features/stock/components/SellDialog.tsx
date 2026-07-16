@@ -36,6 +36,8 @@ import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Badge } from "@/shared/components/ui/badge";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
+import { usePerformer } from "@/features/caja/hooks/usePerformer";
+import type { CashActor } from "@/features/caja/types/cash.types";
 
 
 const PAYMENT_METHODS: {
@@ -58,6 +60,13 @@ type SellForm = {
   amount: string;
   paymentMethod: PaymentMethod;
   comment: string;
+  /**
+   * Quien realizo la venta. Define el reparto: MEDICA se lleva el 100% del
+   * neto, COSMETOLOGA el 5% y la medica el 95%. Antes no existia y el hook
+   * mandaba "MEDICA" fijo, asi que toda venta escaneada por Gise se
+   * registraba como propia de Pili.
+   */
+  performedBy: CashActor;
 };
 
 type SellDialogProduct = {
@@ -97,6 +106,10 @@ export function SellDialog({
   onSubmit,
   product,
 }: Props) {
+  // Quien vende sale del usuario logueado; la cosmetologa no puede
+  // cambiarlo, la medica si (a veces carga ventas que hizo Gise).
+  const performer = usePerformer();
+
   const quantity = Number(form.quantity) || 0;
   const amount = Number(form.amount) || 0;
 
@@ -309,6 +322,37 @@ export function SellDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </Field>
+
+            <Field>
+              <FieldLabel>Venta realizada por</FieldLabel>
+              {performer.locked ? (
+                <div className="flex h-9 w-full items-center gap-2 rounded-md border bg-muted/40 px-3">
+                  <Badge variant="secondary">{performer.label}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    detectado por tu usuario
+                  </span>
+                </div>
+              ) : (
+                <Select
+                  value={form.performedBy}
+                  onValueChange={(value) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      performedBy: value as CashActor,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="MEDICA">Médica</SelectItem>
+                    <SelectItem value="COSMETOLOGA">Cosmetóloga</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </Field>
 
             <Field>
