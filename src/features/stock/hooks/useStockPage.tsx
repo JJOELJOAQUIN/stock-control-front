@@ -6,6 +6,7 @@ import {
   useCreateProductMutation,
   useDeactivateProductMutation,
   useGetProductsWithStockQuery,
+  useInternalConsumptionMutation,
   useLazyScanProductByBarcodeQuery,
   usePurchaseProductMutation,
   useSellByBarcodeMutation,
@@ -13,6 +14,7 @@ import {
 } from "../api/stockApi";
 import type {
   CreateProductRequest,
+  InternalConsumptionRequest,
   PaymentMethod,
   ProductScanResponse,
   PurchaseOrderRequest,
@@ -52,6 +54,9 @@ export function useStockPage() {
     usePurchaseProductMutation();
 
   const [sellByBarcode, { isLoading: isSelling }] = useSellByBarcodeMutation();
+
+  const [internalConsumption, { isLoading: isConsuming }] =
+    useInternalConsumptionMutation();
 
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -151,6 +156,32 @@ export function useStockPage() {
     await runScan(payload.barcode, context);
   };
 
+  /**
+   * Consumo interno: descuenta stock (y lotes, FEFO) sin generar movimiento
+   * de caja ni impactar las métricas de ventas.
+   */
+  const handleConsume = async (
+    payload: Omit<InternalConsumptionRequest, "context">
+  ) => {
+    if (!context) {
+      toast.error("Seleccioná un contexto");
+      return;
+    }
+
+    try {
+      await internalConsumption({ ...payload, context }).unwrap();
+      toast.success("Consumo interno registrado");
+      refetch();
+
+      if (barcodeQuery.trim()) {
+        await runScan(barcodeQuery, context).catch(() => undefined);
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo registrar el consumo");
+      throw error;
+    }
+  };
+
   const handleUpdateProduct = async (id: string, payload: UpdateProductRequest) => {
     await updateProduct({
       id,
@@ -197,13 +228,16 @@ export function useStockPage() {
     isCreatingProduct,
     isPurchasing,
     isSelling,
+    isConsuming,
     handleCreateProduct,
     handleScan,
     handlePurchase,
     handleSell,
+    handleConsume,
     isUpdatingProduct,
     isDeactivatingProduct,
     handleUpdateProduct,
     handleDeactivateProduct,
+    refetch,
   };
 }

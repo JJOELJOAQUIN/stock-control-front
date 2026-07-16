@@ -65,7 +65,7 @@ export function ProductExpirationAlerts({ items, isLoading, defaultOpen = false 
               </Badge>
             </CardTitle>
             <CardDescription>
-              Productos con vencimiento dentro de los próximos 90 días.
+              Lotes con stock disponible que vencen dentro de los próximos 90 días.
             </CardDescription>
           </div>
 
@@ -85,7 +85,20 @@ export function ProductExpirationAlerts({ items, isLoading, defaultOpen = false 
               className="flex flex-col gap-2 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="font-medium">{item.productName}</p>
+                <p className="flex flex-wrap items-center gap-2 font-medium">
+                  {item.productName}
+                  {/* Vencimiento calculado por vida útil vs. fecha cargada a mano. */}
+                  <Badge
+                    variant="outline"
+                    className={
+                      item.estimated
+                        ? "border-amber-400/70 text-amber-700 dark:text-amber-400"
+                        : "border-emerald-400/70 text-emerald-700 dark:text-emerald-400"
+                    }
+                  >
+                    {item.estimated ? "Estimado" : "Real"}
+                  </Badge>
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Barcode: {item.barcode || "-"} · Lote: {item.lotNumber || "-"}
                 </p>

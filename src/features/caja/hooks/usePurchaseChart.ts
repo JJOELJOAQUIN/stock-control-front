@@ -24,6 +24,7 @@ export function buildCartLine(product: ProductWithStock): PurchaseCartLine {
     unitCost: savedCost,
     lotNumber: "",
     expirationDate: "",
+    shelfLifeMonths: product.shelfLifeMonths ?? null,
     // Campos legacy: el submit usa el toggle global. Se dejan por compat de tipo.
     updateCostPrice: false,
     updateSalePrice: false,

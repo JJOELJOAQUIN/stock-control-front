@@ -7,6 +7,7 @@ import { useStockPage } from "../hooks/useStockPage";
 
 import type {
   CreateProductRequest,
+  InternalConsumptionRequest,
   PaymentMethod,
   ProductWithStock,
   PurchaseOrderRequest,
@@ -19,10 +20,28 @@ import { CreateProductDialog } from "../components/CreateProductDialog";
 import { PurchaseDialog } from "../components/PurchaseDialog";
 import { SellDialog } from "../components/SellDialog";
 import { EditProductDialog } from "../components/EditProductDialog";
+
+
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { LowStockCard } from "../components/LowStockCard";
+import { InternalConsumptionDialog } from "@/features/caja/ui/components/InternalConsumptionDialog";
+import { ProductMultiSaleDialog } from "@/features/caja/ui/components/ProductMultiSaleDialog";
 
 type NewProductForm = CreateProductRequest;
+
+const emptyNewProduct: NewProductForm = {
+  name: "",
+  description: "",
+  minimumStock: 0,
+  category: "COSMETICO_VENTA",
+  brand: "LIDHERMA",
+  expirable: false,
+  scope: "CONSULTORIO",
+  barcode: "",
+  costPrice: 0,
+  shelfLifeMonths: null,
+  restockPriority: 0,
+};
 
 export default function StockPage() {
   const {
@@ -38,15 +57,18 @@ export default function StockPage() {
     isCreatingProduct,
     isPurchasing,
     isSelling,
+    isConsuming,
     isUpdatingProduct,
     isDeactivatingProduct,
     handleCreateProduct,
     handleScan,
     handlePurchase,
     handleSell,
+    handleConsume,
     handleUpdateProduct,
     handleDeactivateProduct,
-    products
+    refetch,
+    products,
   } = useStockPage();
 
   // Permisos de UI: COSMETOLOGA no ve costos ni registra compras.
@@ -59,21 +81,15 @@ export default function StockPage() {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [isSellOpen, setIsSellOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isConsumeOpen, setIsConsumeOpen] = useState(false);
+  const [isMultiSaleOpen, setIsMultiSaleOpen] = useState(false);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductWithStock | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductWithStock | null>(null);
+  const [consumeProduct, setConsumeProduct] = useState<ProductWithStock | null>(null);
+  const [multiSaleInitial, setMultiSaleInitial] = useState<ProductWithStock | null>(null);
 
-  const [newProduct, setNewProduct] = useState<NewProductForm>({
-    name: "",
-    description: "",
-    minimumStock: 0,
-    category: "COSMETICO_VENTA",
-    brand: "LIDHERMA",
-    expirable: false,
-    scope: "CONSULTORIO",
-    barcode: "",
-    costPrice: 0,
-  });
+  const [newProduct, setNewProduct] = useState<NewProductForm>(emptyNewProduct);
 
   const [editForm, setEditForm] = useState<UpdateProductRequest>({
     name: "",
@@ -86,6 +102,8 @@ export default function StockPage() {
     costPrice: 0,
     salePrice: 0,
     defaultMarkupPercentage: 0,
+    shelfLifeMonths: null,
+    restockPriority: 0,
   });
 
   const [sellForm, setSellForm] = useState({
@@ -127,6 +145,16 @@ export default function StockPage() {
     setIsSellOpen(true);
   };
 
+  const openConsumeDialog = (product: ProductWithStock) => {
+    setConsumeProduct(product);
+    setIsConsumeOpen(true);
+  };
+
+  const openMultiSaleDialog = (product?: ProductWithStock) => {
+    setMultiSaleInitial(product ?? null);
+    setIsMultiSaleOpen(true);
+  };
+
   const openEditDialog = (product: ProductWithStock) => {
     setEditingProduct(product);
     setEditForm({
@@ -140,6 +168,8 @@ export default function StockPage() {
       costPrice: Number(product.costPrice ?? 0),
       salePrice: Number(product.salePrice ?? 0),
       defaultMarkupPercentage: Number(product.defaultMarkupPercentage ?? 0),
+      shelfLifeMonths: product.shelfLifeMonths ?? null,
+      restockPriority: product.restockPriority ?? 0,
     });
     setIsEditOpen(true);
   };
@@ -167,20 +197,12 @@ export default function StockPage() {
         name: newProduct.name.trim(),
         description: newProduct.description?.trim() || "",
         barcode: newProduct.barcode?.trim() || "",
+        shelfLifeMonths: newProduct.shelfLifeMonths || null,
+        restockPriority: newProduct.restockPriority ?? 0,
       });
 
       setIsCreateOpen(false);
-      setNewProduct({
-        name: "",
-        description: "",
-        minimumStock: 0,
-        category: "COSMETICO_VENTA",
-        brand: "LIDHERMA",
-        expirable: false,
-        scope: "BOTH",
-        barcode: "",
-        costPrice: 0,
-      });
+      setNewProduct({ ...emptyNewProduct, scope: "BOTH" });
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo crear el producto");
     }
@@ -231,6 +253,18 @@ export default function StockPage() {
     }
   };
 
+  const onSubmitConsume = async (
+    payload: Omit<InternalConsumptionRequest, "context">
+  ) => {
+    try {
+      await handleConsume(payload);
+      setIsConsumeOpen(false);
+      setConsumeProduct(null);
+    } catch {
+      // El toast de error ya lo muestra el hook.
+    }
+  };
+
   const onSubmitEdit = async () => {
     try {
       if (!editingProduct) return;
@@ -254,6 +288,8 @@ export default function StockPage() {
         ...editForm,
         name: editForm.name.trim(),
         description: editForm.description?.trim() || "",
+        shelfLifeMonths: editForm.shelfLifeMonths || null,
+        restockPriority: editForm.restockPriority ?? 0,
       });
 
       setIsEditOpen(false);
@@ -317,6 +353,12 @@ export default function StockPage() {
         onScan={handleScan}
         onOpenSell={openSellDialog}
         canPurchase={canRegisterPurchase}
+        canManageProducts={canManageProducts}
+        products={products}
+        onOpenMultiSale={openMultiSaleDialog}
+        onOpenConsume={openConsumeDialog}
+        onOpenPurchase={openPurchaseDialog}
+        onOpenEdit={openEditDialog}
         onOpenPurchaseFromScan={() => {
           const product = filteredProducts.find(
             (item) => item.id === scannedProduct?.id
@@ -331,7 +373,10 @@ export default function StockPage() {
         }}
       />
 
-      <LowStockCard products={products} />
+      <LowStockCard
+        products={products}
+        onPurchaseProduct={canRegisterPurchase ? openPurchaseDialog : undefined}
+      />
 
       <ProductCatalogSection
         products={filteredProducts}
@@ -375,6 +420,26 @@ export default function StockPage() {
         isSubmitting={isSelling}
         onSubmit={onSubmitSell}
         product={scannedProduct}
+      />
+
+      <ProductMultiSaleDialog
+        open={isMultiSaleOpen}
+        onOpenChange={setIsMultiSaleOpen}
+        context={context}
+        products={products}
+        initialProduct={multiSaleInitial}
+        onSuccess={() => {
+          setMultiSaleInitial(null);
+          refetch();
+        }}
+      />
+
+      <InternalConsumptionDialog
+        open={isConsumeOpen}
+        onOpenChange={setIsConsumeOpen}
+        product={consumeProduct}
+        isSubmitting={isConsuming}
+        onSubmit={onSubmitConsume}
       />
 
       <EditProductDialog

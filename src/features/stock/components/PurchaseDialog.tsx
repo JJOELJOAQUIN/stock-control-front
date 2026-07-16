@@ -34,7 +34,6 @@ import { ProductSearch } from "@/features/caja/ui/components/ProductSearch";
 import { CartLineItem } from "@/features/caja/ui/components/CartLineItem";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 
-
 type PurchaseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -121,7 +120,13 @@ export function PurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
+      {/*
+        Pantalla grande para pedidos con muchos ítems: ocupa casi todo el
+        viewport, el detalle scrollea internamente y en pantallas anchas las
+        líneas se acomodan en dos columnas. Footer y total quedan siempre
+        visibles (fuera del área con scroll).
+      */}
+      <DialogContent className="flex h-[92dvh] max-h-[92dvh] flex-col sm:max-w-3xl lg:max-w-5xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="size-5" />
@@ -148,7 +153,7 @@ export function PurchaseDialog({
               <p className="text-sm font-medium text-muted-foreground">
                 Detalle de la compra ({itemCount} {itemCount === 1 ? "ítem" : "ítems"})
               </p>
-              <ul className="space-y-2">
+              <ul className="grid grid-cols-1 gap-2 xl:grid-cols-2">
                 {lines.map((line) => (
                   <CartLineItem
                     key={line.lineId}

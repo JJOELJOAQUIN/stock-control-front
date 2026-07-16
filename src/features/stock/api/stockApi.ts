@@ -2,6 +2,7 @@ import { baseApi } from "@/core/api/baseApi";
 import {
   type ProductBatchExpiration,
   type CreateProductRequest,
+  type InternalConsumptionRequest,
   type Product,
   type ProductScanResponse,
   type ProductWithStock,
@@ -99,6 +100,19 @@ export const stockApi = baseApi.injectEndpoints({
       invalidatesTags: ["Products", "Stock", "Cash"],
     }),
 
+    /**
+     * Consumo interno: descuenta stock sin registrar venta ni tocar caja.
+     * Uso personal, traslado a carrito/camilla, muestras, regalos, etc.
+     */
+    internalConsumption: builder.mutation<void, InternalConsumptionRequest>({
+      query: (body) => ({
+        url: "/api/business/internal-consumption",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Products", "Stock"],
+    }),
+
     getExpiringProductBatches: builder.query<
       ProductBatchExpiration[],
       { context: "LOCAL" | "CONSULTORIO"; days?: number }
@@ -111,9 +125,6 @@ export const stockApi = baseApi.injectEndpoints({
     }),
   }),
   overrideExisting: false,
-
-
-  
 });
 
 export const {
@@ -127,4 +138,5 @@ export const {
   useDeactivateProductMutation,
   useGetExpiringProductBatchesQuery,
   useCombinedSaleMutation,
+  useInternalConsumptionMutation,
 } = stockApi;

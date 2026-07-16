@@ -1,10 +1,9 @@
-import { Trash2 } from "lucide-react";
+import { CalendarClock, Trash2 } from "lucide-react";
 
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { calcLineSubtotal, currencyFormatter, type PurchaseCartLine } from "@/shared/lib/purchase";
 import type { CartLinePatch } from "../../hooks/usePurchaseChart";
-
 
 type CartLineItemProps = {
   line: PurchaseCartLine;
@@ -19,6 +18,9 @@ const toNumber = (raw: string, min: number) => {
 };
 
 export function CartLineItem({ line, onChange, onRemove }: CartLineItemProps) {
+  const willEstimateExpiration =
+    !line.expirationDate && line.shelfLifeMonths != null && line.shelfLifeMonths > 0;
+
   return (
     <li className="space-y-3 rounded-lg border p-3">
       <div className="flex items-start justify-between gap-2">
@@ -68,12 +70,24 @@ export function CartLineItem({ line, onChange, onRemove }: CartLineItemProps) {
         </Field>
 
         <Field>
-          <FieldLabel className="text-xs">Vencimiento</FieldLabel>
+          <FieldLabel className="text-xs">
+            Vencimiento{" "}
+            {line.shelfLifeMonths != null && line.shelfLifeMonths > 0 && (
+              <span className="font-normal text-muted-foreground">(opcional)</span>
+            )}
+          </FieldLabel>
           <Input
             type="date"
             value={line.expirationDate}
             onChange={(e) => onChange(line.lineId, { expirationDate: e.target.value })}
           />
+          {willEstimateExpiration && (
+            <p className="flex items-center gap-1 text-xs text-sky-600 dark:text-sky-400">
+              <CalendarClock className="size-3.5 shrink-0" />
+              Se estimará automáticamente: +{line.shelfLifeMonths}{" "}
+              {line.shelfLifeMonths === 1 ? "mes" : "meses"} desde hoy
+            </p>
+          )}
         </Field>
       </div>
 

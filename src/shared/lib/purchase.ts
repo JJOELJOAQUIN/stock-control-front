@@ -80,6 +80,12 @@ export type PurchaseCartLine = {
   unitCost: number;
   lotNumber: string;
   expirationDate: string;
+  /**
+   * Vida útil estimada del producto en meses (magistrales). Si está definida
+   * y no se carga vencimiento manual, el backend calcula el vencimiento
+   * estimado desde la fecha de ingreso. Solo informativo en la UI.
+   */
+  shelfLifeMonths: number | null;
   updateCostPrice: boolean;
   updateSalePrice: boolean;
   newSalePrice: string;

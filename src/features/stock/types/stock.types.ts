@@ -18,8 +18,12 @@ export type Product = {
   barcode?: string | null;
   scope: ProductScope;
   costPrice?: number | null;
-  salePrice?: number | null
-  defaultMarkupPercentage?: number | null
+  salePrice?: number | null;
+  defaultMarkupPercentage?: number | null;
+  /** Vida útil estimada en meses (magistrales). Null = sin estimación. */
+  shelfLifeMonths?: number | null;
+  /** Prioridad de reposición: 0 normal, 1 alta, 2 crítica. */
+  restockPriority?: number | null;
 };
 
 export type CreateProductRequest = {
@@ -32,8 +36,10 @@ export type CreateProductRequest = {
   scope: ProductScope;
   barcode?: string;
   costPrice: number;
-  salePrice?: number | null
-  defaultMarkupPercentage?: number | null
+  salePrice?: number | null;
+  defaultMarkupPercentage?: number | null;
+  shelfLifeMonths?: number | null;
+  restockPriority?: number | null;
 };
 
 export type ProductScanResponse = {
@@ -43,9 +49,9 @@ export type ProductScanResponse = {
   scope: ProductScope;
   currentStock: number;
   belowMinimum: boolean;
-  costPrice?: number | null
-  salePrice?: number | null
-  defaultMarkupPercentage?: number | null
+  costPrice?: number | null;
+  salePrice?: number | null;
+  defaultMarkupPercentage?: number | null;
 };
 
 export type PurchaseItem = {
@@ -93,6 +99,8 @@ export type ProductWithStock = {
   costPrice?: number | null;
   salePrice?: number | null;
   defaultMarkupPercentage?: number | null;
+  shelfLifeMonths?: number | null;
+  restockPriority?: number | null;
 };
 
 export type UpdateProductRequest = {
@@ -106,6 +114,8 @@ export type UpdateProductRequest = {
   costPrice: number;
   salePrice?: number | null;
   defaultMarkupPercentage?: number | null;
+  shelfLifeMonths?: number | null;
+  restockPriority?: number | null;
 };
 
 export type PatchProductRequest = {
@@ -116,6 +126,8 @@ export type PatchProductRequest = {
   brand?: string;
   expirable?: boolean;
   active?: boolean;
+  shelfLifeMonths?: number | null;
+  restockPriority?: number | null;
 };
 
 export type ProductBatchExpiration = {
@@ -128,6 +140,55 @@ export type ProductBatchExpiration = {
   lotNumber?: string | null;
   daysToExpire: number;
   context: "LOCAL" | "CONSULTORIO";
+  /** true = vencimiento estimado desde la fecha de ingreso; false = real. */
+  estimated: boolean;
+};
+
+/* ------------------------------------------------------------------ */
+/* Consumo interno (uso personal, carrito/camilla, muestras, etc.)     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Motivos de consumo interno. Debe mantenerse en sincronía con el enum
+ * StockMovementReason del backend (solo el subconjunto habilitado para
+ * consumo interno en BusinessOperationService.INTERNAL_CONSUMPTION_REASONS).
+ */
+export const INTERNAL_CONSUMPTION_REASONS = [
+  { value: "USO_PERSONAL", label: "Uso personal" },
+  { value: "USO_CAMILLA", label: "Uso en camilla" },
+  { value: "TRASLADO", label: "Traslado a carrito" },
+  { value: "MUESTRA", label: "Muestra" },
+  { value: "REGALO", label: "Regalo" },
+  { value: "PEDIDO_ESPECIAL", label: "Pedido especial (sin cobro)" },
+  { value: "VENCIMIENTO", label: "Baja por vencimiento" },
+  { value: "OTRO", label: "Otro" },
+] as const;
+
+export type InternalConsumptionReason =
+  (typeof INTERNAL_CONSUMPTION_REASONS)[number]["value"];
+
+export type InternalConsumptionRequest = {
+  productId: string;
+  quantity: number;
+  context: BusinessContext;
+  reason: InternalConsumptionReason;
+  comment?: string;
+};
+
+/* ------------------------------------------------------------------ */
+/* Prioridad de reposición                                             */
+/* ------------------------------------------------------------------ */
+
+export const RESTOCK_PRIORITIES = [
+  { value: 0, label: "Normal" },
+  { value: 1, label: "Alta" },
+  { value: 2, label: "Crítica" },
+] as const;
+
+export function restockPriorityLabel(priority: number | null | undefined): string {
+  return (
+    RESTOCK_PRIORITIES.find((p) => p.value === (priority ?? 0))?.label ?? "Normal"
+  );
 }
 
 /**
