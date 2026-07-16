@@ -1,9 +1,10 @@
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2, Search, Package, Sparkles, ShoppingBag } from "lucide-react";
 
 import type { CashActor, PaymentMethod, ProcedureOption } from "../../types/cash.types";
+import { usePerformer } from "@/features/caja/hooks/usePerformer";
+import { Badge } from "@/shared/components/ui/badge";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
 import type {
     CombinedSaleItemRequest,
@@ -86,6 +87,9 @@ export function CombinedSaleDialog({
     defaultCosmetologistSharePercent,
     onSuccess,
 }: Props) {
+    // Quien realiza la venta sale del usuario logueado.
+    const performer = usePerformer();
+
     const [lines, setLines] = useState<CartLine[]>([]);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
     const [comment, setComment] = useState("");
@@ -175,7 +179,7 @@ export function CombinedSaleDialog({
                     description: p.name,
                     quantity: 1,
                     unitAmount: Number(p.salePrice ?? 0),
-                    performedBy: null,
+                    performedBy: performer.actor,
                 },
             ];
         });
@@ -270,7 +274,8 @@ export function CombinedSaleDialog({
                     quantity: l.quantity,
                     unitAmount: unit,
                     subtotal,
-                    performedBy: l.performedBy,
+                    // Blindaje: un rol bloqueado no registra a nombre de otra.
+                    performedBy: performer.locked ? performer.actor : l.performedBy,
                     doctorSharePercent: null,
                     cosmetologistSharePercent: null,
                 };
@@ -283,7 +288,10 @@ export function CombinedSaleDialog({
                 quantity: l.quantity,
                 unitAmount: l.unitAmount,
                 subtotal,
-                performedBy: null,
+                // Autoria del procedimiento: si la cosmetologa se lleva parte,
+                // lo hizo ella. Si no, es de quien esta operando el sistema.
+                performedBy:
+                    l.cosmetologistSharePercent > 0 ? "COSMETOLOGA" : performer.actor,
                 doctorSharePercent: l.doctorSharePercent,
                 cosmetologistSharePercent: l.cosmetologistSharePercent,
             };
@@ -293,7 +301,7 @@ export function CombinedSaleDialog({
             context,
             paymentMethod,
             comment: comment.trim() || null,
-            performedBy: null,
+            performedBy: performer.actor,
             expectedTotal: round2(total),
             items,
         };
@@ -471,6 +479,16 @@ export function CombinedSaleDialog({
                                             {l.kind === "PRODUCT" && isConsultorio ? (
                                                 <Field className="col-span-2">
                                                     <FieldLabel className="text-xs">Realizado por</FieldLabel>
+                                                    {performer.locked ? (
+                                                        <div className="flex h-9 w-full items-center gap-2 rounded-md border bg-muted/40 px-3">
+                                                            <Badge variant="secondary">
+                                                                {performer.label}
+                                                            </Badge>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                detectado por tu usuario
+                                                            </span>
+                                                        </div>
+                                                    ) : (
                                                     <Select
                                                         value={l.performedBy ?? ""}
                                                         onValueChange={(v) =>
@@ -490,7 +508,8 @@ export function CombinedSaleDialog({
                                                             <SelectItem value="COSMETOLOGA">Cosmetóloga</SelectItem>
                                                         </SelectContent>
                                                     </Select>
-                                                    {performerError && (
+                                                    )}
+                                                    {!performer.locked && performerError && (
                                                         <span className="text-xs font-light text-destructive">
                                                             Elegí quién realizó la venta
                                                         </span>

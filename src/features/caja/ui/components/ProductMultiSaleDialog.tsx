@@ -26,14 +26,14 @@ import { Badge } from "@/shared/components/ui/badge";
 import { ProductSearch } from "@/features/caja/ui/components/ProductSearch";
 import { currencyFormatter } from "@/shared/lib/purchase";
 
-
 import type { CashActor } from "@/features/caja/types/cash.types";
+import { usePerformer } from "@/features/caja/hooks/usePerformer";
 import type {
   CombinedSaleItemRequest,
   CombinedSaleRequest,
 } from "@/features/caja/types/combined-sale.types";
-import { useCombinedSaleMutation } from "@/features/stock/api/stockApi";
 import type { BusinessContext, PaymentMethod, ProductWithStock } from "@/features/stock/types/stock.types";
+import { useCombinedSaleMutation } from "@/features/stock/api/stockApi";
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "CASH", label: "Efectivo" },
@@ -104,7 +104,10 @@ export function ProductMultiSaleDialog({
 }: Props) {
   const [lines, setLines] = useState<SaleLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
-  const [performedBy, setPerformedBy] = useState<CashActor>("MEDICA");
+  // Quién vende se deduce del usuario logueado. La cosmetóloga no puede
+  // cambiarlo; la médica sí, porque a veces carga ventas que hizo Gise.
+  const performer = usePerformer();
+  const [performedBy, setPerformedBy] = useState<CashActor>(performer.actor);
   const [comment, setComment] = useState("");
 
   const [discountPercent, setDiscountPercent] = useState("");
@@ -118,13 +121,13 @@ export function ProductMultiSaleDialog({
     if (open && !wasOpen.current) {
       setLines(initialProduct ? [buildLine(initialProduct)] : []);
       setPaymentMethod("CASH");
-      setPerformedBy("MEDICA");
+      setPerformedBy(performer.actor);
       setComment("");
       setDiscountPercent("");
       setDiscountReason("FAMILIAR");
     }
     wasOpen.current = open;
-  }, [open, initialProduct]);
+  }, [open, initialProduct, performer.actor]);
 
   const addedProductIds = useMemo(
     () => new Set(lines.map((l) => l.productId)),
@@ -213,6 +216,10 @@ export function ProductMultiSaleDialog({
             .join(" · ")
         : comment.trim();
 
+    // Blindaje: si el rol está bloqueado, se ignora cualquier valor de
+    // estado y se manda el actor del usuario logueado.
+    const actor: CashActor = performer.locked ? performer.actor : performedBy;
+
     const items: CombinedSaleItemRequest[] = lines.map((line) => ({
       kind: "PRODUCT",
       productId: line.productId,
@@ -221,7 +228,7 @@ export function ProductMultiSaleDialog({
       quantity: line.quantity,
       unitAmount: effectiveUnit(line),
       subtotal: lineSubtotal(line),
-      performedBy,
+      performedBy: actor,
       doctorSharePercent: null,
       cosmetologistSharePercent: null,
     }));
@@ -230,7 +237,7 @@ export function ProductMultiSaleDialog({
       context,
       paymentMethod,
       comment: finalComment || null,
-      performedBy,
+      performedBy: actor,
       expectedTotal: total,
       items,
     };
@@ -413,18 +420,27 @@ export function ProductMultiSaleDialog({
 
             <Field>
               <FieldLabel>Realizada por</FieldLabel>
-              <Select
-                value={performedBy}
-                onValueChange={(v) => setPerformedBy(v as CashActor)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MEDICA">Médica</SelectItem>
-                  <SelectItem value="COSMETOLOGA">Cosmetóloga</SelectItem>
-                </SelectContent>
-              </Select>
+              {performer.locked ? (
+                <div className="flex h-9 items-center gap-2 rounded-md border bg-muted/40 px-3">
+                  <Badge variant="secondary">{performer.label}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    detectado por tu usuario
+                  </span>
+                </div>
+              ) : (
+                <Select
+                  value={performedBy}
+                  onValueChange={(v) => setPerformedBy(v as CashActor)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MEDICA">Médica</SelectItem>
+                    <SelectItem value="COSMETOLOGA">Cosmetóloga</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </Field>
 
             <Field>

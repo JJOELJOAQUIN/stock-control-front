@@ -21,9 +21,15 @@ import type {
   UpdateProductRequest,
 } from "../types/stock.types";
 import type { CashActor } from "@/features/caja/types/cash.types";
+import { usePerformer } from "@/features/caja/hooks/usePerformer";
 
 export function useStockPage() {
   const context: "CONSULTORIO" = "CONSULTORIO";
+
+  // Quien opera define el reparto de la venta. Antes esto era "MEDICA"
+  // fijo: si Gise escaneaba un producto, la venta se registraba 100% Pili
+  // y Gise perdia su 5% sin que nadie se enterara.
+  const performer = usePerformer();
 
   const [search, setSearch] = useState("");
   const [barcodeQuery, setBarcodeQuery] = useState("");
@@ -147,7 +153,9 @@ export function useStockPage() {
     await sellByBarcode({
       ...payload,
       context,
-      performedBy: payload.performedBy ?? "MEDICA",
+      performedBy: performer.locked
+        ? performer.actor
+        : payload.performedBy ?? performer.actor,
     }).unwrap();
 
     toast.success("Venta registrada correctamente");
@@ -234,6 +242,7 @@ export function useStockPage() {
     handlePurchase,
     handleSell,
     handleConsume,
+    performer,
     isUpdatingProduct,
     isDeactivatingProduct,
     handleUpdateProduct,

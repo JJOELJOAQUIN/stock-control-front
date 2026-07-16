@@ -29,6 +29,7 @@ import { PriceStat } from "./PriceStat";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import { calcSale, PAYMENT_METHODS, SALE_ACTORS } from "@/lib/sale";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
+import { usePerformer } from "@/features/caja/hooks/usePerformer";
 
 
 
@@ -58,7 +59,13 @@ export function ProductSaleDialog({
     const [quantity, setQuantity] = useState("1");
     const [amount, setAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
-    const [performedBy, setPerformedBy] = useState<CashActor | "">("");
+    // Quien vende sale del usuario logueado: la cosmetologa no elige,
+    // la medica arranca en MEDICA pero puede cambiarlo (a veces carga
+    // ventas que hizo Gise).
+    const performer = usePerformer();
+    const [performedBy, setPerformedBy] = useState<CashActor | "">(
+        performer.actor
+    );
     const [comment, setComment] = useState("");
     const performedByRef = useRef<HTMLButtonElement | null>(null);
     const [performedByError, setPerformedByError] = useState("");
@@ -118,15 +125,18 @@ export function ProductSaleDialog({
             return;
         }
 
+        // Blindaje: un rol bloqueado no puede registrar a nombre de otra.
+        const actor: CashActor = performer.locked ? performer.actor : performedBy;
+
         await onSell({
             barcode: product.barcode,
             quantity: parsedQty,
             amount: parsedAmount,
             paymentMethod,
-            performedBy,
+            performedBy: actor,
             comment:
                 comment.trim() ||
-                `Venta de producto desde caja consultorio - ${performedBy}`,
+                `Venta de producto desde caja consultorio - ${actor}`,
         });
 
         // Cierra el modal al registrar, igual que en la compra.
@@ -264,8 +274,16 @@ export function ProductSaleDialog({
                     </Field>
 
                     <Field>
-                        <FieldLabel>Venta realizada por *</FieldLabel>
+                        <FieldLabel>Venta realizada por</FieldLabel>
 
+                        {performer.locked ? (
+                            <div className="flex h-9 w-full items-center gap-2 rounded-md border bg-muted/40 px-3">
+                                <Badge variant="secondary">{performer.label}</Badge>
+                                <span className="text-xs text-muted-foreground">
+                                    detectado por tu usuario
+                                </span>
+                            </div>
+                        ) : (
                         <Select
                             value={performedBy}
                             onValueChange={(v) => {
@@ -294,6 +312,7 @@ export function ProductSaleDialog({
                                 ))}
                             </SelectContent>
                         </Select>
+                        )}
 
                         {performedByError && (
                             <p className="mt-1 !text-xs !font-normal !text-red-600">
