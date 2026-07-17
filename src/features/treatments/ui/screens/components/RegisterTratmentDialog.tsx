@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
@@ -27,7 +27,9 @@ import { PatientPicker } from "./PatientPicker";
 import {
   DEFAULT_COSMETOLOGIST_FIXED_SHARE,
   PEELING_PROFUNDO,
+  splitPresetOptions,
   type Patient,
+  type SplitPreset,
 } from "../models/treatment";
 import type { RegisterTreatmentInput } from "../hooks/useTreatmentsPage";
 
@@ -51,8 +53,8 @@ export function RegisterTreatmentDialog({
   const [fixedShare, setFixedShare] = useState(String(DEFAULT_COSMETOLOGIST_FIXED_SHARE));
   const [firstAmount, setFirstAmount] = useState("");
   const [firstMethod, setFirstMethod] = useState<PaymentMethod>("CASH");
+  const [firstSplitPreset, setFirstSplitPreset] = useState<SplitPreset>("NORMAL");
   const [attempted, setAttempted] = useState(false);
-
 
   const reset = () => {
     setPatient(null);
@@ -60,12 +62,18 @@ export function RegisterTreatmentDialog({
     setFixedShare(String(DEFAULT_COSMETOLOGIST_FIXED_SHARE));
     setFirstAmount("");
     setFirstMethod("CASH");
+    setFirstSplitPreset("NORMAL");
     setAttempted(false);
   };
 
   const totalNum = Number(total) || 0;
   const firstNum = Number(firstAmount) || 0;
   const patientError = attempted && !patient;
+
+  // El pago de este dialog es siempre la primera cuota: el tratamiento se
+  // está creando en este mismo submit, así que no hay pagos previos.
+  const presetOptions = splitPresetOptions(true, Number(fixedShare) || 0);
+  const isDeviation = firstSplitPreset !== "NORMAL";
 
   const handleSubmit = async () => {
     setAttempted(true);
@@ -93,6 +101,7 @@ export function RegisterTreatmentDialog({
       },
       firstPaymentAmount: firstNum > 0 ? firstNum : null,
       firstPaymentMethod: firstNum > 0 ? firstMethod : null,
+      firstPaymentSplitPreset: firstNum > 0 ? firstSplitPreset : null,
     });
 
     if (ok) {
@@ -149,7 +158,14 @@ export function RegisterTreatmentDialog({
             </div>
           </div>
 
-          <div className="space-y-3 rounded-lg border p-3">
+          <div
+            className={
+              "space-y-3 rounded-lg border p-3 " +
+              (firstNum > 0 && isDeviation
+                ? "border-amber-300 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-950/20"
+                : "")
+            }
+          >
             <p className="text-sm font-medium">Primer pago (opcional)</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -177,6 +193,41 @@ export function RegisterTreatmentDialog({
                 </Select>
               </div>
             </div>
+
+            {/* El reparto sólo tiene sentido si hay pago: sin monto no hay
+                nada que repartir, y mostrarlo invita a tocarlo al pedo. */}
+            {firstNum > 0 && (
+              <div className="space-y-1.5">
+                <Label>Reparto del primer pago</Label>
+                <Select
+                  value={firstSplitPreset}
+                  onValueChange={(v) => setFirstSplitPreset(v as SplitPreset)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {presetOptions.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {firstNum > 0 && isDeviation && (
+              <div className="flex gap-2 rounded-md bg-amber-100/70 p-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-200">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Este pago se aparta del reparto habitual. El reparto real del peeling
+                  no cambia: queda registrado como desvío, y la diferencia es una deuda
+                  entre ustedes que el sistema todavía no lleva.
+                </span>
+              </div>
+            )}
+
             {firstNum > 0 && totalNum > 0 && (
               <p className="text-xs text-muted-foreground">
                 Queda un saldo pendiente de{" "}

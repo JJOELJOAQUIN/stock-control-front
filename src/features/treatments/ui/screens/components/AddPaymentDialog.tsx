@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   Dialog,
@@ -22,21 +22,41 @@ import { Spinner } from "@/shared/components/ui/spinner";
 import { PAYMENT_METHODS } from "@/lib/sale";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import type { PaymentMethod } from "@/features/caja/types/cash.types";
-import type { Treatment } from "../models/treatment";
+
+import { AlertTriangle } from "lucide-react";
+import { isSplitPresetAllowed, splitPresetOptions, supportsSplitPreset, type SplitPreset, type Treatment } from "../models/treatment";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   treatment: Treatment | null;
   isPaying: boolean;
-  onPay: (treatmentId: string, amount: number, method: PaymentMethod) => Promise<boolean>;
+  onPay: (
+    treatmentId: string,
+    amount: number,
+    method: PaymentMethod,
+    splitPreset: SplitPreset | null
+  ) => Promise<boolean>;
 };
 
 export function AddPaymentDialog({ open, onOpenChange, treatment, isPaying, onPay }: Props) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("CASH");
+  const [splitPreset, setSplitPreset] = useState<SplitPreset>("NORMAL");
+
+  // La cuota la decide el backend contando los pagos existentes; acá sólo
+  // anticipamos cuál va a ser para mostrar las opciones correctas.
+  const isFirstPayment = (treatment?.paymentsCount ?? 0) === 0;
+
+  const presetOptions = useMemo(
+    () => splitPresetOptions(isFirstPayment, treatment?.cosmetologistFixedShare),
+    [isFirstPayment, treatment?.cosmetologistFixedShare]
+  );
 
   if (!treatment) return null;
+
+  const showSplitPreset = supportsSplitPreset(treatment.code);
+  const isDeviation = splitPreset !== "NORMAL";
 
   const remaining = treatment.remainingAmount;
   const amountNum = Number(amount) || 0;
@@ -45,11 +65,15 @@ export function AddPaymentDialog({ open, onOpenChange, treatment, isPaying, onPa
   const reset = () => {
     setAmount("");
     setMethod("CASH");
+    setSplitPreset("NORMAL");
   };
 
   const handlePay = async () => {
     if (amountNum <= 0 || over) return;
-    const ok = await onPay(treatment.id, amountNum, method);
+    // Si el desvío dejó de aplicar (cambió la cuota mientras el dialog estaba
+    // abierto), mandamos NORMAL en vez de que el backend lo rechace.
+    const preset = isSplitPresetAllowed(splitPreset, isFirstPayment) ? splitPreset : "NORMAL";
+    const ok = await onPay(treatment.id, amountNum, method, showSplitPreset ? preset : null);
     if (ok) {
       reset();
       onOpenChange(false);
@@ -135,6 +159,43 @@ export function AddPaymentDialog({ open, onOpenChange, treatment, isPaying, onPa
               </SelectContent>
             </Select>
           </div>
+          {showSplitPreset && (
+            <div
+              className={
+                "space-y-3 rounded-lg border p-3 " +
+                (isDeviation
+                  ? "border-amber-300 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-950/20"
+                  : "")
+              }
+            >
+              <div className="space-y-1.5">
+                <Label>Reparto</Label>
+                <Select value={splitPreset} onValueChange={(v) => setSplitPreset(v as SplitPreset)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {presetOptions.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {isDeviation && (
+                <div className="flex gap-2 rounded-md bg-amber-100/70 p-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-200">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    Este pago se aparta del reparto habitual. El reparto real del peeling
+                    no cambia: queda registrado como desvío, y la diferencia es una deuda
+                    entre ustedes que el sistema todavía no lleva.
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>

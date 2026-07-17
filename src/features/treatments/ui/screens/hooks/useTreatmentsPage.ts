@@ -6,7 +6,7 @@ import {
   useCreateTreatmentMutation,
   useRegisterTreatmentPaymentMutation,
 } from "../api/treatmentsApi";
-import type { CreateTreatmentRequest } from "../models/treatment";
+import type { CreateTreatmentRequest, SplitPreset } from "../models/treatment";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 
 // Lo que el dialog de alta arma: datos del tratamiento + primer pago opcional.
@@ -14,6 +14,9 @@ export type RegisterTreatmentInput = {
   treatment: CreateTreatmentRequest;
   firstPaymentAmount: number | null;
   firstPaymentMethod: PaymentMethod | null;
+  // El primer pago es donde vive el caso "Gise se cobra la cuota entera", así
+  // que el desvío tiene que poder elegirse ya en el alta y no sólo después.
+  firstPaymentSplitPreset: SplitPreset | null;
 };
 
 export function useTreatmentsPage() {
@@ -42,6 +45,7 @@ export function useTreatmentsPage() {
             amount: input.firstPaymentAmount,
             paymentMethod: input.firstPaymentMethod,
             context: "CONSULTORIO",
+            splitPreset: input.firstPaymentSplitPreset ?? null,
           },
         }).unwrap();
       }
@@ -59,12 +63,13 @@ export function useTreatmentsPage() {
   const addPayment = async (
     treatmentId: string,
     amount: number,
-    paymentMethod: PaymentMethod
+    paymentMethod: PaymentMethod,
+    splitPreset: SplitPreset | null = null
   ) => {
     try {
       await registerPayment({
         id: treatmentId,
-        body: { amount, paymentMethod, context: "CONSULTORIO" },
+        body: { amount, paymentMethod, context: "CONSULTORIO", splitPreset },
       }).unwrap();
       toast.success("Pago registrado");
       refetch();
