@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles, Stethoscope } from "lucide-react";
+import { AlertTriangle, Sparkles, Stethoscope } from "lucide-react";
 
-import type { PaymentMethod, ProcedureOption } from "../../types/cash.types";
+import type { CashActor, PaymentMethod, ProcedureOption } from "../../types/cash.types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -13,7 +13,20 @@ import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import { ProcedureCombobox } from "./ProcedureCombobox";
-import { getPeelingSplit, PAYMENT_METHODS, PEELING_INSTALLMENT, PEELING_PAYMENT_OPTIONS, PEELING_PROTOCOLO_CODE, PEELING_TOTAL, peelingInstallmentLabel, type PeelingPaymentKind } from "@/lib/peeling";
+import {
+  getPeelingSplit,
+  isSplitPresetAllowed,
+  PAYMENT_METHODS,
+  PEELING_INSTALLMENT,
+  PEELING_PAYMENT_OPTIONS,
+  PEELING_PROTOCOLO_CODE,
+  PEELING_TOTAL,
+  peelingInstallmentLabel,
+  splitPresetComment,
+  splitPresetOptions,
+  type PeelingPaymentKind,
+  type SplitPreset,
+} from "@/lib/peeling";
 
 
 type Variant = "cosmetologia" | "medica";
@@ -33,6 +46,9 @@ type Props = {
     comment?: string;
     doctorSharePercent: number;
     cosmetologistSharePercent: number;
+    performedBy: CashActor;
+    splitPreset?: SplitPreset;
+    peelingPaymentKind?: PeelingPaymentKind;
   }) => Promise<void>;
 };
 
@@ -58,6 +74,7 @@ export function ProcedureIncomeCard({
   const [comment, setComment] = useState("");
   const [multiplier, setMultiplier] = useState("1");
   const [peelingPayment, setPeelingPayment] = useState<PeelingPaymentKind>("FULL");
+  const [splitPreset, setSplitPreset] = useState<SplitPreset>("NORMAL");
 
   const selected = useMemo(
     () => procedures.find((p) => p.code === procedureCode),
@@ -68,13 +85,32 @@ export function ProcedureIncomeCard({
   const unitAmount = Number(amount) || 0;
   const totalPreview = isPeeling ? unitAmount : unitAmount * parsedMultiplier;
   const peelingSplit = useMemo(
-    () => getPeelingSplit(Number(amount) || 0, peelingPayment),
+    () => getPeelingSplit(Number(amount) || 0, peelingPayment, splitPreset),
+    [amount, peelingPayment, splitPreset]
+  );
+  const presetOptions = useMemo(
+    () => splitPresetOptions(Number(amount) || 0, peelingPayment),
     [amount, peelingPayment]
   );
+  const isDeviation = splitPreset !== "NORMAL";
+
+  /**
+   * Autoría del trabajo. Sale del card, no del rol logueado: el catálogo ya
+   * está partido por especialidad, así que el card sabe de quién es el trabajo
+   * mejor que quien esté operando el sistema en ese momento.
+   *
+   * El peeling es la excepción: vive en el card de la médica pero lo hace
+   * Gise. Sin este override, un peeling con "Todo a Pili" quedaría como
+   * trabajo de la médica y desaparecería de la card de Gise — que es
+   * exactamente el bug que este feature viene a cerrar.
+   */
+  const performedBy: CashActor =
+    isPeeling ? "COSMETOLOGA" : variant === "cosmetologia" ? "COSMETOLOGA" : "MEDICA";
 
   const handleProcedureChange = (code: string) => {
     setProcedureCode(code);
     setMultiplier("1");
+    setSplitPreset("NORMAL");
     const found = procedures.find((p) => p.code === code);
     if (code === PEELING_PROTOCOLO_CODE) {
       setPeelingPayment("FULL");
@@ -87,6 +123,11 @@ export function ProcedureIncomeCard({
   const handlePeelingPaymentChange = (kind: PeelingPaymentKind) => {
     setPeelingPayment(kind);
     setAmount(String(kind === "FULL" ? PEELING_TOTAL : PEELING_INSTALLMENT));
+    // Si el desvío elegido no aplica a la cuota nueva, vuelve al reparto
+    // normal en vez de quedar seleccionado y ser rechazado por el backend.
+    if (!isSplitPresetAllowed(splitPreset, kind)) {
+      setSplitPreset("NORMAL");
+    }
   };
 
   const handleSubmit = async () => {
@@ -97,16 +138,26 @@ export function ProcedureIncomeCard({
     }
 
     if (isPeeling) {
-      const split = getPeelingSplit(parsed, peelingPayment);
+      const split = getPeelingSplit(parsed, peelingPayment, splitPreset);
+      const base =
+        comment.trim() || `${selected.label} - ${peelingInstallmentLabel(peelingPayment)}`;
+      const note = splitPresetComment(splitPreset);
+
       await onSubmit({
         procedure: selected,
         amount: parsed,
         paymentMethod,
-        comment: comment.trim() || `${selected.label} - ${peelingInstallmentLabel(peelingPayment)}`,
+        comment: note ? `${note} · ${base}` : base,
+        // Los percents siguen viajando por compatibilidad, pero cuando hay
+        // desvío el backend los ignora y manda el preset.
         doctorSharePercent: 1 - split.cosmologistPercent,
         cosmetologistSharePercent: split.cosmologistPercent,
+        performedBy,
+        splitPreset,
+        peelingPaymentKind: peelingPayment,
       });
       setComment("");
+      setSplitPreset("NORMAL");
       return;
     }
 
@@ -119,6 +170,7 @@ export function ProcedureIncomeCard({
       comment: parsedMultiplier > 1 ? `${base} ×${parsedMultiplier}` : base,
       doctorSharePercent,
       cosmetologistSharePercent,
+      performedBy,
     });
     setComment("");
     setMultiplier("1");
@@ -197,7 +249,14 @@ export function ProcedureIncomeCard({
           )}
 
           {isPeeling && (
-            <div className="space-y-3 rounded-lg border border-sky-200/50 bg-sky-50/50 p-3 dark:border-sky-800/50 dark:bg-sky-950/20">
+            <div
+              className={
+                "space-y-3 rounded-lg border p-3 " +
+                (isDeviation
+                  ? "border-amber-300 bg-amber-50/60 dark:border-amber-800/60 dark:bg-amber-950/20"
+                  : "border-sky-200/50 bg-sky-50/50 dark:border-sky-800/50 dark:bg-sky-950/20")
+              }
+            >
               <Field>
                 <FieldLabel>Tipo de pago</FieldLabel>
                 <Select value={peelingPayment} onValueChange={(v) => handlePeelingPaymentChange(v as PeelingPaymentKind)}>
@@ -213,9 +272,37 @@ export function ProcedureIncomeCard({
                   </SelectContent>
                 </Select>
               </Field>
+
+              <Field>
+                <FieldLabel>Reparto</FieldLabel>
+                <Select value={splitPreset} onValueChange={(v) => setSplitPreset(v as SplitPreset)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {presetOptions.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
               <SplitRow label="A cobrar" value={peelingSplit.amount} />
               <SplitRow label="Cosmetóloga" value={peelingSplit.cosmologistAmount} className="text-violet-600 dark:text-violet-400" />
               <SplitRow label="Médica" value={peelingSplit.doctorAmount} className="text-sky-600 dark:text-sky-400" />
+
+              {isDeviation && (
+                <div className="flex gap-2 rounded-md bg-amber-100/70 p-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-200">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                  <span>
+                    Este pago se aparta del reparto habitual del peeling. El reparto real
+                    no cambia: queda registrado como desvío, y la diferencia es una deuda
+                    entre ustedes que el sistema todavía no lleva.
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
