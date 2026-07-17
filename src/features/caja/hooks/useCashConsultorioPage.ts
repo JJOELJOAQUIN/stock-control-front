@@ -10,12 +10,10 @@ import {
 
 import type {
   PaymentMethod,
-  PeelingPaymentKind,
   ProcedureOption,
   CashActor,
   CashMovementType,
   CashSource,
-  SplitPreset,
 } from "../types/cash.types";
 
 import {
@@ -364,9 +362,6 @@ export function useCashConsultorioPage() {
     comment?: string;
     doctorSharePercent: number;
     cosmetologistSharePercent: number;
-    performedBy: CashActor;
-    splitPreset?: SplitPreset;
-    peelingPaymentKind?: PeelingPaymentKind;
   }) => {
     try {
       await createCashMovement({
@@ -383,12 +378,6 @@ export function useCashConsultorioPage() {
         referenceId: null,
         doctorSharePercent: payload.doctorSharePercent,
         cosmetologistSharePercent: payload.cosmetologistSharePercent,
-        // El código estructurado: sin esto el backend no puede validar que el
-        // desvío sea efectivamente un peeling sin comparar labels de UI.
-        procedureCode: payload.procedure.code,
-        performedBy: payload.performedBy,
-        splitPreset: payload.splitPreset ?? null,
-        peelingPaymentKind: payload.peelingPaymentKind ?? null,
       }).unwrap();
 
       toast.success("Ingreso por procedimiento registrado");
