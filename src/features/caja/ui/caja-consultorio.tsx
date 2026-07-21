@@ -260,7 +260,7 @@ export default function CajaConsultorioPage() {
             )}
           </div>
 
-          <RoleGate allow={["ADMIN", "USER"]}>
+          <RoleGate allow={["ADMIN", "USER", "COSMETOLOGA"]}>
             <CashTable
               data={data}
               isLoading={isLoading}
