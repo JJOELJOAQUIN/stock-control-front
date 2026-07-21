@@ -50,14 +50,6 @@ export type CreateCashMovementRequest = {
   referenceId?: string | null;
   doctorSharePercent?: number | null;
   cosmetologistSharePercent?: number | null;
-  /** Quién hizo el trabajo. El backend lo persiste en el ítem. */
-  performedBy?: CashActor | null;
-  /** Sólo source = PROCEDURE. Antes el procedimiento sólo viajaba como texto. */
-  procedureCode?: string | null;
-  /** Sólo peeling profundo. Null se trata como NORMAL. */
-  splitPreset?: SplitPreset | null;
-  /** Sólo peeling profundo. El backend lo usa para validar el desvío. */
-  peelingPaymentKind?: PeelingPaymentKind | null;
 };
 
 export type CashMovementFilters = {
@@ -99,6 +91,14 @@ export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
     code: "LIMPIEZA_PREMIUM_HIDRATACION",
     label: "LIMPIEZA PREMIUM HIDRATACIÓN INTENSIVA",
     amount: 42900,
+  },
+  {
+    // Antes se cargaba como LIMPIEZA PREMIUM con el monto editado a mano y
+    // "sume dermaplaning" en el comentario. Con código propio, el combo se
+    // puede agregar en dos toques y queda contable por separado.
+    code: "LIMPIEZA_PREMIUM_DERMAPLANING",
+    label: "LIMPIEZA PREMIUM CON DERMAPLANING",
+    amount: 44600,
   },
   {
     code: "DERMAPLANING",
@@ -166,10 +166,6 @@ export type CashSalesTotalsResponse = {
 };
 
 export type CashActor = "MEDICA" | "COSMETOLOGA";
-
-export type SplitPreset = "NORMAL" | "TODO_COSMETOLOGA" | "TODO_MEDICA";
-
-export type PeelingPaymentKind = "FULL" | "FIRST" | "SECOND";
 
 export const MEDICA_PROCEDURES: ProcedureOption[] = [
   {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../firebase";
@@ -8,6 +8,8 @@ import {
   onIdTokenChanged,
   type User,
 } from "firebase/auth";
+import { store } from "@/core/store/store";
+import { baseApi } from "@/core/api/baseApi";
 
 console.log("AUTH MODE:", import.meta.env.VITE_AUTH_MODE);
 console.log("API URL:", import.meta.env.VITE_API_URL);
@@ -47,6 +49,26 @@ const DEV_AUTH = import.meta.env.VITE_AUTH_MODE === "dev";
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [_, loading] = useAuthState(auth);
+
+  // Cache de RTK Query vs. cambio de usuario. El logout navega con
+  // react-router (sin recargar la página), así que el store de Redux
+  // sobrevive al cambio de sesión: si entra Gise después de Pili, sus
+  // queries tienen la misma cache key y RTK le sirve al instante los datos
+  // del usuario anterior — la caja entera de Pili en la pantalla de Gise,
+  // aunque el backend haya filtrado bien. Por eso, cuando cambia el uid
+  // autenticado, se tira TODO el caché de la API.
+  //
+  // El guard por uid es necesario porque onIdTokenChanged también dispara
+  // en cada refresh de token (~1 hora) con el mismo usuario, y ahí resetear
+  // sería tirar el caché al pedo.
+  const lastUidRef = useRef<string | null | undefined>(undefined);
+
+  const resetApiCacheOnUserChange = (uid: string | null) => {
+    if (lastUidRef.current !== uid) {
+      lastUidRef.current = uid;
+      store.dispatch(baseApi.util.resetApiState());
+    }
+  };
 
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -88,6 +110,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // ── Rama PRODUCCIÓN: flujo original con Firebase (sin cambios). ──
     const unsub = onIdTokenChanged(auth, async (firebaseUser) => {
+      resetApiCacheOnUserChange(firebaseUser?.uid ?? null);
+
       if (!firebaseUser) {
         setAuthState({
           isAuthenticated: false,
@@ -145,6 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     if (DEV_AUTH) {
+      resetApiCacheOnUserChange(null);
       setAuthState({
         isAuthenticated: false,
         user: null,
@@ -180,4 +205,4 @@ export const useAuth = (): AuthContextType => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth debe ser usado dentro de un AuthProvider");
   return ctx;
-};  
+};
