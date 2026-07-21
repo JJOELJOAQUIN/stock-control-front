@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Coins, Package, ShoppingBag, Tag } from "lucide-react";
 
@@ -59,16 +59,14 @@ export function ProductSaleDialog({
     const [quantity, setQuantity] = useState("1");
     const [amount, setAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
-    // Quien vende sale del usuario logueado: la cosmetologa no elige,
-    // la medica arranca en MEDICA pero puede cambiarlo (a veces carga
-    // ventas que hizo Gise).
+    // Quien vende sale del usuario logueado como DEFAULT: la cosmetóloga
+    // arranca en COSMETOLOGA, la médica en MEDICA, y las dos pueden
+    // cambiarlo (cada una a veces carga ventas que hizo la otra).
+    // Como siempre hay un valor, no existe el estado "sin elegir" y la
+    // validación de vacío que había acá se fue con él.
     const performer = usePerformer();
-    const [performedBy, setPerformedBy] = useState<CashActor | "">(
-        performer.actor
-    );
+    const [performedBy, setPerformedBy] = useState<CashActor>(performer.actor);
     const [comment, setComment] = useState("");
-    const performedByRef = useRef<HTMLButtonElement | null>(null);
-    const [performedByError, setPerformedByError] = useState("");
 
     const sale = calcSale(product, quantity, paymentMethod);
     const showSummary = sale.qty > 0 && sale.unitPrice > 0;
@@ -82,11 +80,10 @@ export function ProductSaleDialog({
             setQuantity("1");
             setAmount("");
             setComment("");
-            setPerformedBy("");
+            setPerformedBy(performer.actor);
             setPaymentMethod("CASH");
-            setPerformedByError("");
         }
-    }, [open, product?.id]);
+    }, [open, product?.id, performer.actor]);
 
     // Sugiere el monto en base al cálculo único.
     useEffect(() => {
@@ -100,19 +97,6 @@ export function ProductSaleDialog({
             toast.error("Producto inválido");
             return;
         }
-        if (!performedBy) {
-            setPerformedByError("*Elegir quién lo vendió");
-
-            performedByRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-            });
-
-            performedByRef.current?.focus();
-
-            return;
-        }
-
         const parsedQty = Number(quantity);
         const parsedAmount = Number(amount);
 
@@ -286,22 +270,10 @@ export function ProductSaleDialog({
                         ) : (
                         <Select
                             value={performedBy}
-                            onValueChange={(v) => {
-                                setPerformedBy(v as CashActor);
-                                setPerformedByError("");
-                            }}
+                            onValueChange={(v) => setPerformedBy(v as CashActor)}
                         >
-                            <SelectTrigger
-                                ref={performedByRef}
-                                className={[
-                                    "w-full",
-                                    performedByError
-                                        ? "!border-red-500 !text-red-600 !ring-1 !ring-red-500 focus:!ring-red-500 [&>span]:!text-red-600"
-                                        : "",
-                                ].join(" ")}
-                                aria-invalid={!!performedByError}
-                            >
-                                <SelectValue placeholder="Seleccionar..." />
+                            <SelectTrigger className="w-full">
+                                <SelectValue />
                             </SelectTrigger>
 
                             <SelectContent>
@@ -312,12 +284,6 @@ export function ProductSaleDialog({
                                 ))}
                             </SelectContent>
                         </Select>
-                        )}
-
-                        {performedByError && (
-                            <p className="mt-1 !text-xs !font-normal !text-red-600">
-                                Elegir quién lo vendió! :D
-                            </p>
                         )}
                     </Field>
 

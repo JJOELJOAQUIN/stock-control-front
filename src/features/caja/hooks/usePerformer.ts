@@ -9,8 +9,9 @@ type Performer = {
   actor: CashActor;
   /**
    * True cuando el rol no puede registrar ventas a nombre de otra persona.
-   * La COSMETOLOGA sólo puede vender como ella misma; la médica (ADMIN/USER)
-   * opera el sistema todo el día y a veces carga ventas que hizo Gise.
+   * Hoy nadie está bloqueado (ver abajo), pero el mecanismo queda: los
+   * diálogos ya saben renderizar un rol bloqueado, y volver a bloquear es
+   * cambiar un booleano acá.
    */
   locked: boolean;
   /** Texto para mostrar dónde antes había un select. */
@@ -23,18 +24,16 @@ const LABELS: Record<CashActor, string> = {
 };
 
 /**
- * Resuelve automáticamente quién realiza la venta a partir del rol logueado,
- * para no hacer elegir en cada venta algo que el sistema ya sabe.
+ * Resuelve quién realiza la venta a partir del rol logueado, como DEFAULT:
+ * la cosmetóloga arranca en COSMETOLOGA, la médica en MEDICA, y las dos
+ * pueden cambiarlo antes de confirmar.
  *
- * Por qué NO se bloquea para la médica: Pili es quien opera el sistema, y
- * registrar una venta que hizo Gise es un caso real. Si el selector
- * desapareciera para ella, esa venta se guardaría como 100% médica en lugar
- * de 5/95 y Gise perdería su parte sin que nadie lo note. El default le
- * ahorra el clic en el caso normal; el override existe para el caso raro.
- *
- * Para la cosmetóloga sí se bloquea: no tiene ningún motivo legítimo para
- * registrar una venta a nombre de la médica, y dejarlo abierto sería darle
- * la posibilidad de moverse plata de un lado al otro.
+ * Antes la cosmetóloga estaba bloqueada (no podía elegir MEDICA). Se
+ * destrabó a pedido de Joel: el caso espejo también existe — Gise a veces
+ * registra una venta que hizo Pili, y con el selector bloqueado esa venta
+ * quedaba 5/95 en lugar de 100% médica. El costo de destrabarlo es que ya
+ * no hay nada que impida registrar a nombre de la otra; el default correcto
+ * hace que el caso normal siga siendo cero clics.
  */
 export function usePerformer(): Performer {
   const roles = useRoles();
@@ -43,7 +42,7 @@ export function usePerformer(): Performer {
     if (hasAnyRole(roles, ["COSMETOLOGA"])) {
       return {
         actor: "COSMETOLOGA" as CashActor,
-        locked: true,
+        locked: false,
         label: LABELS.COSMETOLOGA,
       };
     }
