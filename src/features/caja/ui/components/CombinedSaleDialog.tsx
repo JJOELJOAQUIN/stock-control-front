@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Search, Package, Sparkles, ShoppingBag } from "lucide-react";
 
 import type { CashActor, PaymentMethod, ProcedureOption } from "../../types/cash.types";
+import type { SaleDraftLine } from "./ProductSaleDialog";
 import { usePerformer } from "@/features/caja/hooks/usePerformer";
 import { Badge } from "@/shared/components/ui/badge";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
@@ -68,6 +69,16 @@ type Props = {
     /** Split por defecto para procedimientos (los mismos que pasás a ProcedureIncomeCard). */
     defaultDoctorSharePercent: number;
     defaultCosmetologistSharePercent: number;
+    /**
+     * Líneas con las que arranca el carrito al abrir. Es el puente desde la
+     * venta unitaria: el usuario empezó una venta simple y necesitó sumar más
+     * productos, así que lo cargado se traspasa acá en vez de perderse.
+     *
+     * Los precios vienen de LISTA, sin descuento aplicado: el descuento por
+     * efectivo lo calcula este diálogo, y si llegaran ya descontados se
+     * aplicaría dos veces.
+     */
+    seedLines?: SaleDraftLine[];
     onSuccess?: () => void;
 };
 
@@ -85,6 +96,7 @@ export function CombinedSaleDialog({
     procedures,
     defaultDoctorSharePercent,
     defaultCosmetologistSharePercent,
+    seedLines,
     onSuccess,
 }: Props) {
     // Quien realiza la venta sale del usuario logueado.
@@ -120,6 +132,37 @@ export function CombinedSaleDialog({
         () => procedures.filter((p) => p.code !== PEELING_PROTOCOLO_CODE),
         [procedures]
     );
+
+    /**
+     * Siembra del carrito al abrir. El ref evita re-sembrar en cada render
+     * mientras el diálogo está abierto: sin él, cualquier cambio de estado
+     * pisaría lo que el usuario viene editando (y podría duplicar líneas).
+     * Se rearma recién cuando el diálogo se cierra.
+     */
+    const seededRef = useRef(false);
+
+    useEffect(() => {
+        if (!open) {
+            seededRef.current = false;
+            return;
+        }
+        if (seededRef.current) return;
+        seededRef.current = true;
+
+        if (seedLines && seedLines.length > 0) {
+            setLines(
+                seedLines.map((s) => ({
+                    uid: nextUid(),
+                    kind: "PRODUCT" as const,
+                    productId: s.productId,
+                    description: s.description,
+                    quantity: s.quantity,
+                    unitAmount: s.unitAmount,
+                    performedBy: s.performedBy,
+                }))
+            );
+        }
+    }, [open, seedLines]);
 
     // Al agregar un ítem, baja al final del carrito para que se vea el nuevo.
     useEffect(() => {

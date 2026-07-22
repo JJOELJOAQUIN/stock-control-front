@@ -20,6 +20,7 @@ import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
 import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
 import { LowStockCard } from "@/features/stock/components/LowStockCard";
+import { ShoppingListCard } from "@/features/shopping/ui/ShoppingListCard";
 
 // Repartos por especialidad (doctor / cosmetóloga).
 const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
@@ -153,7 +154,7 @@ export default function CajaConsultorioPage() {
               aria-label="Acciones de caja"
             >
               <LowStockCard products={products} />
-
+              <ShoppingListCard products={products} />
               <ProductExpirationAlerts
                 items={expiringProducts}
                 isLoading={isLoadingExpiringProducts}
@@ -236,9 +237,8 @@ export default function CajaConsultorioPage() {
           />
 
           <div
-            className={`grid grid-cols-1 items-stretch gap-6 ${
-              showCosmetologiaProcedures ? "md:grid-cols-2" : ""
-            }`}
+            className={`grid grid-cols-1 items-stretch gap-6 ${showCosmetologiaProcedures ? "md:grid-cols-2" : ""
+              }`}
             aria-label="Ingresos por procedimientos"
           >
             <ProcedureIncomeCard

@@ -22,7 +22,7 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { currencyFormatter } from "@/lib/currencyFormatter";
-import { ProductSaleDialog } from "./ProductSaleDialog";
+import { ProductSaleDialog, type SaleDraftLine } from "./ProductSaleDialog";
 
 type Props = {
   scannedProduct: ProductScanResponse | null;
@@ -41,6 +41,12 @@ type Props = {
     performedBy: CashActor;
     comment?: string;
   }) => Promise<void>;
+  /**
+   * Puente a la venta combinada. Esta card sólo lo pasa hacia abajo: quien
+   * abre el carrito es la página, que es la que tiene productos y
+   * procedimientos cargados.
+   */
+  onAddMore?: (draft: SaleDraftLine) => void;
 };
 
 export function InlineProductSaleCard({
@@ -53,6 +59,7 @@ export function InlineProductSaleCard({
   nameResults,
   onSelectByName,
   onSell,
+  onAddMore,
 }: Props) {
   const [isSaleOpen, setIsSaleOpen] = useState(false);
 
@@ -144,6 +151,7 @@ export function InlineProductSaleCard({
         product={scannedProduct}
         isSelling={isSelling}
         onSell={onSell}
+        onAddMore={onAddMore}
       />
     </Card>
   );

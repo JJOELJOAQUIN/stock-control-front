@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Coins, Package, ShoppingBag, Tag } from "lucide-react";
+import { Coins, Package, Plus, ShoppingBag, Tag } from "lucide-react";
 
 import type { PaymentMethod, CashActor } from "../../types/cash.types";
 import type { ProductScanResponse } from "@/features/stock/types/stock.types";
@@ -31,8 +31,14 @@ import { calcSale, PAYMENT_METHODS, SALE_ACTORS } from "@/lib/sale";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { usePerformer } from "@/features/caja/hooks/usePerformer";
 
-
-
+/** Lo que se traspasa al carrito cuando la venta deja de ser de un solo ítem. */
+export type SaleDraftLine = {
+    productId: string;
+    description: string;
+    quantity: number;
+    unitAmount: number;
+    performedBy: CashActor;
+};
 
 type Props = {
     open: boolean;
@@ -47,6 +53,12 @@ type Props = {
         performedBy: CashActor;
         comment?: string;
     }) => Promise<void>;
+    /**
+     * Si viene, aparece "Agregar otro producto": cierra este diálogo y manda
+     * lo cargado al carrito de la venta combinada. La lógica de carrito vive
+     * en un solo lugar (CombinedSaleDialog); acá sólo se traspasa el borrador.
+     */
+    onAddMore?: (draft: SaleDraftLine) => void;
 };
 
 export function ProductSaleDialog({
@@ -55,6 +67,7 @@ export function ProductSaleDialog({
     product,
     isSelling,
     onSell,
+    onAddMore,
 }: Props) {
     const [quantity, setQuantity] = useState("1");
     const [amount, setAmount] = useState("");
@@ -124,6 +137,39 @@ export function ProductSaleDialog({
         });
 
         // Cierra el modal al registrar, igual que en la compra.
+        onOpenChange(false);
+    };
+
+    /**
+     * Traspasa la venta al carrito. NO registra nada: sólo mueve el borrador
+     * y cierra este diálogo, así no queda un formulario abierto que se pueda
+     * confirmar por segunda vez.
+     *
+     * Se manda el precio de LISTA, no el "monto final": ese monto ya tiene
+     * aplicado el descuento por efectivo, y el carrito aplica el suyo. Pasarle
+     * el descontado lo descontaría dos veces y se podría terminar vendiendo
+     * por debajo del costo. Si el precio se editó a mano, se reajusta en el
+     * carrito, que también deja editarlo.
+     */
+    const handleAddMore = (): void => {
+        if (!product) return;
+
+        const parsedQty = Number(quantity);
+        if (!Number.isFinite(parsedQty) || parsedQty <= 0) {
+            toast.error("La cantidad debe ser mayor a cero");
+            return;
+        }
+
+        const actor: CashActor = performer.locked ? performer.actor : performedBy;
+
+        onAddMore?.({
+            productId: product.id,
+            description: product.name,
+            quantity: parsedQty,
+            unitAmount: Number(product.salePrice ?? 0),
+            performedBy: actor,
+        });
+
         onOpenChange(false);
     };
 
@@ -297,14 +343,32 @@ export function ProductSaleDialog({
                     </Field>
                 </div>
 
-                <DialogFooter className="border-t pt-4">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={() => void handleSell()} disabled={isSelling}>
-                        {isSelling && <Spinner />}
-                        Registrar venta
-                    </Button>
+                <DialogFooter className="flex-col gap-2 border-t pt-4 sm:flex-row sm:justify-between">
+                    {/* Puente al carrito: la venta empieza simple y, si hace
+                        falta, sigue en la combinada sin volver a empezar. */}
+                    {onAddMore ? (
+                        <Button
+                            variant="secondary"
+                            className="gap-1.5"
+                            onClick={handleAddMore}
+                            disabled={isSelling}
+                        >
+                            <Plus className="size-4" />
+                            Agregar otro producto
+                        </Button>
+                    ) : (
+                        <span />
+                    )}
+
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={() => void handleSell()} disabled={isSelling}>
+                            {isSelling && <Spinner />}
+                            Registrar venta
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
