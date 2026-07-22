@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ListX, Search, X } from "lucide-react";
+import { Ban, ChevronLeft, ChevronRight, ListX, Search, X } from "lucide-react";
 import type {
   CashMovementResponse,
   CashMovementType,
@@ -44,7 +44,8 @@ type ColKey =
   | "net"
   | "doctor"
   | "cosmetologist"
-  | "comment";
+  | "comment"
+  | "actions";
 
 const COLUMNS: {
   key: ColKey;
@@ -63,6 +64,7 @@ const COLUMNS: {
   { key: "doctor", label: "Médica", width: 120, min: 90, align: "right" },
   { key: "cosmetologist", label: "Cosmetóloga", width: 130, min: 100, align: "right" },
   { key: "comment", label: "Comentario", width: 240, min: 140 },
+  { key: "actions", label: "", width: 70, min: 60 },
 ];
 
 type Props = {
@@ -84,6 +86,10 @@ type Props = {
   setCommentQuery: (value: string) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
+
+  // Anulación: si viene, cada fila viva muestra el botón. Las anuladas quedan
+  // tachadas y sin botón — anular dos veces no existe.
+  onVoid?: (movement: CashMovementResponse) => void;
 
   // Permite redimensionar columnas arrastrando el borde derecho del encabezado.
   resizable?: boolean;
@@ -122,6 +128,7 @@ export function CashTable({
   setCommentQuery,
   clearFilters,
   hasActiveFilters,
+  onVoid,
   resizable = true,
 }: Props) {
   // Anchos de columna controlados (para redimensionar).
@@ -322,7 +329,16 @@ export function CashTable({
                 rows.map((item) => (
                   <TableRow
                     key={item.id}
-                    className="transition-colors hover:bg-muted/30"
+                    className={
+                      item.voided
+                        ? "bg-muted/40 text-muted-foreground line-through opacity-60"
+                        : "transition-colors hover:bg-muted/30"
+                    }
+                    title={
+                      item.voided
+                        ? `Anulado por ${item.voidedBy ?? "?"}: ${item.voidReason ?? ""}`
+                        : undefined
+                    }
                   >
                     <TableCell className="truncate text-muted-foreground">
                       {formatDate(item.createdAt)}
@@ -385,7 +401,34 @@ export function CashTable({
                     </TableCell>
 
                     <TableCell className="truncate text-muted-foreground">
-                      {item.comment || "-"}
+                      {item.voided ? (
+                        // El motivo va acá y no en una columna nueva: es lo
+                        // primero que se busca cuando alguien pregunta "¿y
+                        // esto por qué está tachado?".
+                        <span className="flex min-w-0 flex-col no-underline">
+                          <span className="truncate">{item.comment || "-"}</span>
+                          <span className="truncate text-xs text-destructive/80">
+                            Anulado{item.voidedBy ? ` por ${item.voidedBy}` : ""}
+                            {item.voidReason ? `: ${item.voidReason}` : ""}
+                          </span>
+                        </span>
+                      ) : (
+                        item.comment || "-"
+                      )}
+                    </TableCell>
+
+                    <TableCell>
+                      {onVoid && !item.voided && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Anular movimiento"
+                          className="size-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => onVoid(item)}
+                        >
+                          <Ban className="size-4" />
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

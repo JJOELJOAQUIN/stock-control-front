@@ -122,7 +122,7 @@ export const DERMATO_PROCEDURES: DermatoProcedure[] = [
     label: "MESOTERAPIA CON VITAMINA C",
     kind: "medica",
     amount: 0,
-    bom: [{ hint: "vitamin", label: "Vitamina C", quantity: 1, unit: "vial", note: "vial completo" }],
+    bom: [{ hint: "vitamin c", label: "Vitamina C", quantity: 1, unit: "vial", note: "vial completo" }],
   },
   {
     code: "MESOTERAPIA_DMAE",

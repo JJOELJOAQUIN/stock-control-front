@@ -6,6 +6,7 @@ import {
   useGetCashMovementsQuery,
   useGetDailyCashSplitQuery,
   useGetSalesTotalsQuery,
+  useVoidCashMovementMutation,
 } from "../api/cashApi";
 
 import type {
@@ -119,6 +120,9 @@ export function useCashConsultorioPage() {
   const [createCashMovement, { isLoading: isCreating }] =
     useCreateCashMovementMutation();
 
+  const [voidCashMovement, { isLoading: isVoiding }] =
+    useVoidCashMovementMutation();
+
   const [triggerScan, { isFetching: isScanning }] =
     useLazyScanProductByBarcodeQuery();
 
@@ -186,6 +190,12 @@ export function useCashConsultorioPage() {
   const summary = useMemo(() => {
     return items.reduce(
       (acc, item) => {
+        // Los anulados no suman. El backend ya los excluye de sus queries de
+        // agregación, pero este resumen se calcula en memoria sobre la lista
+        // completa (que SÍ los trae, para mostrarlos tachados): sin este
+        // guard, la caja del día seguiría contando plata que no existe.
+        if (item.voided) return acc;
+
         const amount = Number(item.amount ?? 0);
         const net = Number(item.netAmount ?? 0);
 
@@ -225,7 +235,6 @@ export function useCashConsultorioPage() {
     () => products.filter((p) => p.belowMinimum),
     [products]
   );
-
 
   const refetchCaja = async () => {
     await refetchCash();
@@ -413,6 +422,25 @@ export function useCashConsultorioPage() {
     }
   };
 
+  /**
+   * Anula un movimiento. Puede devolver stock a sus lotes y revertir un pago
+   * de tratamiento, así que además de la caja se refrescan productos y
+   * vencimientos a mano: la mutation sólo invalida el tag "Cash".
+   */
+  const voidMovement = async (id: string, reason: string) => {
+    try {
+      await voidCashMovement({ id, reason }).unwrap();
+
+      toast.success("Movimiento anulado");
+
+      await refetchCaja();
+      await refetchProducts();
+      await refetchExpiringProducts();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "No se pudo anular el movimiento");
+    }
+  };
+
   return {
     data,
     items,
@@ -450,6 +478,7 @@ export function useCashConsultorioPage() {
     isScanning,
     isSellingProduct,
     isPurchasingProduct,
+    isVoiding,
 
     summary,
     salesTotals,
@@ -468,5 +497,6 @@ export function useCashConsultorioPage() {
 
     registerProcedureIncome,
     registerExpense,
+    voidMovement,
   };
 }

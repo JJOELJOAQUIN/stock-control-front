@@ -26,6 +26,10 @@ export type CashMovementResponse = {
   detail?: string | null;
   referenceId?: string | null;
   createdAt: string;
+  voided: boolean;
+  voidedAt?: string | null;
+  voidReason?: string | null;
+  voidedBy?: string | null;
 };
 
 export type PageResponse<T> = {
@@ -259,3 +263,7 @@ export const MEDICA_PROCEDURES: ProcedureOption[] = [
     amount: 165000,
   },
 ];
+
+export type VoidCashMovementRequest = {
+  reason: string;
+}; 

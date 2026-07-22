@@ -7,6 +7,7 @@ import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
 import { ProcedureIncomeCard } from "./components/ProcedureIncomeCard";
 import { ExpenseCard } from "./components/ExpenseCard";
 import { CashTable } from "./components/CashTable";
+import { VoidMovementDialog } from "./components/VoidMovementDialog";
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
 import { PurchaseDialog } from "@/features/stock/components/PurchaseDialog";
 import { DailySplitSummary } from "./components/DailySplitSummary";
@@ -14,6 +15,7 @@ import { CosmetologistSplitCard } from "./components/CosmetologistSplitCard";
 import { ProductExpirationAlerts } from "./components/ProductExpirationAlerts";
 import { BusinessTotals } from "./components/BusinessTotals";
 import { COSMETOLOGIA_PROCEDURES, MEDICA_PROCEDURES } from "../types/cash.types";
+import type { CashMovementResponse } from "../types/cash.types";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
 import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
@@ -30,6 +32,8 @@ const ACTION_CTA_CLASS =
 export default function CajaConsultorioPage() {
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [combinedOpen, setCombinedOpen] = useState(false);
+  // Movimiento a anular: el dialog pide el motivo antes de confirmar.
+  const [voidTarget, setVoidTarget] = useState<CashMovementResponse | null>(null);
 
   const {
     data,
@@ -51,6 +55,7 @@ export default function CajaConsultorioPage() {
     isCreating,
     isScanning,
     isSellingProduct,
+    isVoiding,
     barcodeQuery,
     setBarcodeQuery,
     scannedProduct,
@@ -58,6 +63,7 @@ export default function CajaConsultorioPage() {
     sellProductFromCash,
     registerProcedureIncome,
     registerExpense,
+    voidMovement,
     products,
     purchaseProductFromCash,
     isPurchasingProduct,
@@ -278,9 +284,18 @@ export default function CajaConsultorioPage() {
               setCommentQuery={setCommentQuery}
               clearFilters={clearFilters}
               hasActiveFilters={hasActiveFilters}
+              onVoid={setVoidTarget}
             />
           </RoleGate>
         </section>
+
+        {/* Fuera de la sección: el dialog no depende del layout */}
+        <VoidMovementDialog
+          movement={voidTarget}
+          onOpenChange={(o) => !o && setVoidTarget(null)}
+          onConfirm={voidMovement}
+          isVoiding={isVoiding}
+        />
       </div>
     </div>
   );

@@ -25,6 +25,17 @@ export const cashApi = baseApi.injectEndpoints({
       invalidatesTags: ["Cash"],
     }),
 
+    voidCashMovement: builder.mutation({
+      query: (arg: { id: string; reason: string }) => ({
+        url: "/api/cash-movements/" + arg.id + "/void",
+        method: "POST",
+        body: { reason: arg.reason },
+      }),
+      invalidatesTags: ["Cash"],
+    }),
+
+    
+
     getDailyCashSplit: builder.query<
       CashDailySplitResponse,
       { context: CashContext; date?: string }
@@ -95,6 +106,8 @@ export const cashApi = baseApi.injectEndpoints({
       providesTags: ["Cash"],
     }),
 
+    
+
     getSalesTotals: builder.query<
       CashSalesTotalsResponse,
       { context: CashContext }
@@ -112,6 +125,8 @@ export const cashApi = baseApi.injectEndpoints({
     }),
   }),
   overrideExisting: false,
+
+  
 });
 
 export const {
@@ -120,4 +135,5 @@ export const {
   useGetDailyCashSplitQuery,
   useGetCosmetologistDailySplitQuery,
   useGetSalesTotalsQuery,
+  useVoidCashMovementMutation,
 } = cashApi;
