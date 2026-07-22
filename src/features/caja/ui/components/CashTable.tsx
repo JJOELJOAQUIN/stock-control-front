@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 
 const ALL = "ALL";
 
@@ -110,6 +111,12 @@ const formatDate = (dateString: string) =>
     hour: "2-digit",
     minute: "2-digit",
   });
+
+const getDetailLines = (detail?: string | null) =>
+  detail
+    ?.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean) ?? [];
 
 export function CashTable({
   data,
@@ -359,14 +366,39 @@ export function CashTable({
 
                     <TableCell>
                       <div className="flex min-w-0 flex-col">
-                        <span className="truncate font-medium">
-                          {SOURCE_LABELS[item.source] ?? item.source}
-                        </span>
-                        {item.detail && (
-                          <span className="truncate text-xs text-muted-foreground">
-                            {item.detail}
+                        {item.detail ? (() => {
+                          const detailLines = getDetailLines(item.detail);
+                          const firstDetail = detailLines[0] ?? item.detail.trim();
+                          const hasMoreDetails = detailLines.length > 1;
+
+                          return (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate font-medium text-foreground">
+                                  {firstDetail}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs whitespace-pre-line text-left">
+                                {item.detail}
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })() : (
+                          <span className="truncate font-medium">
+                            {SOURCE_LABELS[item.source] ?? item.source}
                           </span>
                         )}
+
+                        {item.detail && (() => {
+                          const detailLines = getDetailLines(item.detail);
+                          const hasMoreDetails = detailLines.length > 1;
+
+                          return hasMoreDetails ? (
+                            <span className="truncate text-xs text-muted-foreground">
+                              +{detailLines.length - 1} más
+                            </span>
+                          ) : null;
+                        })()}
                       </div>
                     </TableCell>
 
@@ -380,9 +412,9 @@ export function CashTable({
                       {formatCurrency(Number(item.amount))}
                     </TableCell>
 
-                    <TableCell className="truncate text-right tabular-nums text-muted-foreground">
+                    {/* <TableCell className="truncate text-right tabular-nums text-muted-foreground">
                       {formatCurrency(Number(item.retention))}
-                    </TableCell>
+                    </TableCell> */}
 
                     <TableCell className="truncate text-right font-semibold tabular-nums">
                       {formatCurrency(Number(item.netAmount))}
