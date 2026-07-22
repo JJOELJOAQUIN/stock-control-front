@@ -369,7 +369,6 @@ export function CashTable({
                         {item.detail ? (() => {
                           const detailLines = getDetailLines(item.detail);
                           const firstDetail = detailLines[0] ?? item.detail.trim();
-                          const hasMoreDetails = detailLines.length > 1;
 
                           return (
                             <Tooltip>
