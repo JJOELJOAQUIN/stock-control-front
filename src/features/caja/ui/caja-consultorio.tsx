@@ -9,6 +9,7 @@ import { ExpenseCard } from "./components/ExpenseCard";
 import { CashTable } from "./components/CashTable";
 import { VoidMovementDialog } from "./components/VoidMovementDialog";
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
+import type { SaleDraftLine } from "./components/ProductSaleDialog";
 import { PurchaseDialog } from "@/features/stock/components/PurchaseDialog";
 import { DailySplitSummary } from "./components/DailySplitSummary";
 import { CosmetologistSplitCard } from "./components/CosmetologistSplitCard";
@@ -21,6 +22,7 @@ import { RoleGate } from "@/features/auth/ui/RoleGate";
 import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
 import { LowStockCard } from "@/features/stock/components/LowStockCard";
 import { ShoppingListCard } from "@/features/shopping/ui/ShoppingListCard";
+import { MonthlyMetricsCard } from "@/features/metrics/ui/MonthlyMetricsCard";
 
 // Repartos por especialidad (doctor / cosmetóloga).
 const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
@@ -35,6 +37,9 @@ export default function CajaConsultorioPage() {
   const [combinedOpen, setCombinedOpen] = useState(false);
   // Movimiento a anular: el dialog pide el motivo antes de confirmar.
   const [voidTarget, setVoidTarget] = useState<CashMovementResponse | null>(null);
+  // Borrador que viene de la venta unitaria cuando el usuario decide sumar
+  // más productos. Precarga el carrito de la venta combinada.
+  const [seedLines, setSeedLines] = useState<SaleDraftLine[]>([]);
 
   const {
     data,
@@ -61,6 +66,7 @@ export default function CajaConsultorioPage() {
     setBarcodeQuery,
     scannedProduct,
     scanProduct,
+    clearScannedProduct,
     sellProductFromCash,
     registerProcedureIncome,
     registerExpense,
@@ -94,6 +100,17 @@ export default function CajaConsultorioPage() {
       ),
     [],
   );
+
+  /**
+   * La venta unitaria pasa a ser combinada. Se limpia el producto escaneado
+   * para que no quede un formulario de venta simple cargado atrás: si quedara,
+   * se podría confirmar la misma venta dos veces (una acá y otra en el carrito).
+   */
+  const handleAddMore = (draft: SaleDraftLine) => {
+    setSeedLines([draft]);
+    clearScannedProduct();
+    setCombinedOpen(true);
+  };
 
   return (
     <div className="min-h-full bg-background text-foreground">
@@ -132,6 +149,13 @@ export default function CajaConsultorioPage() {
             />
           </RoleGate>
 
+          {/* Métricas del mes: procedimientos por especialidad, ventas y
+              reparto. Por ahora sólo para la médica — el endpoint todavía no
+              tiene blindaje por rol en el backend. */}
+          <RoleGate allow={["ADMIN", "USER"]}>
+            <MonthlyMetricsCard />
+          </RoleGate>
+
           {canViewFinancials ? (
             <DailySplitSummary
               date={splitDate}
@@ -148,17 +172,23 @@ export default function CajaConsultorioPage() {
           )}
 
           {canViewFinancials ? (
-            // 2 tarjetas alineadas a igual altura + CTA a ancho completo debajo.
+            // 2 tarjetas alineadas a igual altura + lista y CTA a ancho
+            // completo debajo. La lista va sola en su fila: crece al agregar
+            // ítems, y dentro del grid empujaba a la de al lado.
             <div
               className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2"
               aria-label="Acciones de caja"
             >
               <LowStockCard products={products} />
-              <ShoppingListCard products={products} />
+
               <ProductExpirationAlerts
                 items={expiringProducts}
                 isLoading={isLoadingExpiringProducts}
               />
+
+              <div className="md:col-span-2">
+                <ShoppingListCard products={products} />
+              </div>
 
               <Button
                 variant="outline"
@@ -221,6 +251,7 @@ export default function CajaConsultorioPage() {
                 onSell={sellProductFromCash}
                 nameResults={nameResults}
                 onSelectByName={selectProductByName}
+                onAddMore={handleAddMore}
               />
             </div>
           </div>
@@ -228,12 +259,19 @@ export default function CajaConsultorioPage() {
           {/* Diálogo fuera del grid, igual que PurchaseDialog */}
           <CombinedSaleDialog
             open={combinedOpen}
-            onOpenChange={setCombinedOpen}
+            onOpenChange={(o) => {
+              setCombinedOpen(o);
+              // Al cerrar se descarta el borrador: si no, una venta combinada
+              // abierta después desde el botón arrancaría con el producto de
+              // la venta anterior ya cargado.
+              if (!o) setSeedLines([]);
+            }}
             context="CONSULTORIO"
             products={products}
             procedures={allProcedures}
             defaultDoctorSharePercent={0.6}
             defaultCosmetologistSharePercent={0.4}
+            seedLines={seedLines}
           />
 
           <div

@@ -371,6 +371,7 @@ export function useCashConsultorioPage() {
     comment?: string;
     doctorSharePercent: number;
     cosmetologistSharePercent: number;
+
   }) => {
     try {
       await createCashMovement({
@@ -384,9 +385,11 @@ export function useCashConsultorioPage() {
           payload.comment?.trim() ||
           `Procedimiento: ${payload.procedure.label}`,
         detail: payload.procedure.label,
+        procedureCode: payload.procedure.code,
         referenceId: null,
         doctorSharePercent: payload.doctorSharePercent,
         cosmetologistSharePercent: payload.cosmetologistSharePercent,
+
       }).unwrap();
 
       toast.success("Ingreso por procedimiento registrado");

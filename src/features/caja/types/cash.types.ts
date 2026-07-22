@@ -54,6 +54,7 @@ export type CreateCashMovementRequest = {
   referenceId?: string | null;
   doctorSharePercent?: number | null;
   cosmetologistSharePercent?: number | null;
+  procedureCode?: string | null;
 };
 
 export type CashMovementFilters = {
