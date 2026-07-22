@@ -7,6 +7,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import { currencyFormatter } from "@/lib/currencyFormatter";
+import { useHasRole } from "@/features/auth/hooks/useRoles";
 import {
   COSMETOLOGIA_PROCEDURES,
   MEDICA_PROCEDURES,
@@ -22,6 +23,10 @@ export function MonthlyMetricsCard() {
   const [monthValue, setMonthValue] = useState(currentMonthValue());
   const [yearStr, monthStr] = monthValue.split("-");
 
+  // La médica ve el panel completo; la cosmetóloga, sólo lo suyo. El
+  // backend ya filtra por rol: esto decide qué se dibuja, no qué se recibe.
+  const isCosmetologist = useHasRole(["COSMETOLOGA"]);
+
   const { data } = useGetMonthlyMetricsQuery({
     context: "CONSULTORIO",
     year: Number(yearStr),
@@ -30,11 +35,6 @@ export function MonthlyMetricsCard() {
 
   const metrics = data as MonthlyMetrics | undefined;
 
-  /**
-   * La clasificación médica/cosmetología sale del catálogo del front, que ya
-   * está partido por especialidad. Duplicarla en el backend sería un segundo
-   * lugar donde mantener la misma verdad.
-   */
   const view = useMemo(() => {
     const cosmoCodes = new Set(COSMETOLOGIA_PROCEDURES.map((p) => p.code));
     const labels = new Map(
@@ -51,6 +51,7 @@ export function MonthlyMetricsCard() {
     const top = [...rows].sort((a, b) => b.count - a.count)[0];
 
     return {
+      totalCount: sum(rows, (r) => r.count),
       medicaCount: sum(medica, (r) => r.count),
       cosmoCount: sum(cosmo, (r) => r.count),
       consultas: rows.find((r) => r.procedureCode === "CONSULTA")?.count ?? 0,
@@ -68,6 +69,7 @@ export function MonthlyMetricsCard() {
       cosmoPagaAMedica: sum(cosmo, (r) => r.doctorShare),
       ventas: Number(metrics?.products.count ?? 0),
       ventasMonto: Number(metrics?.products.amount ?? 0),
+      ventasParteCosmo: Number(metrics?.products.cosmetologistShare ?? 0),
       ranking: [...rows]
         .sort((a, b) => b.count - a.count)
         .map((r) => ({
@@ -75,35 +77,105 @@ export function MonthlyMetricsCard() {
           label: labels.get(r.procedureCode) ?? r.procedureCode,
           count: r.count,
           amount: Number(r.amount ?? 0),
+          cosmoShare: Number(r.cosmetologistShare ?? 0),
           isCosmo: cosmoCodes.has(r.procedureCode),
         })),
     };
   }, [metrics]);
 
+  const header = (
+    <CardHeader>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <TrendingUp className="size-5" />
+          </div>
+          <div>
+            <CardTitle>{isCosmetologist ? "Tu mes" : "Métricas del mes"}</CardTitle>
+            <CardDescription>
+              {isCosmetologist
+                ? "Lo que hiciste y lo que te corresponde."
+                : "Procedimientos, ventas y reparto entre las dos."}
+            </CardDescription>
+          </div>
+        </div>
+        <Input
+          type="month"
+          value={monthValue}
+          onChange={(e) => setMonthValue(e.target.value)}
+          className="w-full sm:w-44"
+        />
+      </div>
+    </CardHeader>
+  );
+
+  // ───────────── Vista de la cosmetóloga ─────────────
+  if (isCosmetologist) {
+    return (
+      <Card>
+        {header}
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Kpi
+              icon={<Sparkles className="size-4 text-violet-600" />}
+              label="Procedimientos"
+              value={String(view.totalCount)}
+            />
+            <Money label="Tu total del mes" value={view.paraCosmo} strong />
+            <Kpi
+              label="Lo que más hiciste"
+              value={view.topLabel}
+              hint={view.topCount ? `${view.topCount} veces` : undefined}
+              small
+            />
+          </div>
+
+          {view.ventasParteCosmo > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Incluye {currencyFormatter.format(view.ventasParteCosmo)} por
+              ventas de producto.
+            </p>
+          )}
+
+          {view.ranking.length > 0 ? (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">
+                Detalle por procedimiento
+              </p>
+              {view.ranking.map((r) => (
+                <div
+                  key={r.code}
+                  className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                    >
+                      {r.count}
+                    </Badge>
+                    <span className="truncate">{r.label}</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    {currencyFormatter.format(r.cosmoShare)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Sin movimientos en este mes.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ───────────── Vista de la médica ─────────────
   return (
     <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <TrendingUp className="size-5" />
-            </div>
-            <div>
-              <CardTitle>Métricas del mes</CardTitle>
-              <CardDescription>
-                Procedimientos, ventas y reparto entre las dos.
-              </CardDescription>
-            </div>
-          </div>
-          <Input
-            type="month"
-            value={monthValue}
-            onChange={(e) => setMonthValue(e.target.value)}
-            className="w-full sm:w-44"
-          />
-        </div>
-      </CardHeader>
-
+      {header}
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Kpi
@@ -117,10 +189,17 @@ export function MonthlyMetricsCard() {
             label="Procedimientos cosmetología"
             value={String(view.cosmoCount)}
           />
-          <Kpi label="Ventas de producto" value={String(view.ventas)}
-               hint={currencyFormatter.format(view.ventasMonto)} />
-          <Kpi label="Más realizado" value={view.topLabel}
-               hint={view.topCount ? `${view.topCount} veces` : undefined} small />
+          <Kpi
+            label="Ventas de producto"
+            value={String(view.ventas)}
+            hint={currencyFormatter.format(view.ventasMonto)}
+          />
+          <Kpi
+            label="Más realizado"
+            value={view.topLabel}
+            hint={view.topCount ? `${view.topCount} veces` : undefined}
+            small
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

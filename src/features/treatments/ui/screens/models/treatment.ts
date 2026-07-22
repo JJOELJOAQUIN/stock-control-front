@@ -92,19 +92,23 @@ export function splitPresetOptions(
   const options: { value: SplitPreset; label: string }[] = [
     {
       value: "NORMAL",
-      label: `Reparto normal (${currencyFormatter.format(normalShare)} a Gise)`,
+      label: `Normal — Gise ${currencyFormatter.format(normalShare)}`,
     },
   ];
 
-  // "Todo a Gise" es el caso de la primera cuota que ella se cobra entera
-  // para saldar arreglos previos. En las siguientes no existe.
+  // Las etiquetas dicen QUIÉN COBRA y QUIÉN NO en la misma línea: "Todo a
+  // Gise" y "Todo a Pili" se parecen demasiado leídas al pasar, y elegir la
+  // equivocada mueve el neto entero de una a la otra.
   if (isFirstPayment) {
-    options.push({ value: "TODO_COSMETOLOGA", label: "Todo a Gise (neto entero)" });
+    options.push({
+      value: "TODO_COSMETOLOGA",
+      label: "DESVÍO — Gise cobra todo",
+    });
   }
 
   options.push({
     value: "TODO_MEDICA",
-    label: `Todo a Pili (${currencyFormatter.format(0)} a Gise)`,
+    label: "DESVÍO — Pili cobra todo",
   });
 
   return options;

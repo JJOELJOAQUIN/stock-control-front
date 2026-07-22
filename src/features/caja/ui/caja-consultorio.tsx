@@ -21,7 +21,7 @@ import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
 import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
 import { LowStockCard } from "@/features/stock/components/LowStockCard";
-import { ShoppingListCard } from "@/features/shopping/ui/ShoppingListCard";
+
 import { MonthlyMetricsCard } from "@/features/metrics/ui/MonthlyMetricsCard";
 
 // Repartos por especialidad (doctor / cosmetóloga).
@@ -152,7 +152,7 @@ export default function CajaConsultorioPage() {
           {/* Métricas del mes: procedimientos por especialidad, ventas y
               reparto. Por ahora sólo para la médica — el endpoint todavía no
               tiene blindaje por rol en el backend. */}
-          <RoleGate allow={["ADMIN", "USER"]}>
+          <RoleGate allow={["ADMIN", "USER", "COSMETOLOGA"]}>
             <MonthlyMetricsCard />
           </RoleGate>
 
@@ -186,9 +186,7 @@ export default function CajaConsultorioPage() {
                 isLoading={isLoadingExpiringProducts}
               />
 
-              <div className="md:col-span-2">
-                <ShoppingListCard products={products} />
-              </div>
+
 
               <Button
                 variant="outline"

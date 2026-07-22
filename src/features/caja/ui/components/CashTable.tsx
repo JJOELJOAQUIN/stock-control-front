@@ -59,7 +59,7 @@ const COLUMNS: {
   { key: "source", label: "Origen", width: 210, min: 140 },
   { key: "method", label: "Método", width: 120, min: 90 },
   { key: "amount", label: "Bruto", width: 120, min: 90, align: "right" },
-  { key: "retention", label: "Retención", width: 120, min: 90, align: "right" },
+  // { key: "retention", label: "Retención", width: 120, min: 90, align: "right" },
   { key: "net", label: "Neto", width: 120, min: 90, align: "right" },
   { key: "doctor", label: "Médica", width: 120, min: 90, align: "right" },
   { key: "cosmetologist", label: "Cosmetóloga", width: 130, min: 100, align: "right" },
