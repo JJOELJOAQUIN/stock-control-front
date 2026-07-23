@@ -4,8 +4,6 @@ import { ArrowLeft, Building2, ShoppingBag, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
-import { ProcedureIncomeCard } from "./components/ProcedureIncomeCard";
-import { ExpenseCard } from "./components/ExpenseCard";
 import { CashTable } from "./components/CashTable";
 import { VoidMovementDialog } from "./components/VoidMovementDialog";
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
@@ -23,10 +21,6 @@ import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
 import { LowStockCard } from "@/features/stock/components/LowStockCard";
 
 import { MonthlyMetricsCard } from "@/features/metrics/ui/MonthlyMetricsCard";
-
-// Repartos por especialidad (doctor / cosmetóloga).
-const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
-const MEDICA_SHARE = { doctor: 1, cosmetologist: 0 } as const;
 
 // Clases compartidas para los CTAs con borde punteado (consistencia visual).
 const ACTION_CTA_CLASS =
@@ -58,7 +52,7 @@ export default function CajaConsultorioPage() {
     setCommentQuery,
     clearFilters,
     hasActiveFilters,
-    isCreating,
+
     isScanning,
     isSellingProduct,
     isVoiding,
@@ -68,8 +62,6 @@ export default function CajaConsultorioPage() {
     scanProduct,
     clearScannedProduct,
     sellProductFromCash,
-    registerProcedureIncome,
-    registerExpense,
     voidMovement,
     products,
     purchaseProductFromCash,
@@ -88,9 +80,6 @@ export default function CajaConsultorioPage() {
 
   // Permisos de UI: COSMETOLOGA no ve KPIs/costos, neto, ni registra compras.
   const canViewFinancials = useHasRole(["ADMIN", "USER"]);
-  // La médica (ADMIN) no ve el card de procedimientos de cosmetología.
-  const showCosmetologiaProcedures = useHasRole(["USER", "COSMETOLOGA"]);
-
   const allProcedures = useMemo(
     () =>
       Array.from(
@@ -229,7 +218,7 @@ export default function CajaConsultorioPage() {
             className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2"
             aria-label="Venta y egreso"
           >
-            <ExpenseCard isSubmitting={isCreating} onSubmit={registerExpense} />
+            {/* <ExpenseCard isSubmitting={isCreating} onSubmit={registerExpense} /> */}
 
             <Button onClick={() => setCombinedOpen(true)} className={ACTION_CTA_CLASS}>
               <span className="flex size-12 items-center justify-center rounded-full bg-primary/10">
@@ -238,7 +227,7 @@ export default function CajaConsultorioPage() {
               <span className="text-sm font-semibold">Venta combinada</span>
             </Button>
 
-            <div className="md:col-span-2">
+   
               <InlineProductSaleCard
                 scannedProduct={scannedProduct}
                 barcodeQuery={barcodeQuery}
@@ -251,7 +240,7 @@ export default function CajaConsultorioPage() {
                 onSelectByName={selectProductByName}
                 onAddMore={handleAddMore}
               />
-            </div>
+        
           </div>
 
           {/* Diálogo fuera del grid, igual que PurchaseDialog */}
@@ -272,35 +261,6 @@ export default function CajaConsultorioPage() {
             seedLines={seedLines}
           />
 
-          <div
-            className={`grid grid-cols-1 items-stretch gap-6 ${showCosmetologiaProcedures ? "md:grid-cols-2" : ""
-              }`}
-            aria-label="Ingresos por procedimientos"
-          >
-            <ProcedureIncomeCard
-              title="PROCEDIMIENTOS MEDICA"
-              description="Registrar procedimientos médicos"
-              procedures={MEDICA_PROCEDURES}
-              doctorSharePercent={MEDICA_SHARE.doctor}
-              cosmetologistSharePercent={MEDICA_SHARE.cosmetologist}
-              isSubmitting={isCreating}
-              variant="medica"
-              onSubmit={registerProcedureIncome}
-            />
-
-            {showCosmetologiaProcedures && (
-              <ProcedureIncomeCard
-                title="PROCEDIMIENTOS COSMETOLOGIA"
-                description="Registrar procedimientos de cosmetología"
-                procedures={COSMETOLOGIA_PROCEDURES}
-                doctorSharePercent={COSMETOLOGIA_SHARE.doctor}
-                cosmetologistSharePercent={COSMETOLOGIA_SHARE.cosmetologist}
-                isSubmitting={isCreating}
-                variant="cosmetologia"
-                onSubmit={registerProcedureIncome}
-              />
-            )}
-          </div>
 
           <RoleGate allow={["ADMIN", "USER", "COSMETOLOGA"]}>
             <CashTable

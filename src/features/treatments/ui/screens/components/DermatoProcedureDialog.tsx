@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -66,6 +66,30 @@ export function DermatoProcedureDialog({ open, onOpenChange }: Props) {
   const [register, { isLoading }] = useRegisterDermatoProcedureMutation();
 
   const selected = DERMATO_PROCEDURES.find((p) => p.code === procedureCode);
+
+  /**
+   * Re-matcheo diferido. El matcheo por hint corre al elegir el tratamiento,
+   * pero si la pagina es fresca los productos todavia no llegaron y todas
+   * las lineas quedan "sin producto asignado" — que era exactamente el bug.
+   * Cuando la query resuelve, este efecto completa SOLO las lineas vacias:
+   * lo que el usuario ya eligio a mano no se pisa.
+   */
+  useEffect(() => {
+    if (!selected || sortedProducts.length === 0) return;
+
+    setRows((rs) =>
+      rs.map((row, idx) => {
+        if (row.productId) return row;
+        const template = selected.bom[idx];
+        if (!template) return row;
+        const hit = sortedProducts.find((p) =>
+          p.name.toLowerCase().includes(template.hint.toLowerCase())
+        );
+        return hit ? { ...row, productId: hit.id } : row;
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedProducts.length, procedureCode]);
 
   const reset = () => {
     setProcedureCode("");

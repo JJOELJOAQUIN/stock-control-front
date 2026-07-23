@@ -156,6 +156,26 @@ export const DERMATO_PROCEDURES: DermatoProcedure[] = [
     ],
   },
   {
+    code: "TOXINA_BOTULINICA_TERCIO_SUPERIOR",
+    label: "TOXINA BOTULINICA TERCIO SUPERIOR",
+    kind: "medica",
+    // Precio real de lista. El "precio amigo" ($160.000) se carga editando
+    // el monto en el momento, como cualquier descuento.
+    amount: 210000,
+    bom: [
+      { hint: "xeomin", label: "Xeomin (toxina botulinica)", quantity: 1, unit: "ml", note: "1 ml por paciente; el vial rinde 2" },
+    ],
+  },
+  {
+    code: "PDRN_NAD_SKINBOOSTER",
+    label: "PDRN+ NAD+ SKINBOOSTER PLUS",
+    kind: "medica",
+    amount: 135000,
+    bom: [
+      { hint: "pdrn", label: "PDRN+ NAD+ Skinbooster Plus", quantity: 2, unit: "ml", note: "2 ml por paciente; la ampolla rinde 2 pacientes" },
+    ],
+  },
+  {
     code: "FRAX_FACE_DERMATOLOGICO",
     label: "FRAX FACE DERMATOLÓGICO",
     kind: "medica",

@@ -219,6 +219,7 @@ export const PRODUCT_BRANDS = [
   "MIRADROR",
   "UVANZA",
   "EXODERMAL",
+  "MERZ_AESTHETICS",
 ] as const;
 
 export type ProductBrand = (typeof PRODUCT_BRANDS)[number];

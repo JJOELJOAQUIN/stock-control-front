@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { Ban, ChevronLeft, ChevronRight, ListX, Search, X } from "lucide-react";
 import type {
