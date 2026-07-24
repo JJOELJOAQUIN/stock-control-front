@@ -12,6 +12,11 @@ import {
 /**
  * Venta combinada como seccion propia: productos + procedimientos en un
  * solo movimiento de caja, con reparto por item.
+ *
+ * El reparto de cada procedimiento ya NO se pasa desde acá: lo deriva el
+ * diálogo a partir del catálogo (cosmetología 70/30, médicos 100/0). Antes se
+ * pasaba un default 60/40 fijo que se aplicaba a todo, y eso le metía 40% de
+ * cada CONSULTA a la cosmetóloga.
  */
 export default function VentaCombinadaPage() {
   const [open, setOpen] = useState(false);
@@ -56,8 +61,6 @@ export default function VentaCombinadaPage() {
         context="CONSULTORIO"
         products={products}
         procedures={allProcedures}
-        defaultDoctorSharePercent={0.6}
-        defaultCosmetologistSharePercent={0.4}
       />
     </div>
   );

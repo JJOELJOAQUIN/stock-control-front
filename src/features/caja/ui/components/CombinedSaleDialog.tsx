@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Search, Package, Sparkles, ShoppingBag } from "lucide-react";
 
 import type { CashActor, PaymentMethod, ProcedureOption } from "../../types/cash.types";
+import { COSMETOLOGIA_PROCEDURES } from "../../types/cash.types";
 import type { SaleDraftLine } from "./ProductSaleDialog";
 import { usePerformer } from "@/features/caja/hooks/usePerformer";
 import { Badge } from "@/shared/components/ui/badge";
@@ -38,6 +39,37 @@ type Context = "LOCAL" | "CONSULTORIO";
 
 const CASH_PRODUCT_DISCOUNT = 0.10;
 
+/**
+ * Reparto de un procedimiento: se deriva del catálogo, NO de un default suelto.
+ *
+ * Cosmetología -> 70% cosmetóloga / 30% médica, y lo realiza la cosmetóloga.
+ * Todo lo demás (médicos: consulta, PRP, mesoterapia, etc.) -> 100% médica,
+ * y lo realiza la médica.
+ *
+ * Antes VentaCombinadaPage pasaba un default 60/40 fijo que se le aplicaba a
+ * CUALQUIER procedimiento, CONSULTA incluida: por eso cada consulta terminaba
+ * con 40% para Gise y firmada COSMETOLOGA, ensuciando su ranking. El split real
+ * depende de qué procedimiento es, así que se resuelve por código.
+ *
+ * El backend hace el mismo cálculo y pisa lo que mande el cliente
+ * (BusinessOperationService.resolveProcedureSplit): esto es sólo para que la
+ * UI muestre y mande lo correcto; la fuente de verdad es el server.
+ */
+const COSMETOLOGIA_CODES = new Set(COSMETOLOGIA_PROCEDURES.map((p) => p.code));
+
+const isCosmetologiaProcedure = (code: string) => COSMETOLOGIA_CODES.has(code);
+
+type ProcedureShares = {
+    performedBy: CashActor;
+    doctorSharePercent: number;
+    cosmetologistSharePercent: number;
+};
+
+const procedureShares = (code: string): ProcedureShares =>
+    isCosmetologiaProcedure(code)
+        ? { performedBy: "COSMETOLOGA", doctorSharePercent: 0.30, cosmetologistSharePercent: 0.70 }
+        : { performedBy: "MEDICA", doctorSharePercent: 1, cosmetologistSharePercent: 0 };
+
 // Línea del carrito (unión discriminada por kind).
 type CartLine =
     | {
@@ -66,9 +98,6 @@ type Props = {
     context: Context;
     products: ProductWithStock[];
     procedures: ProcedureOption[];
-    /** Split por defecto para procedimientos (los mismos que pasás a ProcedureIncomeCard). */
-    defaultDoctorSharePercent: number;
-    defaultCosmetologistSharePercent: number;
     /**
      * Líneas con las que arranca el carrito al abrir. Es el puente desde la
      * venta unitaria: el usuario empezó una venta simple y necesitó sumar más
@@ -94,8 +123,6 @@ export function CombinedSaleDialog({
     context,
     products,
     procedures,
-    defaultDoctorSharePercent,
-    defaultCosmetologistSharePercent,
     seedLines,
     onSuccess,
 }: Props) {
@@ -231,6 +258,9 @@ export function CombinedSaleDialog({
     };
 
     const addProcedure = (proc: ProcedureOption) => {
+        // El reparto sale del catálogo (cosmetología 70/30, médicos 100/0),
+        // no de un default suelto. Es fijo por procedimiento.
+        const shares = procedureShares(proc.code);
         setLines((prev) => {
             const existing = prev.find(
                 (l) => l.kind === "PROCEDURE" && l.procedureCode === proc.code
@@ -249,8 +279,8 @@ export function CombinedSaleDialog({
                     description: proc.label,
                     quantity: 1,
                     unitAmount: Number(proc.amount ?? 0),
-                    doctorSharePercent: defaultDoctorSharePercent,
-                    cosmetologistSharePercent: defaultCosmetologistSharePercent,
+                    doctorSharePercent: shares.doctorSharePercent,
+                    cosmetologistSharePercent: shares.cosmetologistSharePercent,
                 },
             ];
         });
@@ -323,6 +353,13 @@ export function CombinedSaleDialog({
                     cosmetologistSharePercent: null,
                 };
             }
+
+            // Procedimiento: autoría y reparto derivados del catálogo. Una
+            // cosmetología la hace la cosmetóloga; un procedimiento médico
+            // (consulta, PRP, etc.) la médica, siempre 100% para ella. No
+            // depende de quién opere el sistema ni de un share editable.
+            // El backend recalcula esto igual y pisa lo que mandemos.
+            const shares = procedureShares(l.procedureCode);
             return {
                 kind: "PROCEDURE",
                 productId: null,
@@ -331,12 +368,9 @@ export function CombinedSaleDialog({
                 quantity: l.quantity,
                 unitAmount: l.unitAmount,
                 subtotal,
-                // Autoria del procedimiento: si la cosmetologa se lleva parte,
-                // lo hizo ella. Si no, es de quien esta operando el sistema.
-                performedBy:
-                    l.cosmetologistSharePercent > 0 ? "COSMETOLOGA" : performer.actor,
-                doctorSharePercent: l.doctorSharePercent,
-                cosmetologistSharePercent: l.cosmetologistSharePercent,
+                performedBy: shares.performedBy,
+                doctorSharePercent: shares.doctorSharePercent,
+                cosmetologistSharePercent: shares.cosmetologistSharePercent,
             };
         });
 
@@ -463,6 +497,9 @@ export function CombinedSaleDialog({
                                 const baseSubtotal = l.quantity * l.unitAmount;
                                 const hasDiscount = isCashDiscount && l.kind === "PRODUCT";
                                 const performerError = attempted && missingPerformer(l);
+                                const isCosmoProc =
+                                    l.kind === "PROCEDURE" &&
+                                    l.cosmetologistSharePercent > 0;
                                 return (
                                     <div
                                         key={l.uid}
@@ -572,6 +609,20 @@ export function CombinedSaleDialog({
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Reparto del procedimiento (informativo, fijo por catálogo). */}
+                                        {l.kind === "PROCEDURE" && isConsultorio && (
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <Badge variant="secondary" className="font-normal">
+                                                    {isCosmoProc ? "Cosmetóloga" : "Médica"}
+                                                </Badge>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {isCosmoProc
+                                                        ? "Reparto 70% cosmetóloga · 30% médica"
+                                                        : "100% médica"}
+                                                </span>
+                                            </div>
+                                        )}
 
                                         {l.kind === "PRODUCT" && isConsultorio && (
                                             <div className="mt-2 flex items-center justify-end gap-1 text-sm">
