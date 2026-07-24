@@ -256,8 +256,7 @@ export default function CajaConsultorioPage() {
             context="CONSULTORIO"
             products={products}
             procedures={allProcedures}
-            defaultDoctorSharePercent={0.6}
-            defaultCosmetologistSharePercent={0.4}
+  
             seedLines={seedLines}
           />
 
