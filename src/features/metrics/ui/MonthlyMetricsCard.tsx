@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
-import { Sparkles, Stethoscope, TrendingUp } from "lucide-react";
+import { Sparkles, Stethoscope, TrendingUp, ChevronRight } from "lucide-react";
 
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/shared/components/ui/card";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import { currencyFormatter } from "@/lib/currencyFormatter";
@@ -19,9 +22,22 @@ function currentMonthValue() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+type RankRow = {
+  code: string;
+  label: string;
+  count: number;
+  amount: number;
+  cosmoShare: number;
+  doctorShare: number;
+  isCosmo: boolean;
+};
+
 export function MonthlyMetricsCard() {
   const [monthValue, setMonthValue] = useState(currentMonthValue());
   const [yearStr, monthStr] = monthValue.split("-");
+
+  // Modal de detalle de procedimientos.
+  const [proceduresOpen, setProceduresOpen] = useState(false);
 
   // La médica ve el panel completo; la cosmetóloga, sólo lo suyo. El
   // backend ya filtra por rol: esto decide qué se dibuja, no qué se recibe.
@@ -50,6 +66,18 @@ export function MonthlyMetricsCard() {
 
     const top = [...rows].sort((a, b) => b.count - a.count)[0];
 
+    const ranking: RankRow[] = [...rows]
+      .sort((a, b) => b.count - a.count || Number(b.amount) - Number(a.amount))
+      .map((r) => ({
+        code: r.procedureCode,
+        label: labels.get(r.procedureCode) ?? r.procedureCode,
+        count: r.count,
+        amount: Number(r.amount ?? 0),
+        cosmoShare: Number(r.cosmetologistShare ?? 0),
+        doctorShare: Number(r.doctorShare ?? 0),
+        isCosmo: cosmoCodes.has(r.procedureCode),
+      }));
+
     return {
       totalCount: sum(rows, (r) => r.count),
       medicaCount: sum(medica, (r) => r.count),
@@ -64,22 +92,16 @@ export function MonthlyMetricsCard() {
       paraCosmo:
         sum(rows, (r) => r.cosmetologistShare) +
         Number(metrics?.products.cosmetologistShare ?? 0),
+      // Total facturado sólo de procedimientos (para el pie del modal).
+      procedimientosMonto: sum(rows, (r) => r.amount),
+      procedimientosParaCosmo: sum(rows, (r) => r.cosmetologistShare),
       // Lo que queda para Pili de los procedimientos que hizo Gise: es el
       // reparto del uso del consultorio, no una comisión de venta.
       cosmoPagaAMedica: sum(cosmo, (r) => r.doctorShare),
       ventas: Number(metrics?.products.count ?? 0),
       ventasMonto: Number(metrics?.products.amount ?? 0),
       ventasParteCosmo: Number(metrics?.products.cosmetologistShare ?? 0),
-      ranking: [...rows]
-        .sort((a, b) => b.count - a.count)
-        .map((r) => ({
-          code: r.procedureCode,
-          label: labels.get(r.procedureCode) ?? r.procedureCode,
-          count: r.count,
-          amount: Number(r.amount ?? 0),
-          cosmoShare: Number(r.cosmetologistShare ?? 0),
-          isCosmo: cosmoCodes.has(r.procedureCode),
-        })),
+      ranking,
     };
   }, [metrics]);
 
@@ -109,6 +131,17 @@ export function MonthlyMetricsCard() {
     </CardHeader>
   );
 
+  const proceduresDialog = (
+    <ProceduresDetailDialog
+      open={proceduresOpen}
+      onOpenChange={setProceduresOpen}
+      rows={view.ranking}
+      isCosmetologist={isCosmetologist}
+      totalAmount={view.procedimientosMonto}
+      totalCosmo={view.procedimientosParaCosmo}
+    />
+  );
+
   // ───────────── Vista de la cosmetóloga ─────────────
   if (isCosmetologist) {
     return (
@@ -120,6 +153,7 @@ export function MonthlyMetricsCard() {
               icon={<Sparkles className="size-4 text-violet-600" />}
               label="Procedimientos"
               value={String(view.totalCount)}
+              onClick={view.ranking.length ? () => setProceduresOpen(true) : undefined}
             />
             <Money label="Tu total del mes" value={view.paraCosmo} strong />
             <Kpi
@@ -138,36 +172,28 @@ export function MonthlyMetricsCard() {
           )}
 
           {view.ranking.length > 0 ? (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">
-                Detalle por procedimiento
+            <button
+              type="button"
+              onClick={() => setProceduresOpen(true)}
+              className="w-full rounded-lg border p-3 text-left transition hover:bg-muted/40"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Detalle por procedimiento
+                </p>
+                <ChevronRight className="size-4 text-muted-foreground" />
+              </div>
+              <p className="mt-1 text-sm">
+                Ver el desglose de tus {view.totalCount} procedimientos.
               </p>
-              {view.ranking.map((r) => (
-                <div
-                  key={r.code}
-                  className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <Badge
-                      variant="secondary"
-                      className="bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
-                    >
-                      {r.count}
-                    </Badge>
-                    <span className="truncate">{r.label}</span>
-                  </span>
-                  <span className="shrink-0 tabular-nums text-muted-foreground">
-                    {currencyFormatter.format(r.cosmoShare)}
-                  </span>
-                </div>
-              ))}
-            </div>
+            </button>
           ) : (
             <p className="py-4 text-center text-sm text-muted-foreground">
               Sin movimientos en este mes.
             </p>
           )}
         </CardContent>
+        {proceduresDialog}
       </Card>
     );
   }
@@ -183,11 +209,13 @@ export function MonthlyMetricsCard() {
             label="Procedimientos médica"
             value={String(view.medicaCount)}
             hint={`${view.consultas} consultas`}
+            onClick={view.ranking.length ? () => setProceduresOpen(true) : undefined}
           />
           <Kpi
             icon={<Sparkles className="size-4 text-violet-600" />}
             label="Procedimientos cosmetología"
             value={String(view.cosmoCount)}
+            onClick={view.ranking.length ? () => setProceduresOpen(true) : undefined}
           />
           <Kpi
             label="Ventas de producto"
@@ -223,61 +251,136 @@ export function MonthlyMetricsCard() {
           </p>
         </div>
 
-        {view.ranking.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">
-              Detalle por procedimiento
+        {view.ranking.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setProceduresOpen(true)}
+            className="w-full rounded-lg border p-3 text-left transition hover:bg-muted/40"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">
+                Detalle por procedimiento
+              </p>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </div>
+            <p className="mt-1 text-sm">
+              Ver el $ de cada procedimiento y el total del mes.
             </p>
-            {view.ranking.map((r) => (
-              <div
-                key={r.code}
-                className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <Badge
-                    variant="secondary"
-                    className={
-                      r.isCosmo
-                        ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
-                        : "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
-                    }
-                  >
-                    {r.count}
-                  </Badge>
-                  <span className="truncate">{r.label}</span>
-                </span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">
-                  {currencyFormatter.format(r.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!view.ranking.length && (
+          </button>
+        ) : (
           <p className="py-4 text-center text-sm text-muted-foreground">
             Sin movimientos en este mes.
           </p>
         )}
       </CardContent>
+      {proceduresDialog}
     </Card>
   );
 }
 
+// ───────────── Modal de detalle por procedimiento ─────────────
+function ProceduresDetailDialog({
+  open, onOpenChange, rows, isCosmetologist, totalAmount, totalCosmo,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  rows: RankRow[];
+  isCosmetologist: boolean;
+  totalAmount: number;
+  totalCosmo: number;
+}) {
+  const totalCount = rows.reduce((acc, r) => acc + r.count, 0);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle>Detalle de procedimientos</DialogTitle>
+          <DialogDescription>
+            {isCosmetologist
+              ? "Lo que te correspondió por cada procedimiento, de mayor a menor."
+              : "Facturado por cada procedimiento, de mayor a menor."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-2">
+          {rows.map((r) => (
+            <div
+              key={r.code}
+              className="flex items-center justify-between gap-2 border-b py-2.5 text-sm last:border-b-0"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <Badge
+                  variant="secondary"
+                  className={
+                    r.isCosmo
+                      ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                      : "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                  }
+                >
+                  {r.count}
+                </Badge>
+                <span className="truncate">{r.label}</span>
+              </span>
+              <span className="shrink-0 tabular-nums font-medium">
+                {currencyFormatter.format(isCosmetologist ? r.cosmoShare : r.amount)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t px-6 py-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              Total ({totalCount} procedimientos)
+            </span>
+            <span className="text-lg font-bold tabular-nums">
+              {currencyFormatter.format(isCosmetologist ? totalCosmo : totalAmount)}
+            </span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Kpi({
-  icon, label, value, hint, small,
+  icon, label, value, hint, small, onClick,
 }: {
   icon?: React.ReactNode;
   label: string;
   value: string;
   hint?: string;
   small?: boolean;
+  onClick?: () => void;
 }) {
+  const clickable = Boolean(onClick);
   return (
-    <div className="rounded-lg border p-3">
+    <div
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+      className={
+        "rounded-lg border p-3 " +
+        (clickable
+          ? "cursor-pointer transition hover:bg-muted/40 hover:border-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          : "")
+      }
+    >
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         {icon}
         <span className="truncate">{label}</span>
+        {clickable && <ChevronRight className="ml-auto size-3.5" />}
       </div>
       <p className={small ? "mt-1 truncate text-sm font-semibold" : "mt-1 text-2xl font-bold"}>
         {value}
