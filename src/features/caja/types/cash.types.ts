@@ -133,7 +133,7 @@ export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
   {
     code: "PEELING_COSMETOLOGICO",
     label: "PEELING COSMETOLÓGICO",
-    amount: 42300,
+    amount: 45600,
   },
   {
     code: "FRAX_FACE_COSMETOLOGICO",
@@ -144,6 +144,18 @@ export const COSMETOLOGIA_PROCEDURES: ProcedureOption[] = [
     code: "FRAX_FACE_COSMETOLOGICO_EXOSOMAS",
     label: "FRAX FACE COSMETOLÓGICO + EXOSOMAS",
     amount: 0,
+  },
+  {
+    // Reparto 50/50 (excepción al 70/30). El backend lo resuelve por código
+    // (FIFTY_FIFTY_PROCEDURE_CODES); el front lo replica en procedureShares.
+    code: "FRAX_LIMPIEZA_PROFUNDA",
+    label: "FRAX CON LIMPIEZA PROFUNDA",
+    amount: 90000,
+  },
+  {
+    code: "FRAX_EXOSOMAS_LIMPIEZA",
+    label: "FRAX CON EXOSOMAS Y LIMPIEZA PROFUNDA",
+    amount: 120000,
   },
 ];
 
@@ -263,8 +275,24 @@ export const MEDICA_PROCEDURES: ProcedureOption[] = [
     label: "FRAX FACE DERMATOLÓGICO",
     amount: 165000,
   },
+  {
+    code: "FOSFATIDIL_CORPORAL",
+    label: "FOSFATIDIL COLINA CORPORAL",
+    amount: 70000,
+  },
+  {
+    code: "FOSFATIDIL_PAPADA",
+    label: "FOSFATIDIL COLINA PAPADA",
+    amount: 70000,
+  },
+  {
+    // Precio provisorio ($95.000): la Dra lo iba a confirmar.
+    code: "MESOTERAPIA_CELULITIS",
+    label: "MESOTERAPIA CELULITIS",
+    amount: 95000,
+  },
 ];
 
 export type VoidCashMovementRequest = {
   reason: string;
-}; 
+};

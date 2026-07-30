@@ -57,6 +57,10 @@ const CASH_PRODUCT_DISCOUNT = 0.10;
  */
 const COSMETOLOGIA_CODES = new Set(COSMETOLOGIA_PROCEDURES.map((p) => p.code));
 
+// Procedimientos de cosmetología con reparto 50/50 (excepción al 70/30).
+// El backend valida esto mismo; acá es solo para mostrar/mandar bien.
+const FIFTY_FIFTY_CODES = new Set(["FRAX_LIMPIEZA_PROFUNDA", "FRAX_EXOSOMAS_LIMPIEZA"]);
+
 const isCosmetologiaProcedure = (code: string) => COSMETOLOGIA_CODES.has(code);
 
 type ProcedureShares = {
@@ -65,10 +69,15 @@ type ProcedureShares = {
     cosmetologistSharePercent: number;
 };
 
-const procedureShares = (code: string): ProcedureShares =>
-    isCosmetologiaProcedure(code)
-        ? { performedBy: "COSMETOLOGA", doctorSharePercent: 0.30, cosmetologistSharePercent: 0.70 }
-        : { performedBy: "MEDICA", doctorSharePercent: 1, cosmetologistSharePercent: 0 };
+const procedureShares = (code: string): ProcedureShares => {
+    if (FIFTY_FIFTY_CODES.has(code)) {
+        return { performedBy: "COSMETOLOGA", doctorSharePercent: 0.50, cosmetologistSharePercent: 0.50 };
+    }
+    if (isCosmetologiaProcedure(code)) {
+        return { performedBy: "COSMETOLOGA", doctorSharePercent: 0.30, cosmetologistSharePercent: 0.70 };
+    }
+    return { performedBy: "MEDICA", doctorSharePercent: 1, cosmetologistSharePercent: 0 };
+};
 
 // Línea del carrito (unión discriminada por kind).
 type CartLine =
@@ -618,7 +627,7 @@ export function CombinedSaleDialog({
                                                 </Badge>
                                                 <span className="text-xs text-muted-foreground">
                                                     {isCosmoProc
-                                                        ? "Reparto 70% cosmetóloga · 30% médica"
+                                                        ? `Reparto ${Math.round(l.cosmetologistSharePercent * 100)}% cosmetóloga · ${Math.round(l.doctorSharePercent * 100)}% médica`
                                                         : "100% médica"}
                                                 </span>
                                             </div>
