@@ -142,9 +142,9 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/inicio/tratamientos",
-    label: "Tratamientos",
+    label: "Tratamientos Panel",
     icon: Stethoscope,
-    mobileLabel: "Tratam.",
+    mobileLabel: "Tratamientos Panel",
     mobileIcon: Activity,
     // Medica (ADMIN) registra; cosmetologa ve/registra lo suyo. USER afuera.
     roles: ["ADMIN", "COSMETOLOGA"],
@@ -157,13 +157,20 @@ export const NAV_ITEMS: NavItem[] = [
       },
       {
         href: "/inicio/tratamientos/procedimientos",
-        label: "Procedimientos",
+        label: "Procedimientos General",
         icon: Stethoscope,
         showInMobile: false,
       },
       {
         href: "/inicio/tratamientos/mesoterapias",
-        label: "Mesoterapias",
+        label: "Tratamientos Detallados",
+        icon: Syringe,
+        showInMobile: false,
+        roles: ["ADMIN"],
+      },
+      {
+        href: "/inicio/tratamientos/toxina",
+        label: "Toxina",
         icon: Syringe,
         showInMobile: false,
         roles: ["ADMIN"],

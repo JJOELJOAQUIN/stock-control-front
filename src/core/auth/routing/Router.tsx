@@ -29,6 +29,7 @@ import PrecioEspecialPage from "@/features/caja/ui/precio-especial";
 import ComprasPage from "@/features/caja/ui/compras-page";
 import ProcedimientosPage from "@/features/treatments/ui/screens/ProcedimientosPage";
 import MesoterapiasPage from "@/features/treatments/ui/screens/MesoterapiasPage";
+import ToxinaPage from "@/features/treatments/ui/screens/ToxinaPage";
 
 export default function Router() {
   return (
@@ -81,6 +82,7 @@ export default function Router() {
           <Route path="tratamientos" element={<Navigate to="/inicio/tratamientos/peeling" replace />} />
           <Route path="tratamientos/peeling" element={<Tratamientos />} />
           <Route path="tratamientos/procedimientos" element={<ProcedimientosPage />} />
+          <Route path="tratamientos/toxina" element={<ToxinaPage />} />
         </Route>
         <Route element={<RoleGuard allowedRoles={["ADMIN"]} redirectPath="/inicio" />}>
           <Route path="tratamientos/mesoterapias" element={<MesoterapiasPage />} />

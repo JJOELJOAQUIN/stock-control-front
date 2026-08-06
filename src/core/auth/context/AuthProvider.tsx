@@ -12,8 +12,7 @@ import { store } from "@/core/store/store";
 import { baseApi } from "@/core/api/baseApi";
 import { useInactivityLogout } from "../helper/UseInactivityLogout";
 
-console.log("AUTH MODE:", import.meta.env.VITE_AUTH_MODE);
-console.log("API URL:", import.meta.env.VITE_API_URL);
+
 
 type Roles = string[];
 
