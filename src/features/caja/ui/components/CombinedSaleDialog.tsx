@@ -430,23 +430,23 @@ export function CombinedSaleDialog({
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent
-                            className="w-[var(--radix-popover-trigger-width)] bg-white p-0 shadow-md"
+                            className="w-[var(--radix-popover-trigger-width)] bg-popover p-0 text-popover-foreground shadow-md dark:bg-[#1f1a1d] dark:text-white"
                             align="start"
                             onCloseAutoFocus={(e) => e.preventDefault()}
                         >
-                            <div className="flex items-center gap-2 border-b px-3 py-2">
+                            <div className="flex items-center gap-2 border-b border-border px-3 py-2">
                                 <Search className="h-4 w-4 text-muted-foreground" />
                                 <input
                                     autoFocus
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Buscar..."
-                                    className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                                    className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground dark:text-white"
                                 />
                             </div>
                             <div className="max-h-72 overflow-auto py-1">
                                 {filteredProducts.length > 0 && (
-                                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground dark:text-zinc-300">
                                         Productos
                                     </div>
                                 )}
@@ -455,18 +455,18 @@ export function CombinedSaleDialog({
                                         key={`prod-${p.id}`}
                                         type="button"
                                         onClick={() => addProduct(p)}
-                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
+                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-popover-foreground hover:bg-muted/60 dark:text-white dark:hover:bg-white/5"
                                     >
                                         <Package className="h-4 w-4 shrink-0 text-emerald-600" />
                                         <span className="flex-1 truncate">{p.name}</span>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-xs text-muted-foreground dark:text-zinc-300">
                                             Stock: {p.currentStock}
                                         </span>
                                     </button>
                                 ))}
 
                                 {filteredProcedures.length > 0 && (
-                                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground dark:text-zinc-300">
                                         Procedimientos
                                     </div>
                                 )}
@@ -475,18 +475,18 @@ export function CombinedSaleDialog({
                                         key={`proc-${proc.code}`}
                                         type="button"
                                         onClick={() => addProcedure(proc)}
-                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
+                                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-popover-foreground hover:bg-muted/60 dark:text-white dark:hover:bg-white/5"
                                     >
                                         <Sparkles className="h-4 w-4 shrink-0 text-violet-600" />
                                         <span className="flex-1 truncate">{proc.label}</span>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-xs text-muted-foreground dark:text-zinc-300">
                                             {currencyFormatter.format(Number(proc.amount ?? 0))}
                                         </span>
                                     </button>
                                 ))}
 
                                 {filteredProducts.length === 0 && filteredProcedures.length === 0 && (
-                                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                                    <div className="px-3 py-6 text-center text-sm text-muted-foreground dark:text-zinc-300">
                                         Sin resultados
                                     </div>
                                 )}

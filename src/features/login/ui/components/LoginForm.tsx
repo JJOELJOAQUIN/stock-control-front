@@ -81,7 +81,7 @@ export default function LoginForm() {
 
             <Button
               type="submit"
-              className="w-full bg-pink-500 text-white shadow-md transition-all hover:bg-pink-600 hover:shadow-lg dark:bg-pink-400 dark:text-pink-950 dark:hover:bg-pink-300"
+              className="w-full bg-[linear-gradient(90deg,#B2967D_0%,#8B6E5A_100%)] text-[#4A342A] shadow-md transition-all hover:brightness-95 dark:bg-[linear-gradient(90deg,#B2967D_0%,#8B6E5A_100%)] dark:text-[#4A342A] dark:hover:brightness-95"
             >
               Entrar
             </Button>
