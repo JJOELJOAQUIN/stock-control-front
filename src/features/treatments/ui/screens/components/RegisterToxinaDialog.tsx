@@ -19,13 +19,15 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select";
 import { PAYMENT_METHODS } from "@/lib/sale";
-import { currencyFormatter } from "@/lib/currencyFormatter";
 import type { PaymentMethod } from "@/features/caja/types/cash.types";
 
 import { PatientPicker } from "./PatientPicker";
-import { DEFAULT_TOXINA_TOTAL } from "../models/toxina";
+import {
+  DEFAULT_TOXINA_TOTAL,
+  DEFAULT_UNITS_PER_SESSION,
+  type RegisterToxinaInput,
+} from "../models/toxina";
 import type { Patient } from "../models/treatment";
-import type { RegisterToxinaInput } from "../hooks/useToxinaPage";
 
 type Props = {
   open: boolean;
@@ -34,7 +36,11 @@ type Props = {
   isSubmitting: boolean;
 };
 
-export function RegisterToxinaTreatmentDialog({
+/**
+ * Todo en un modal: paciente, unidades de la 1ª sesión y el pago único. A
+ * diferencia de peeling, acá el alta ya deja la primera sesión registrada.
+ */
+export function RegisterToxinaDialog({
   open,
   onOpenChange,
   onSubmit,
@@ -42,20 +48,23 @@ export function RegisterToxinaTreatmentDialog({
 }: Props) {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [total, setTotal] = useState(String(DEFAULT_TOXINA_TOTAL));
-  const [firstAmount, setFirstAmount] = useState("");
-  const [firstMethod, setFirstMethod] = useState<PaymentMethod>("CASH");
+  const [units, setUnits] = useState(String(DEFAULT_UNITS_PER_SESSION));
+  const [payAmount, setPayAmount] = useState("");
+  const [payMethod, setPayMethod] = useState<PaymentMethod>("CASH");
   const [attempted, setAttempted] = useState(false);
 
   const reset = () => {
     setPatient(null);
     setTotal(String(DEFAULT_TOXINA_TOTAL));
-    setFirstAmount("");
-    setFirstMethod("CASH");
+    setUnits(String(DEFAULT_UNITS_PER_SESSION));
+    setPayAmount("");
+    setPayMethod("CASH");
     setAttempted(false);
   };
 
   const totalNum = Number(total) || 0;
-  const firstNum = Number(firstAmount) || 0;
+  const unitsNum = Number(units) || 0;
+  const payNum = Number(payAmount) || 0;
   const patientError = attempted && !patient;
 
   const handleSubmit = async () => {
@@ -64,11 +73,11 @@ export function RegisterToxinaTreatmentDialog({
       toast.error("La toxina requiere un paciente");
       return;
     }
-    if (totalNum <= 0) {
-      toast.error("Ingresá el monto total");
+    if (unitsNum <= 0) {
+      toast.error("Ingresá las unidades de la sesión");
       return;
     }
-    if (firstNum > totalNum) {
+    if (payNum > totalNum) {
       toast.error("El pago no puede superar el total");
       return;
     }
@@ -76,8 +85,9 @@ export function RegisterToxinaTreatmentDialog({
     const ok = await onSubmit({
       patientId: patient.id,
       totalAmount: totalNum,
-      firstPaymentAmount: firstNum > 0 ? firstNum : null,
-      firstPaymentMethod: firstNum > 0 ? firstMethod : null,
+      firstSessionUnits: unitsNum,
+      paymentAmount: payNum > 0 ? payNum : null,
+      paymentMethod: payNum > 0 ? payMethod : null,
     });
 
     if (ok) {
@@ -96,9 +106,9 @@ export function RegisterToxinaTreatmentDialog({
     >
       <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 p-0">
         <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle>Registrar tratamiento de toxina</DialogTitle>
+          <DialogTitle>Registrar toxina</DialogTitle>
           <DialogDescription>
-            Xeomin con paciente. Pago único editable; las sesiones se registran aparte.
+            Paciente, primera sesión y pago en un solo paso.
           </DialogDescription>
         </DialogHeader>
 
@@ -113,14 +123,25 @@ export function RegisterToxinaTreatmentDialog({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Monto del tratamiento</Label>
-            <Input
-              type="number"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
-              placeholder="0"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Unidades (1ª sesión)</Label>
+              <Input
+                type="number"
+                value={units}
+                onChange={(e) => setUnits(e.target.value)}
+                placeholder="25"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Monto del tratamiento</Label>
+              <Input
+                type="number"
+                value={total}
+                onChange={(e) => setTotal(e.target.value)}
+                placeholder="0"
+              />
+            </div>
           </div>
 
           <div className="space-y-3 rounded-lg border p-3">
@@ -130,17 +151,14 @@ export function RegisterToxinaTreatmentDialog({
                 <Label>Monto</Label>
                 <Input
                   type="number"
-                  value={firstAmount}
-                  onChange={(e) => setFirstAmount(e.target.value)}
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
                   placeholder="0"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>Método</Label>
-                <Select
-                  value={firstMethod}
-                  onValueChange={(v) => setFirstMethod(v as PaymentMethod)}
-                >
+                <Select value={payMethod} onValueChange={(v) => setPayMethod(v as PaymentMethod)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -154,13 +172,9 @@ export function RegisterToxinaTreatmentDialog({
                 </Select>
               </div>
             </div>
-
-            {firstNum > 0 && totalNum > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Queda un saldo pendiente de{" "}
-                {currencyFormatter.format(Math.max(totalNum - firstNum, 0))}.
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Si no cobrás ahora, podés hacerlo al registrar la 2ª sesión.
+            </p>
           </div>
         </div>
 

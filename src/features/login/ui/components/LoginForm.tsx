@@ -43,18 +43,23 @@ export default function LoginForm() {
         <CardContent className="w-full max-w-sm space-y-4">
           <form className="space-y-4" onSubmit={handleEmailLogin}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground">
+                Email
+              </Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="tuemail@ejemplo.com"
                 required
+                className="text-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="text-foreground">
+                Contraseña
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -62,6 +67,7 @@ export default function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   required
+                  className="text-foreground"
                 />
                 <button
                   type="button"
@@ -75,7 +81,8 @@ export default function LoginForm() {
 
             <Button
               type="submit"
-              className="w-full bg-button-gradient shadow-md transition-all hover:shadow-lg"            >
+              className="w-full bg-pink-500 text-white shadow-md transition-all hover:bg-pink-600 hover:shadow-lg dark:bg-pink-400 dark:text-pink-950 dark:hover:bg-pink-300"
+            >
               Entrar
             </Button>
           </form>

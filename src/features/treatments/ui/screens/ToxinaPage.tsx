@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, Syringe } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
@@ -11,14 +11,12 @@ import {
   CardTitle,
 } from "@/shared/components/ui/card";
 
-import { TreatmentsTable } from "./components/TreatmentsTable";
-import { AddPaymentDialog } from "./components/AddPaymentDialog";
-
-import type { Treatment } from "./models/treatment";
-import { useToxinaPage } from "./hooks/useToxinaPage";
+import { ToxinaTable } from "./components/ToxinaTable";
 import { OpenVialsCard } from "./components/OpenVialsCard";
-import { RegisterToxinaTreatmentDialog } from "./components/RegisterToxinaTreatmentDialog";
-import { RegisterToxinaSessionDialog } from "./components/RegisterToxinaSessionDialog";
+import { RegisterToxinaDialog } from "./components/RegisterToxinaDialog";
+import { SecondSessionDialog } from "./components/SecondSessionDialog";
+import { useToxinaPage } from "./hooks/useToxinaPage";
+import type { ToxinaTreatment } from "./models/toxina";
 
 export default function ToxinaPage() {
   const {
@@ -28,16 +26,13 @@ export default function ToxinaPage() {
     isLoading,
     isCreating,
     isRegisteringSession,
-    isPaying,
     registerTreatment,
-    registerToxinaSession,
-    addPayment,
+    registerSecondSession,
   } = useToxinaPage();
 
   const [search, setSearch] = useState("");
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [isSessionOpen, setIsSessionOpen] = useState(false);
-  const [payTarget, setPayTarget] = useState<Treatment | null>(null);
+  const [secondTarget, setSecondTarget] = useState<ToxinaTreatment | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -56,20 +51,10 @@ export default function ToxinaPage() {
         </div>
 
         {canRegister && (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setIsSessionOpen(true)}
-            >
-              <Syringe className="size-4" />
-              Registrar sesión
-            </Button>
-            <Button className="gap-2" onClick={() => setIsRegisterOpen(true)}>
-              <Plus className="size-4" />
-              Registrar tratamiento
-            </Button>
-          </div>
+          <Button className="gap-2" onClick={() => setIsRegisterOpen(true)}>
+            <Plus className="size-4" />
+            Registrar toxina
+          </Button>
         )}
       </div>
 
@@ -78,7 +63,7 @@ export default function ToxinaPage() {
       <Card>
         <CardHeader>
           <CardTitle>Historial</CardTitle>
-          <CardDescription>Tratamientos de toxina y su saldo pendiente.</CardDescription>
+          <CardDescription>Tratamientos de toxina y unidades por sesión.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
@@ -89,40 +74,32 @@ export default function ToxinaPage() {
               className="max-w-sm"
             />
           </div>
-          <TreatmentsTable
+          <ToxinaTable
             treatments={filtered}
             isLoading={isLoading}
             canRegister={canRegister}
-            onAddPayment={setPayTarget}
+            onSecondSession={setSecondTarget}
           />
         </CardContent>
       </Card>
 
       {canRegister && (
         <>
-          <RegisterToxinaTreatmentDialog
+          <RegisterToxinaDialog
             open={isRegisterOpen}
             onOpenChange={setIsRegisterOpen}
             onSubmit={registerTreatment}
-            isSubmitting={isCreating}
+            isSubmitting={isCreating || isRegisteringSession}
           />
-          <RegisterToxinaSessionDialog
-            open={isSessionOpen}
-            onOpenChange={setIsSessionOpen}
-            treatments={treatments}
-            onSubmit={registerToxinaSession}
+          <SecondSessionDialog
+            open={!!secondTarget}
+            onOpenChange={(o) => !o && setSecondTarget(null)}
+            treatment={secondTarget}
+            onSubmit={registerSecondSession}
             isSubmitting={isRegisteringSession}
           />
         </>
       )}
-
-      <AddPaymentDialog
-        open={!!payTarget}
-        onOpenChange={(o) => !o && setPayTarget(null)}
-        treatment={payTarget}
-        isPaying={isPaying}
-        onPay={addPayment}
-      />
     </div>
   );
 }

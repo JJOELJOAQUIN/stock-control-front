@@ -1,77 +1,74 @@
 import { useMemo } from "react";
 import { toast } from "sonner";
 
-import type { PaymentMethod } from "@/features/caja/types/cash.types";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
-
+import { useGetProductsWithStockQuery } from "@/features/stock/api/stockApi";
+import { useRegisterTreatmentPaymentMutation } from "../api/treatmentsApi";
 import {
-  useGetTreatmentsQuery,
-  useRegisterTreatmentPaymentMutation,
-} from "../api/treatmentsApi";
-import {
+  useGetToxinaTreatmentsQuery,
   useCreateToxinaTreatmentMutation,
   useRegisterToxinaSessionMutation,
   useGetOpenVialsQuery,
 } from "../api/toxinaApi";
-import { TOXINA } from "../models/toxina";
-
-export type RegisterToxinaInput = {
-  patientId: string;
-  totalAmount: number;
-  firstPaymentAmount: number | null;
-  firstPaymentMethod: PaymentMethod | null;
-};
-
-export type RegisterSessionInput = {
-  treatmentId: string;
-  productId: string;
-  sessionNumber: number;
-  unitsUsed: number;
-};
+import type {
+  RegisterToxinaInput,
+  RegisterSecondSessionInput,
+} from "../models/toxina";
 
 export function useToxinaPage() {
   // La toxina es médica: sólo ADMIN la registra.
   const canRegister = useHasRole(["ADMIN"]);
 
-  const { data: allTreatments = [], isLoading, refetch } = useGetTreatmentsQuery();
-  const treatments = useMemo(
-    () => allTreatments.filter((t) => t.code === TOXINA.code),
-    [allTreatments]
-  );
-
+  const { data: treatments = [], isLoading } = useGetToxinaTreatmentsQuery();
   const { data: openVials = [] } = useGetOpenVialsQuery();
+
+  // El vial de Xeomin sale del stock; se resuelve una vez y lo usan los dos flujos.
+  const { data: products = [] } = useGetProductsWithStockQuery({ context: "CONSULTORIO" });
+  const toxinaProductId = useMemo(
+    () => products.find((p) => p.name.toUpperCase().includes("XEOMIN"))?.id ?? null,
+    [products]
+  );
 
   const [createToxina, { isLoading: isCreating }] = useCreateToxinaTreatmentMutation();
   const [registerSession, { isLoading: isRegisteringSession }] =
     useRegisterToxinaSessionMutation();
-  const [registerPayment, { isLoading: isPaying }] = useRegisterTreatmentPaymentMutation();
+  const [registerPayment] = useRegisterTreatmentPaymentMutation();
 
-  // Alta del tratamiento + (opcional) pago único, orquestado en dos llamadas.
+  // Alta completa en un solo submit: tratamiento -> 1ª sesión -> (opcional) pago.
   const registerTreatment = async (input: RegisterToxinaInput) => {
+    if (!toxinaProductId) {
+      toast.error("No hay Xeomin cargado en stock");
+      return false;
+    }
     try {
       const created = await createToxina({
         patientId: input.patientId,
         totalAmount: input.totalAmount,
       }).unwrap();
 
-      if (
-        input.firstPaymentAmount &&
-        input.firstPaymentAmount > 0 &&
-        input.firstPaymentMethod
-      ) {
+      await registerSession({
+        id: created.id,
+        body: {
+          productId: toxinaProductId,
+          sessionNumber: 1,
+          unitsUsed: input.firstSessionUnits,
+          context: "CONSULTORIO",
+        },
+      }).unwrap();
+
+      if (input.paymentAmount && input.paymentAmount > 0 && input.paymentMethod) {
         await registerPayment({
           id: created.id,
           body: {
-            amount: input.firstPaymentAmount,
-            paymentMethod: input.firstPaymentMethod,
+            amount: input.paymentAmount,
+            paymentMethod: input.paymentMethod,
             context: "CONSULTORIO",
             splitPreset: null,
           },
         }).unwrap();
       }
 
-      toast.success("Tratamiento de toxina registrado");
-      refetch();
+      toast.success("Tratamiento y 1ª sesión registrados");
       return true;
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar el tratamiento");
@@ -79,41 +76,39 @@ export function useToxinaPage() {
     }
   };
 
-  const registerToxinaSession = async (input: RegisterSessionInput) => {
+  // 2ª sesión: unidades + (opcional) el pago único, si todavía no se cobró.
+  const registerSecondSession = async (input: RegisterSecondSessionInput) => {
+    if (!toxinaProductId) {
+      toast.error("No hay Xeomin cargado en stock");
+      return false;
+    }
     try {
       await registerSession({
         id: input.treatmentId,
         body: {
-          productId: input.productId,
-          sessionNumber: input.sessionNumber,
-          unitsUsed: input.unitsUsed,
+          productId: toxinaProductId,
+          sessionNumber: 2,
+          unitsUsed: input.units,
           context: "CONSULTORIO",
         },
       }).unwrap();
-      toast.success("Sesión registrada");
-      refetch();
+
+      if (input.paymentAmount && input.paymentAmount > 0 && input.paymentMethod) {
+        await registerPayment({
+          id: input.treatmentId,
+          body: {
+            amount: input.paymentAmount,
+            paymentMethod: input.paymentMethod,
+            context: "CONSULTORIO",
+            splitPreset: null,
+          },
+        }).unwrap();
+      }
+
+      toast.success("2ª sesión registrada");
       return true;
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar la sesión");
-      return false;
-    }
-  };
-
-  const addPayment = async (
-    treatmentId: string,
-    amount: number,
-    paymentMethod: PaymentMethod
-  ) => {
-    try {
-      await registerPayment({
-        id: treatmentId,
-        body: { amount, paymentMethod, context: "CONSULTORIO", splitPreset: null },
-      }).unwrap();
-      toast.success("Pago registrado");
-      refetch();
-      return true;
-    } catch (error: any) {
-      toast.error(error?.data?.message || "No se pudo registrar el pago");
       return false;
     }
   };
@@ -125,9 +120,7 @@ export function useToxinaPage() {
     isLoading,
     isCreating,
     isRegisteringSession,
-    isPaying,
     registerTreatment,
-    registerToxinaSession,
-    addPayment,
+    registerSecondSession,
   };
 }

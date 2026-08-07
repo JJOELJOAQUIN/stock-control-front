@@ -87,7 +87,7 @@ export function VoidMovementDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={handleConfirm} disabled={isVoiding}>
+          <Button variant="ghost" onClick={handleConfirm} disabled={isVoiding}>
             Anular
           </Button>
         </div>
