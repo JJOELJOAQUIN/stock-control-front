@@ -9,11 +9,19 @@ import {
   User,
   Moon,
   Sun,
+  Sparkles,
+  Stethoscope,
 } from "lucide-react"
 
 import { useTheme } from "@/core/context/theme-provider"
 import { useAuth } from "@/core/auth/context/AuthProvider"
 import { NAV_ITEMS, filterNavByRoles, type NavItem } from "@/shared/navigation/nav-items"
+import { hasAnyRole } from "@/features/auth/role"
+import {
+  COSMETOLOGIA_PROCEDURES,
+  MEDICA_PROCEDURES,
+} from "@/features/caja/types/cash.types"
+
 
 import {
   DropdownMenu,
@@ -24,6 +32,7 @@ import {
 } from "@/shared/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar"
 import { Button } from "@/shared/components/ui/button"
+import { TreatmentsCatalogDialog } from "@/features/treatments/ui/screens/components/TreatmentsCatalogDialog"
 
 /* =========================
    HELPERS
@@ -160,6 +169,13 @@ export function Sidebar({
   const user = authState.user
   const role = authState.roles
 
+  // Catálogo cruzado en el menú del avatar: la Dra ve lo de Gise y viceversa.
+  // 'cosmetologia' → tratamientos que ofrece la cosmetóloga (para la médica).
+  // 'dermatologia' → tratamientos que ofrece la médica (para la cosmetóloga).
+  const [catalogModal, setCatalogModal] = useState<null | "cosmetologia" | "dermatologia">(null)
+  const isAdmin = hasAnyRole(authState.roles, ["ADMIN"])
+  const isCosmetologist = hasAnyRole(authState.roles, ["COSMETOLOGA"])
+
   // Navegación filtrada por rol (fuente única en nav-items.ts)
   const menuItems = filterNavByRoles(NAV_ITEMS, authState.roles)
 
@@ -289,6 +305,38 @@ export function Sidebar({
               <User className="mr-2 h-4 w-4" />
               Perfil
             </DropdownMenuItem>
+
+            {/* Catálogo cruzado, solo lectura. La Dra consulta lo de Gise;
+                Gise consulta lo de la Dra. */}
+            {isAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    setCatalogModal("cosmetologia")
+                  }}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Tratamientos cosmetológicos
+                </DropdownMenuItem>
+              </>
+            )}
+            {isCosmetologist && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    setCatalogModal("dermatologia")
+                  }}
+                >
+                  <Stethoscope className="mr-2 h-4 w-4" />
+                  Tratamientos dermatológicos
+                </DropdownMenuItem>
+              </>
+            )}
+
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -297,6 +345,24 @@ export function Sidebar({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Modales de catálogo (referencia, sin registrar nada) */}
+      <TreatmentsCatalogDialog
+        open={catalogModal === "cosmetologia"}
+        onOpenChange={(o) => setCatalogModal(o ? "cosmetologia" : null)}
+        title="Tratamientos cosmetológicos"
+        description="Lo que ofrece la cosmetóloga. Precios de lista."
+        procedures={COSMETOLOGIA_PROCEDURES}
+        accent="violet"
+      />
+      <TreatmentsCatalogDialog
+        open={catalogModal === "dermatologia"}
+        onOpenChange={(o) => setCatalogModal(o ? "dermatologia" : null)}
+        title="Tratamientos dermatológicos"
+        description="Lo que ofrece la dermatóloga. Precios de lista."
+        procedures={MEDICA_PROCEDURES}
+        accent="sky"
+      />
     </aside>
   )
 }

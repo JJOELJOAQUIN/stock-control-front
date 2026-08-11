@@ -1,13 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ShoppingBag } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
 import { useGetProductsWithStockQuery } from "@/features/stock/api/stockApi";
-import {
-  COSMETOLOGIA_PROCEDURES,
-  MEDICA_PROCEDURES,
-} from "../types/cash.types";
+import { useProcedureOptions } from "../hooks/useProcedureOptions";
 
 /**
  * Venta combinada como seccion propia: productos + procedimientos en un
@@ -25,15 +22,7 @@ export default function VentaCombinadaPage() {
     context: "CONSULTORIO",
   });
 
-  const allProcedures = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          [...MEDICA_PROCEDURES, ...COSMETOLOGIA_PROCEDURES].map((p) => [p.code, p])
-        ).values()
-      ),
-    []
-  );
+  const { all: allProcedures } = useProcedureOptions();
 
   return (
     <div className="space-y-6">

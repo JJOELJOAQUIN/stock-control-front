@@ -1,13 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { InlineProductSaleCard } from "./components/InlineProductSaleCards";
 import { CombinedSaleDialog } from "./components/CombinedSaleDialog";
 import type { SaleDraftLine } from "./components/ProductSaleDialog";
 import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
-import {
-  COSMETOLOGIA_PROCEDURES,
-  MEDICA_PROCEDURES,
-} from "../types/cash.types";
+import { useProcedureOptions } from "../hooks/useProcedureOptions";
 
 /**
  * Venta directa (escanear y cobrar) como seccion propia. Conserva el puente
@@ -32,15 +29,7 @@ export default function VentaDirectaPage() {
     products,
   } = useCashConsultorioPage();
 
-  const allProcedures = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          [...MEDICA_PROCEDURES, ...COSMETOLOGIA_PROCEDURES].map((p) => [p.code, p])
-        ).values()
-      ),
-    []
-  );
+  const { all: allProcedures } = useProcedureOptions();
 
   const handleAddMore = (draft: SaleDraftLine) => {
     setSeedLines([draft]);

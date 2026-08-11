@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Building2, ShoppingBag, ShoppingCart } from "lucide-react";
 
@@ -13,7 +13,7 @@ import { DailySplitSummary } from "./components/DailySplitSummary";
 import { CosmetologistSplitCard } from "./components/CosmetologistSplitCard";
 import { ProductExpirationAlerts } from "./components/ProductExpirationAlerts";
 import { BusinessTotals } from "./components/BusinessTotals";
-import { COSMETOLOGIA_PROCEDURES, MEDICA_PROCEDURES } from "../types/cash.types";
+import { useProcedureOptions } from "../hooks/useProcedureOptions";
 import type { CashMovementResponse } from "../types/cash.types";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { RoleGate } from "@/features/auth/ui/RoleGate";
@@ -80,15 +80,7 @@ export default function CajaConsultorioPage() {
 
   // Permisos de UI: COSMETOLOGA no ve KPIs/costos, neto, ni registra compras.
   const canViewFinancials = useHasRole(["ADMIN", "USER"]);
-  const allProcedures = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          [...MEDICA_PROCEDURES, ...COSMETOLOGIA_PROCEDURES].map((p) => [p.code, p]),
-        ).values(),
-      ),
-    [],
-  );
+  const { all: allProcedures } = useProcedureOptions();
 
   /**
    * La venta unitaria pasa a ser combinada. Se limpia el producto escaneado

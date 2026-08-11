@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sparkles, Stethoscope, TrendingUp, ChevronRight } from "lucide-react";
+import { Sparkles, Stethoscope, TrendingUp, ChevronRight, ShoppingBag } from "lucide-react";
 
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -15,7 +15,11 @@ import {
   COSMETOLOGIA_PROCEDURES,
   MEDICA_PROCEDURES,
 } from "@/features/caja/types/cash.types";
-import { useGetMonthlyMetricsQuery, type MonthlyMetrics } from "../api/metricsApi";
+import {
+  useGetMonthlyMetricsQuery,
+  type MonthlyMetrics,
+  type CosmetologistProductRow,
+} from "../api/metricsApi";
 
 function currentMonthValue() {
   const d = new Date();
@@ -47,6 +51,8 @@ export function MonthlyMetricsCard() {
   const [procModal, setProcModal] = useState<ProcModal>(null);
   // Modales de las cards de plata: total facturado, para la médica, ventas.
   const [moneyModal, setMoneyModal] = useState<null | "facturado" | "medica" | "productos">(null);
+  // Detalle de lo que vendió Gise (mismo dato en las dos vistas).
+  const [cosmoProductsOpen, setCosmoProductsOpen] = useState(false);
 
   const isCosmetologist = useHasRole(["COSMETOLOGA"]);
 
@@ -98,6 +104,16 @@ export function MonthlyMetricsCard() {
     const comisionGise = sumP((r) => r.commission);
     const revenueProductos = sumP((r) => r.revenue);
 
+    // Detalle de lo que vendió Gise (sin costo; sirve para las dos vistas).
+    const cosmoProductDetail = [...(metrics?.cosmetologistProductDetail ?? [])].sort(
+      (a, b) => b.count - a.count || b.revenue - a.revenue
+    );
+    const sumCP = (f: (r: CosmetologistProductRow) => number) =>
+      cosmoProductDetail.reduce((acc, r) => acc + Number(f(r) ?? 0), 0);
+    const cosmoProductUnits = sumCP((r) => r.count);
+    const cosmoProductRevenue = sumCP((r) => r.revenue);
+    const cosmoProductCommission = sumCP((r) => r.commission);
+
     const medicaProcMonto = sum(medica, (r) => r.amount);
     const cosmoProcMonto = sum(cosmo, (r) => r.amount);
     const cosmoParaMedica = sum(cosmo, (r) => r.doctorShare);
@@ -143,6 +159,12 @@ export function MonthlyMetricsCard() {
       costoProductos,
       comisionGise,
       revenueProductos,
+
+      // Detalle de productos vendidos por Gise (sin costo).
+      cosmoProductDetail,
+      cosmoProductUnits,
+      cosmoProductRevenue,
+      cosmoProductCommission,
     };
   }, [metrics]);
 
@@ -187,10 +209,15 @@ export function MonthlyMetricsCard() {
             />
             <Money label="Tu total del mes" value={view.paraCosmo} strong />
             <Kpi
-              label="Lo que más hiciste"
-              value={view.topLabel}
-              hint={view.topCount ? `${view.topCount} veces` : undefined}
-              small
+              icon={<ShoppingBag className="size-4 text-emerald-600" />}
+              label="Productos que vendiste"
+              value={String(view.cosmoProductUnits)}
+              hint={
+                view.cosmoProductCommission > 0
+                  ? `${currencyFormatter.format(view.cosmoProductCommission)} de comisión`
+                  : undefined
+              }
+              onClick={view.cosmoProductDetail.length ? () => setCosmoProductsOpen(true) : undefined}
             />
           </div>
 
@@ -201,12 +228,25 @@ export function MonthlyMetricsCard() {
             </p>
           )}
 
-          {view.cosmoRows.length > 0 ? (
-            <DetailTrigger
-              label="Detalle por procedimiento"
-              hint={`Ver el desglose de tus ${view.totalCount} procedimientos.`}
-              onClick={() => setProcModal("self")}
-            />
+          {view.cosmoRows.length > 0 || view.cosmoProductDetail.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {view.cosmoRows.length > 0 && (
+                <DetailTrigger
+                  label="Detalle por procedimiento"
+                  hint={`Ver el desglose de tus ${view.totalCount} procedimientos.`}
+                  onClick={() => setProcModal("self")}
+                />
+              )}
+              {view.cosmoProductDetail.length > 0 && (
+                <DetailTrigger
+                  label="Detalle de productos vendidos"
+                  hint={`${view.cosmoProductUnits} unidades · ${currencyFormatter.format(
+                    view.cosmoProductCommission
+                  )} de comisión.`}
+                  onClick={() => setCosmoProductsOpen(true)}
+                />
+              )}
+            </div>
           ) : (
             <EmptyMonth />
           )}
@@ -218,6 +258,15 @@ export function MonthlyMetricsCard() {
           rows={view.cosmoRows}
           total={view.paraCosmo}
           ventasParteCosmo={view.ventasParteCosmo}
+        />
+
+        <CosmoProductsDialog
+          open={cosmoProductsOpen}
+          onOpenChange={setCosmoProductsOpen}
+          mine
+          rows={view.cosmoProductDetail}
+          revenue={view.cosmoProductRevenue}
+          commission={view.cosmoProductCommission}
         />
       </Card>
     );
@@ -280,7 +329,7 @@ export function MonthlyMetricsCard() {
           </p>
         </div>
 
-        {view.medicaRows.length || view.cosmoRows.length ? (
+        {view.medicaRows.length || view.cosmoRows.length || view.cosmoProductDetail.length ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <DetailTrigger
               label="Detalle procedimientos médicos"
@@ -292,6 +341,15 @@ export function MonthlyMetricsCard() {
                 label="Detalle cosmetología"
                 hint="Facturado y reparto 70/30 por procedimiento."
                 onClick={() => setProcModal("cosmetologia")}
+              />
+            )}
+            {view.cosmoProductDetail.length > 0 && (
+              <DetailTrigger
+                label="Productos vendidos por Gise"
+                hint={`${view.cosmoProductUnits} unidades · comisión ${currencyFormatter.format(
+                  view.cosmoProductCommission
+                )}.`}
+                onClick={() => setCosmoProductsOpen(true)}
               />
             )}
           </div>
@@ -329,6 +387,15 @@ export function MonthlyMetricsCard() {
         cost={view.costoProductos}
         commission={view.comisionGise}
         profit={view.gananciaProductos}
+      />
+
+      {/* Modal productos vendidos por Gise: cantidad, cobrado y su comisión */}
+      <CosmoProductsDialog
+        open={cosmoProductsOpen}
+        onOpenChange={setCosmoProductsOpen}
+        rows={view.cosmoProductDetail}
+        revenue={view.cosmoProductRevenue}
+        commission={view.cosmoProductCommission}
       />
 
       {/* Modal total facturado: de dónde sale cada peso */}
@@ -497,6 +564,79 @@ function SelfProceduresDialog({
             <span className="text-sm font-medium">Tu total del mes</span>
             <span className="text-lg font-bold tabular-nums">
               {currencyFormatter.format(total + ventasParteCosmo)}
+            </span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Productos vendidos por la cosmetóloga: cantidad, cobrado y su comisión (5%).
+// Sin costo ni ganancia — se usa igual en la vista de la Dra (`mine` = false,
+// "por Gise") y en la de Gise (`mine` = true, "que vendiste"). Es el detalle
+// para el conteo mensual que pidieron.
+function CosmoProductsDialog({
+  open, onOpenChange, rows, revenue, commission, mine = false,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  rows: CosmetologistProductRow[];
+  revenue: number;
+  commission: number;
+  mine?: boolean;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[85vh] max-w-xl flex-col gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle>
+            {mine ? "Productos que vendiste" : "Productos vendidos por Gise"}
+          </DialogTitle>
+          <DialogDescription>
+            Cada producto, del más vendido al menos, con lo cobrado y la
+            comisión del 5%.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-2">
+          <div className="flex items-center justify-between border-b py-2 text-xs font-medium text-muted-foreground">
+            <span>Producto</span>
+            <span className="flex gap-6">
+              <span className="w-24 text-right">Cobrado</span>
+              <span className="w-24 text-right">Comisión</span>
+            </span>
+          </div>
+          {rows.map((r) => (
+            <div key={r.productId}
+              className="flex items-center justify-between gap-2 border-b py-2 text-sm last:border-b-0">
+              <span className="flex min-w-0 items-center gap-2">
+                <Badge variant="secondary">{r.count}</Badge>
+                <span className="truncate">{r.name}</span>
+              </span>
+              <span className="flex shrink-0 gap-6 tabular-nums">
+                <span className="w-24 text-right">{currencyFormatter.format(r.revenue)}</span>
+                <span className="w-24 text-right font-medium text-violet-600 dark:text-violet-400">
+                  {currencyFormatter.format(r.commission)}
+                </span>
+              </span>
+            </div>
+          ))}
+          {rows.length === 0 && (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Sin ventas de producto este mes.
+            </p>
+          )}
+        </div>
+
+        <div className="border-t px-6 py-4 space-y-1.5 text-sm">
+          <BreakLine label="Total cobrado" value={revenue} />
+          <div className="flex items-center justify-between border-t pt-2">
+            <span className="font-medium">
+              {mine ? "Tu comisión (5%)" : "Comisión de Gise (5%)"}
+            </span>
+            <span className="text-lg font-bold tabular-nums text-violet-600 dark:text-violet-400">
+              {currencyFormatter.format(commission)}
             </span>
           </div>
         </div>

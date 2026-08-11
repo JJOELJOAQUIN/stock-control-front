@@ -3,9 +3,9 @@ import { toast } from "sonner";
 import { Plus, Trash2, Search, Package, Sparkles, ShoppingBag } from "lucide-react";
 
 import type { CashActor, PaymentMethod, ProcedureOption } from "../../types/cash.types";
-import { COSMETOLOGIA_PROCEDURES } from "../../types/cash.types";
 import type { SaleDraftLine } from "./ProductSaleDialog";
 import { usePerformer } from "@/features/caja/hooks/usePerformer";
+import { useProcedureOptions } from "@/features/caja/hooks/useProcedureOptions";
 import { Badge } from "@/shared/components/ui/badge";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
 import type {
@@ -46,38 +46,11 @@ const CASH_PRODUCT_DISCOUNT = 0.10;
  * Todo lo demás (médicos: consulta, PRP, mesoterapia, etc.) -> 100% médica,
  * y lo realiza la médica.
  *
- * Antes VentaCombinadaPage pasaba un default 60/40 fijo que se le aplicaba a
- * CUALQUIER procedimiento, CONSULTA incluida: por eso cada consulta terminaba
- * con 40% para Gise y firmada COSMETOLOGA, ensuciando su ranking. El split real
- * depende de qué procedimiento es, así que se resuelve por código.
- *
- * El backend hace el mismo cálculo y pisa lo que mande el cliente
- * (BusinessOperationService.resolveProcedureSplit): esto es sólo para que la
- * UI muestre y mande lo correcto; la fuente de verdad es el server.
+ * El reparto por procedimiento sale del catálogo vía useProcedureOptions
+ * (con fallback histórico), y el backend lo revalida y pisa lo que mande el
+ * cliente (BusinessOperationService.resolveProcedureSplit): esto es sólo para
+ * que la UI muestre y mande lo correcto; la fuente de verdad es el server.
  */
-const COSMETOLOGIA_CODES = new Set(COSMETOLOGIA_PROCEDURES.map((p) => p.code));
-
-// Procedimientos de cosmetología con reparto 50/50 (excepción al 70/30).
-// El backend valida esto mismo; acá es solo para mostrar/mandar bien.
-const FIFTY_FIFTY_CODES = new Set(["FRAX_LIMPIEZA_PROFUNDA", "FRAX_EXOSOMAS_LIMPIEZA"]);
-
-const isCosmetologiaProcedure = (code: string) => COSMETOLOGIA_CODES.has(code);
-
-type ProcedureShares = {
-    performedBy: CashActor;
-    doctorSharePercent: number;
-    cosmetologistSharePercent: number;
-};
-
-const procedureShares = (code: string): ProcedureShares => {
-    if (FIFTY_FIFTY_CODES.has(code)) {
-        return { performedBy: "COSMETOLOGA", doctorSharePercent: 0.50, cosmetologistSharePercent: 0.50 };
-    }
-    if (isCosmetologiaProcedure(code)) {
-        return { performedBy: "COSMETOLOGA", doctorSharePercent: 0.30, cosmetologistSharePercent: 0.70 };
-    }
-    return { performedBy: "MEDICA", doctorSharePercent: 1, cosmetologistSharePercent: 0 };
-};
 
 // Línea del carrito (unión discriminada por kind).
 type CartLine =
@@ -137,6 +110,9 @@ export function CombinedSaleDialog({
 }: Props) {
     // Quien realiza la venta sale del usuario logueado.
     const performer = usePerformer();
+    // Reparto por código desde el catálogo (con fallback histórico). El backend
+    // lo revalida igual; esto es para mostrar y mandar lo correcto.
+    const { sharesFor } = useProcedureOptions();
 
     const [lines, setLines] = useState<CartLine[]>([]);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
@@ -269,7 +245,7 @@ export function CombinedSaleDialog({
     const addProcedure = (proc: ProcedureOption) => {
         // El reparto sale del catálogo (cosmetología 70/30, médicos 100/0),
         // no de un default suelto. Es fijo por procedimiento.
-        const shares = procedureShares(proc.code);
+        const shares = sharesFor(proc.code);
         setLines((prev) => {
             const existing = prev.find(
                 (l) => l.kind === "PROCEDURE" && l.procedureCode === proc.code
@@ -368,7 +344,7 @@ export function CombinedSaleDialog({
             // (consulta, PRP, etc.) la médica, siempre 100% para ella. No
             // depende de quién opere el sistema ni de un share editable.
             // El backend recalcula esto igual y pisa lo que mandemos.
-            const shares = procedureShares(l.procedureCode);
+            const shares = sharesFor(l.procedureCode);
             return {
                 kind: "PROCEDURE",
                 productId: null,

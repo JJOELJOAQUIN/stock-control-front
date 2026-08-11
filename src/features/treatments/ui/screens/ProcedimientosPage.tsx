@@ -1,12 +1,10 @@
-import {
-  COSMETOLOGIA_PROCEDURES,
-  MEDICA_PROCEDURES,
-} from "@/features/caja/types/cash.types";
 import { ProcedureIncomeCard } from "@/features/caja/ui/components/ProcedureIncomeCard";
 import { useCashConsultorioPage } from "@/features/caja/hooks/useCashConsultorioPage";
+import { useProcedureOptions } from "@/features/caja/hooks/useProcedureOptions";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 
-// Repartos por especialidad (los mismos que vivian en caja-consultorio).
+// Defaults por card (por si un código no está en el catálogo). El reparto real
+// por procedimiento sale de `sharesFor`, y el backend lo revalida igual.
 const COSMETOLOGIA_SHARE = { doctor: 0.3, cosmetologist: 0.7 } as const;
 const MEDICA_SHARE = { doctor: 1, cosmetologist: 0 } as const;
 
@@ -17,6 +15,7 @@ const MEDICA_SHARE = { doctor: 1, cosmetologist: 0 } as const;
  */
 export default function ProcedimientosPage() {
   const { registerProcedureIncome, isCreating } = useCashConsultorioPage();
+  const { medica, cosmetologia, sharesFor } = useProcedureOptions();
 
   // Misma matriz de visibilidad que tenia caja-consultorio.
   const showCosmetologia = useHasRole(["USER", "COSMETOLOGA"]);
@@ -40,9 +39,10 @@ export default function ProcedimientosPage() {
           <ProcedureIncomeCard
             title="PROCEDIMIENTOS MEDICA"
             description="Registrar procedimientos medicos"
-            procedures={MEDICA_PROCEDURES}
+            procedures={medica}
             doctorSharePercent={MEDICA_SHARE.doctor}
             cosmetologistSharePercent={MEDICA_SHARE.cosmetologist}
+            sharesFor={sharesFor}
             isSubmitting={isCreating}
             variant="medica"
             onSubmit={registerProcedureIncome}
@@ -53,9 +53,10 @@ export default function ProcedimientosPage() {
           <ProcedureIncomeCard
             title="PROCEDIMIENTOS COSMETOLOGIA"
             description="Registrar procedimientos de cosmetologia"
-            procedures={COSMETOLOGIA_PROCEDURES}
+            procedures={cosmetologia}
             doctorSharePercent={COSMETOLOGIA_SHARE.doctor}
             cosmetologistSharePercent={COSMETOLOGIA_SHARE.cosmetologist}
+            sharesFor={sharesFor}
             isSubmitting={isCreating}
             variant="cosmetologia"
             onSubmit={registerProcedureIncome}

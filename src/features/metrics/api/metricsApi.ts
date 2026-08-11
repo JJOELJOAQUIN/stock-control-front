@@ -19,6 +19,19 @@ export type ProductDetailRow = {
   profit: number;     // revenue - cost - commission (ganancia de Pili)
 };
 
+/**
+ * Detalle por producto de lo que vendió la cosmetóloga en el mes.
+ * Sin costo ni ganancia: lo consumen las dos vistas (la Dra para ver qué
+ * vendió Gise, y Gise para su conteo). El costo es información de Pili.
+ */
+export type CosmetologistProductRow = {
+  productId: string;
+  name: string;
+  count: number;      // unidades vendidas por Gise
+  revenue: number;    // lo cobrado por esas ventas
+  commission: number; // el 5% que le corresponde a Gise
+};
+
 export type MonthlyMetrics = {
   year: number;
   month: number;
@@ -32,6 +45,7 @@ export type MonthlyMetrics = {
     cosmetologistShare: number;
   };
   productDetail: ProductDetailRow[];
+  cosmetologistProductDetail: CosmetologistProductRow[];
 };
 
 export const metricsApi = baseApi.injectEndpoints({

@@ -20,6 +20,7 @@ import {
   Store,
   Layers,
   Syringe,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -160,6 +161,13 @@ export const NAV_ITEMS: NavItem[] = [
         label: "Procedimientos General",
         icon: Stethoscope,
         showInMobile: false,
+      },
+      {
+        href: "/inicio/tratamientos/catalogo",
+        label: "Catálogo de tratamientos",
+        icon: ClipboardList,
+        showInMobile: false,
+        roles: ["ADMIN"],
       },
       {
         href: "/inicio/tratamientos/mesoterapias",

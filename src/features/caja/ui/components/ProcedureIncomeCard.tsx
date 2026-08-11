@@ -30,6 +30,15 @@ type Props = {
   cosmetologistSharePercent: number;
   isSubmitting: boolean;
   variant?: Variant;
+  /**
+   * Reparto por código (del catálogo). Si viene, manda sobre los porcentajes
+   * fijos de la card: así un código nuevo o una excepción 50/50 se registran
+   * con su reparto correcto. El backend lo revalida igual.
+   */
+  sharesFor?: (code: string) => {
+    doctorSharePercent: number;
+    cosmetologistSharePercent: number;
+  };
   onSubmit: (payload: {
     procedure: ProcedureOption;
     amount: number;
@@ -53,6 +62,7 @@ export function ProcedureIncomeCard({
   cosmetologistSharePercent,
   isSubmitting,
   variant = "cosmetologia",
+  sharesFor,
   onSubmit,
 }: Props) {
   const initial = procedures[0];
@@ -88,13 +98,17 @@ export function ProcedureIncomeCard({
 
     const total = parsed * parsedMultiplier;
     const base = comment.trim() || selected.label;
+    // Reparto por código si hay catálogo; si no, el default de la card.
+    const shares = sharesFor
+      ? sharesFor(selected.code)
+      : { doctorSharePercent, cosmetologistSharePercent };
     await onSubmit({
       procedure: selected,
       amount: total,
       paymentMethod,
       comment: parsedMultiplier > 1 ? `${base} ×${parsedMultiplier}` : base,
-      doctorSharePercent,
-      cosmetologistSharePercent,
+      doctorSharePercent: shares.doctorSharePercent,
+      cosmetologistSharePercent: shares.cosmetologistSharePercent,
     });
     setComment("");
     setMultiplier("1");
