@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Power, Stethoscope, Sparkles, Search } from "lucide-react";
+import { Plus, Pencil, Power, Stethoscope, Sparkles, Search, Trash2, FlaskConical } from "lucide-react";
 
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
@@ -17,8 +17,22 @@ import {
 } from "@/shared/components/ui/select";
 import { Switch } from "@/shared/components/ui/switch";
 import { currencyFormatter } from "@/lib/currencyFormatter";
-import { SPLIT_RULE_LABELS, useCreateProcedureMutation, useGetProcedureCatalogQuery, useSetProcedureActiveMutation, useUpdateProcedureMutation, type ProcedureCatalogItem, type ProcedureCatalogPayload, type ProcedureSplitRule } from "./api/procedureCatalogApi";
-
+import {
+  useGetProcedureCatalogQuery,
+  useCreateProcedureMutation,
+  useUpdateProcedureMutation,
+  useSetProcedureActiveMutation,
+  useGetRecipeQuery,
+  useSetRecipeMutation,
+  SPLIT_RULE_LABELS,
+  SPECIAL_FLOW_LABELS,
+  type ProcedureCatalogItem,
+  type ProcedureCatalogPayload,
+  type ProcedureSplitRule,
+  type ProcedureSpecialFlow,
+  type RecipeLinePayload,
+} from "@/features/treatments/ui/screens/api/procedureCatalogApi";
+import { useGetProductsWithStockQuery } from "@/features/stock/api/stockApi";
 
 type Draft = {
   id: string | null;
@@ -26,6 +40,7 @@ type Draft = {
   label: string;
   splitRule: ProcedureSplitRule;
   amount: string; // texto en el input; "" = a convenir
+  specialFlow: ProcedureSpecialFlow;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -34,6 +49,7 @@ const EMPTY_DRAFT: Draft = {
   label: "",
   splitRule: "MEDICA_100",
   amount: "",
+  specialFlow: "NONE",
 };
 
 export default function CatalogoTratamientosPage() {
@@ -70,6 +86,7 @@ export default function CatalogoTratamientosPage() {
       label: r.label,
       splitRule: r.splitRule,
       amount: r.amount == null ? "" : String(r.amount),
+      specialFlow: r.specialFlow,
     });
 
   const save = async () => {
@@ -88,6 +105,7 @@ export default function CatalogoTratamientosPage() {
       label: draft.label.trim(),
       splitRule: draft.splitRule,
       amount: amountNum,
+      specialFlow: draft.specialFlow,
     };
     try {
       if (draft.id) {
@@ -329,6 +347,37 @@ function EditDialog({
                 placeholder="Dejar vacío = a convenir"
               />
             </div>
+
+            <div className="space-y-1.5">
+              <Label>Consumo de insumos</Label>
+              <Select
+                value={draft.specialFlow}
+                onValueChange={(v) => onChange({ ...draft, specialFlow: v as ProcedureSpecialFlow })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(SPECIAL_FLOW_LABELS) as ProcedureSpecialFlow[]).map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {SPECIAL_FLOW_LABELS[f]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* La receta se edita sobre un tratamiento ya creado y sólo cuando
+                usa consumo por receta fija (el flujo de vial se maneja aparte). */}
+            {draft.id && draft.specialFlow === "NONE" && (
+              <RecipeEditor treatmentId={draft.id} />
+            )}
+            {!draft.id && (
+              <p className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                Creá el tratamiento primero y después vas a poder cargarle la
+                receta de insumos.
+              </p>
+            )}
           </div>
         )}
 
@@ -342,5 +391,138 @@ function EditDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Editor de receta (BOM) de un tratamiento. Reemplaza toda la receta al
+// guardar. La unidad (ML/AMPOLLA/DISPARO/UNIDAD) sale del producto y se
+// muestra una vez guardada la línea.
+type RecipeRow = { productId: string; quantity: string };
+
+function RecipeEditor({ treatmentId }: { treatmentId: string }) {
+  const { data: recipe, isLoading } = useGetRecipeQuery(treatmentId);
+  const { data: products } = useGetProductsWithStockQuery({ context: "CONSULTORIO" });
+  const [setRecipe, { isLoading: saving }] = useSetRecipeMutation();
+
+  const [rows, setRows] = useState<RecipeRow[]>([]);
+  const [picker, setPicker] = useState<string>("");
+
+  // Cargar la receta traída del backend en el estado local editable.
+  useEffect(() => {
+    if (recipe) {
+      setRows(recipe.map((l) => ({ productId: l.productId, quantity: String(l.quantity) })));
+    }
+  }, [recipe]);
+
+  const productList = products ?? [];
+  const nameById = useMemo(
+    () => new Map(productList.map((p) => [p.id, p.name] as const)),
+    [productList],
+  );
+  const unitById = useMemo(
+    () => new Map((recipe ?? []).map((l) => [l.productId, l.unit] as const)),
+    [recipe],
+  );
+
+  const inRecipe = new Set(rows.map((r) => r.productId));
+  const available = productList.filter((p) => !inRecipe.has(p.id));
+
+  const addRow = () => {
+    if (!picker) return;
+    setRows((prev) => [...prev, { productId: picker, quantity: "1" }]);
+    setPicker("");
+  };
+
+  const save = async () => {
+    const lines: RecipeLinePayload[] = [];
+    for (const r of rows) {
+      const q = Number(r.quantity);
+      if (!Number.isInteger(q) || q < 1) {
+        toast.error("Las cantidades tienen que ser enteros mayores o iguales a 1");
+        return;
+      }
+      lines.push({ productId: r.productId, quantity: q });
+    }
+    try {
+      await setRecipe({ id: treatmentId, lines }).unwrap();
+      toast.success("Receta guardada");
+    } catch (e: any) {
+      toast.error(e?.data?.message || "No se pudo guardar la receta");
+    }
+  };
+
+  return (
+    <div className="space-y-2 rounded-lg border p-3">
+      <div className="flex items-center gap-2">
+        <FlaskConical className="size-4 text-muted-foreground" />
+        <Label className="text-sm">Receta de insumos</Label>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Lo que se descuenta de stock cada vez que se pasa este tratamiento
+        (suelto o en venta combinada).
+      </p>
+
+      {isLoading ? (
+        <p className="py-2 text-sm text-muted-foreground">Cargando receta…</p>
+      ) : (
+        <div className="space-y-1.5">
+          {rows.length === 0 && (
+            <p className="py-1 text-sm text-muted-foreground">Sin insumos cargados.</p>
+          )}
+          {rows.map((r, i) => (
+            <div key={r.productId} className="flex items-center gap-2">
+              <Input
+                inputMode="numeric"
+                value={r.quantity}
+                onChange={(e) => {
+                  const q = e.target.value.replace(/[^\d]/g, "");
+                  setRows((prev) => prev.map((x, xi) => (xi === i ? { ...x, quantity: q } : x)));
+                }}
+                className="w-16 text-center"
+              />
+              {unitById.get(r.productId) && (
+                <Badge variant="secondary" className="shrink-0">{unitById.get(r.productId)}</Badge>
+              )}
+              <span className="min-w-0 flex-1 truncate text-sm">
+                {nameById.get(r.productId) ?? r.productId}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setRows((prev) => prev.filter((_, xi) => xi !== i))}
+                aria-label="Quitar insumo"
+              >
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+
+          <div className="flex items-center gap-2 pt-1">
+            <Select value={picker} onValueChange={setPicker}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Agregar insumo…" />
+              </SelectTrigger>
+              <SelectContent>
+                {available.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button type="button" variant="outline" size="sm" onClick={addRow} disabled={!picker}>
+              <Plus className="mr-1 size-4" />
+              Agregar
+            </Button>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <Button size="sm" onClick={save} disabled={saving}>
+              {saving ? "Guardando…" : "Guardar receta"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
