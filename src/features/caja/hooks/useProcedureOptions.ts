@@ -6,8 +6,10 @@ import {
   type CashActor,
   type ProcedureOption,
 } from "@/features/caja/types/cash.types";
-import { useGetProcedureCatalogQuery, type ProcedureCatalogItem } from "@/features/treatments/ui/screens/api/procedureCatalogApi";
-
+import {
+  useGetProcedureCatalogQuery,
+  type ProcedureCatalogItem,
+} from "@/features/treatments/ui/screens/api/procedureCatalogApi";
 
 export type ProcedureShares = {
   performedBy: CashActor;
@@ -82,11 +84,19 @@ export function useProcedureOptions() {
       return fallbackShares(code);
     };
 
+    // Flujo de consumo del procedimiento (receta fija vs. vial de toxina).
+    // Sólo el catálogo lo define; los códigos hardcodeados son NONE.
+    const specialFlowFor = (code: string): "NONE" | "TOXINA_VIAL" => {
+      const c = catalogByCode.get(code);
+      return c ? c.specialFlow : "NONE";
+    };
+
     return {
       all: all.map(toOption),
       medica: all.filter((p) => p.kind === "MEDICA").map(toOption),
       cosmetologia: all.filter((p) => p.kind === "COSMETOLOGIA").map(toOption),
       sharesFor,
+      specialFlowFor,
       isLoading,
     };
   }, [data, isLoading]);

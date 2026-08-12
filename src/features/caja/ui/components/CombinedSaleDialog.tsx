@@ -6,6 +6,9 @@ import type { CashActor, PaymentMethod, ProcedureOption } from "../../types/cash
 import type { SaleDraftLine } from "./ProductSaleDialog";
 import { usePerformer } from "@/features/caja/hooks/usePerformer";
 import { useProcedureOptions } from "@/features/caja/hooks/useProcedureOptions";
+import { RegisterToxinaDialog } from "@/features/treatments/ui/screens/components/RegisterToxinaDialog";
+import { useToxinaPage } from "@/features/treatments/ui/screens/hooks/useToxinaPage";
+import type { RegisterToxinaInput } from "@/features/treatments/ui/screens/models/toxina";
 import { Badge } from "@/shared/components/ui/badge";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
 import type {
@@ -112,7 +115,19 @@ export function CombinedSaleDialog({
     const performer = usePerformer();
     // Reparto por código desde el catálogo (con fallback histórico). El backend
     // lo revalida igual; esto es para mostrar y mandar lo correcto.
-    const { sharesFor } = useProcedureOptions();
+    const { sharesFor, specialFlowFor } = useProcedureOptions();
+
+    // Toxina: los procedimientos con flujo de vial NO se agregan como línea
+    // normal (su plata va por su Treatment/cuotas, no por la caja combinada).
+    // Al elegirlos disparamos su propio diálogo y se registran por su flujo.
+    const { registerTreatment, isCreating: isRegisteringToxina } = useToxinaPage();
+    const [toxinaOpen, setToxinaOpen] = useState(false);
+
+    const handleToxina = async (input: RegisterToxinaInput) => {
+        const ok = await registerTreatment(input);
+        if (ok) setToxinaOpen(false);
+        return ok;
+    };
 
     const [lines, setLines] = useState<CartLine[]>([]);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
@@ -243,6 +258,16 @@ export function CombinedSaleDialog({
     };
 
     const addProcedure = (proc: ProcedureOption) => {
+        // Flujo especial de vial (toxina): no se agrega como línea; se abre su
+        // propio diálogo (paciente + unidades + vial + pago) y se registra por
+        // su flujo, que crea el tratamiento y descuenta el vial correctamente.
+        if (specialFlowFor(proc.code) === "TOXINA_VIAL") {
+            setPickerOpen(false);
+            setQuery("");
+            setToxinaOpen(true);
+            return;
+        }
+
         // El reparto sale del catálogo (cosmetología 70/30, médicos 100/0),
         // no de un default suelto. Es fijo por procedimiento.
         const shares = sharesFor(proc.code);
@@ -691,6 +716,15 @@ export function CombinedSaleDialog({
                     </div>
                 </div>
             </DialogContent>
+
+            {/* Toxina: se registra por su propio flujo (tratamiento + 1ª sesión
+                + vial), no como línea de esta venta. */}
+            <RegisterToxinaDialog
+                open={toxinaOpen}
+                onOpenChange={setToxinaOpen}
+                onSubmit={handleToxina}
+                isSubmitting={isRegisteringToxina}
+            />
         </Dialog>
     );
 }

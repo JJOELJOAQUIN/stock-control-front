@@ -15,7 +15,13 @@ const MEDICA_SHARE = { doctor: 1, cosmetologist: 0 } as const;
  */
 export default function ProcedimientosPage() {
   const { registerProcedureIncome, isCreating } = useCashConsultorioPage();
-  const { medica, cosmetologia, sharesFor } = useProcedureOptions();
+  const { medica: medicaAll, cosmetologia: cosmetologiaAll, sharesFor, specialFlowFor } =
+    useProcedureOptions();
+
+  // Los tratamientos con flujo especial de vial (toxina) no se registran como
+  // procedimiento suelto normal: tienen su propia sección. Los sacamos de acá.
+  const medica = medicaAll.filter((p) => specialFlowFor(p.code) === "NONE");
+  const cosmetologia = cosmetologiaAll.filter((p) => specialFlowFor(p.code) === "NONE");
 
   // Misma matriz de visibilidad que tenia caja-consultorio.
   const showCosmetologia = useHasRole(["USER", "COSMETOLOGA"]);
