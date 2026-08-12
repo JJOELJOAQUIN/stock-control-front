@@ -49,7 +49,8 @@ export function RegisterToxinaDialog({
   const [patient, setPatient] = useState<Patient | null>(null);
   const [total, setTotal] = useState(String(DEFAULT_TOXINA_TOTAL));
   const [units, setUnits] = useState(String(DEFAULT_UNITS_PER_SESSION));
-  const [payAmount, setPayAmount] = useState("");
+  // Normalmente se paga todo en la 1ª sesión: arrancamos con el total cargado.
+  const [payAmount, setPayAmount] = useState(String(DEFAULT_TOXINA_TOTAL));
   const [payMethod, setPayMethod] = useState<PaymentMethod>("CASH");
   const [attempted, setAttempted] = useState(false);
 
@@ -57,7 +58,7 @@ export function RegisterToxinaDialog({
     setPatient(null);
     setTotal(String(DEFAULT_TOXINA_TOTAL));
     setUnits(String(DEFAULT_UNITS_PER_SESSION));
-    setPayAmount("");
+    setPayAmount(String(DEFAULT_TOXINA_TOTAL));
     setPayMethod("CASH");
     setAttempted(false);
   };
@@ -145,7 +146,16 @@ export function RegisterToxinaDialog({
           </div>
 
           <div className="space-y-3 rounded-lg border p-3">
-            <p className="text-sm font-medium">Pago (opcional)</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Pago</p>
+              <button
+                type="button"
+                onClick={() => setPayAmount(total)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Cobrar todo
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Monto</Label>

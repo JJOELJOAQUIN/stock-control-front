@@ -10,6 +10,7 @@ import StockPage from "@/features/stock/ui/stock";
 import CajaConsultorioPage from "@/features/caja/ui/caja-consultorio";
 import MovimientosConsultorioPage from "@/features/movimientos/ui/movimientos-consultorio";
 import MetricasPage from "@/features/metrics/ui/metricas-page";
+import CierreCajaPage from "@/features/caja/ui/cierre-caja";
 
 
 import Tratamientos from "@/features/treatments/ui/screens/Tratamientos";
@@ -88,6 +89,7 @@ export default function Router() {
         <Route element={<RoleGuard allowedRoles={["ADMIN"]} redirectPath="/inicio" />}>
           <Route path="tratamientos/mesoterapias" element={<MesoterapiasPage />} />
           <Route path="tratamientos/catalogo" element={<CatalogoTratamientosPage />} />
+          <Route path="caja/cierre" element={<CierreCajaPage />} />
         </Route>
       </Route>
 

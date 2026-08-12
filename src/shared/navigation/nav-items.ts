@@ -21,6 +21,7 @@ import {
   Layers,
   Syringe,
   ClipboardList,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -113,6 +114,13 @@ export const NAV_ITEMS: NavItem[] = [
         label: "Metricas",
         icon: TrendingUp,
         showInMobile: false,
+      },
+      {
+        href: "/inicio/caja/cierre",
+        label: "Cierre de caja",
+        icon: Lock,
+        showInMobile: false,
+        roles: ["ADMIN"],
       },
       {
         href: "/inicio/caja/compras",
