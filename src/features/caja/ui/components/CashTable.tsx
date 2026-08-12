@@ -435,14 +435,34 @@ export function CashTable({
                         // primero que se busca cuando alguien pregunta "¿y
                         // esto por qué está tachado?".
                         <span className="flex min-w-0 flex-col no-underline">
-                          <span className="truncate">{item.comment || "-"}</span>
+                          {item.comment ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate">{item.comment}</span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs whitespace-pre-line text-left">
+                                {item.comment}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className="truncate">-</span>
+                          )}
                           <span className="truncate text-xs text-destructive/80">
                             Anulado{item.voidedBy ? ` por ${item.voidedBy}` : ""}
                             {item.voidReason ? `: ${item.voidReason}` : ""}
                           </span>
                         </span>
+                      ) : item.comment ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="block truncate">{item.comment}</span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs whitespace-pre-line text-left">
+                            {item.comment}
+                          </TooltipContent>
+                        </Tooltip>
                       ) : (
-                        item.comment || "-"
+                        "-"
                       )}
                     </TableCell>
 

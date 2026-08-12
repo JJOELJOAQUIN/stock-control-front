@@ -11,10 +11,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
-import {
-  COSMETOLOGIA_PROCEDURES,
-  MEDICA_PROCEDURES,
-} from "@/features/caja/types/cash.types";
+import { useProcedureOptions } from "@/features/caja/hooks/useProcedureOptions";
 import {
   useGetMonthlyMetricsQuery,
   type MonthlyMetrics,
@@ -56,6 +53,11 @@ export function MonthlyMetricsCard() {
 
   const isCosmetologist = useHasRole(["COSMETOLOGA"]);
 
+  // Clasificación médica/cosmetología y etiquetas: salen del catálogo (con
+  // fallback a las constantes), así un tratamiento nuevo cae en el bucket
+  // correcto y se muestra con su nombre, no con el código.
+  const { cosmetologia: cosmoOptions, all: allOptions } = useProcedureOptions();
+
   const { data } = useGetMonthlyMetricsQuery({
     context: "CONSULTORIO",
     year: Number(yearStr),
@@ -65,10 +67,8 @@ export function MonthlyMetricsCard() {
   const metrics = data as MonthlyMetrics | undefined;
 
   const view = useMemo(() => {
-    const cosmoCodes = new Set(COSMETOLOGIA_PROCEDURES.map((p) => p.code));
-    const labels = new Map(
-      [...MEDICA_PROCEDURES, ...COSMETOLOGIA_PROCEDURES].map((p) => [p.code, p.label])
-    );
+    const cosmoCodes = new Set(cosmoOptions.map((p) => p.code));
+    const labels = new Map(allOptions.map((p) => [p.code, p.label]));
 
     const rows = metrics?.procedures ?? [];
     const cosmo = rows.filter((r) => cosmoCodes.has(r.procedureCode));
@@ -166,7 +166,7 @@ export function MonthlyMetricsCard() {
       cosmoProductRevenue,
       cosmoProductCommission,
     };
-  }, [metrics]);
+  }, [metrics, cosmoOptions, allOptions]);
 
   const header = (
     <CardHeader>

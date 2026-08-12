@@ -31,9 +31,12 @@ export default function Tratamientos() {
   const [search, setSearch] = useState("");
 
   const filteredTreatments = useMemo(() => {
+    // La toxina se registra como Treatment (code TOXINA_XEOMIN) pero vive en su
+    // propia sección: no tiene nada que hacer en el historial de peeling.
+    const base = treatments.filter((t) => t.code !== "TOXINA_XEOMIN");
     const q = search.trim().toLowerCase();
-    if (!q) return treatments;
-    return treatments.filter((t) => t.patientName.toLowerCase().includes(q));
+    if (!q) return base;
+    return base.filter((t) => t.patientName.toLowerCase().includes(q));
   }, [treatments, search]);
 
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
