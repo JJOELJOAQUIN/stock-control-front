@@ -25,13 +25,12 @@ import {
   useGetRecipeQuery,
   useSetRecipeMutation,
   SPLIT_RULE_LABELS,
-  SPECIAL_FLOW_LABELS,
   type ProcedureCatalogItem,
   type ProcedureCatalogPayload,
   type ProcedureSplitRule,
   type ProcedureSpecialFlow,
   type RecipeLinePayload,
-} from "@/features/treatments/ui/screens/api/procedureCatalogApi";  
+} from "@/features/treatments/ui/screens/api/procedureCatalogApi";
 import { useGetProductsWithStockQuery } from "@/features/stock/api/stockApi";
 
 type Draft = {
@@ -348,34 +347,22 @@ function EditDialog({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Consumo de insumos</Label>
-              <Select
-                value={draft.specialFlow}
-                onValueChange={(v) => onChange({ ...draft, specialFlow: v as ProcedureSpecialFlow })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(SPECIAL_FLOW_LABELS) as ProcedureSpecialFlow[]).map((f) => (
-                    <SelectItem key={f} value={f}>
-                      {SPECIAL_FLOW_LABELS[f]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {draft.specialFlow === "TOXINA_VIAL"
-                  ? "Usa el flujo de toxina (vial + unidades por sesión, 2 sesiones). Dejá esta opción sólo para la toxina; el resto va con receta fija."
-                  : "Descuenta los insumos de la receta cada vez que se pasa el tratamiento."}
-              </p>
-            </div>
+            {/* No hay selector de "flujo especial": todos los tratamientos que
+                se crean acá son de receta fija. La toxina ya existe como su
+                propio tratamiento (flujo de vial), y ese flag lo setea el
+                sistema, no se elige a mano. El draft conserva specialFlow tal
+                como vino, así editar la toxina no la pisa. */}
 
             {/* La receta se edita sobre un tratamiento ya creado y sólo cuando
                 usa consumo por receta fija (el flujo de vial se maneja aparte). */}
             {draft.id && draft.specialFlow === "NONE" && (
               <RecipeEditor treatmentId={draft.id} />
+            )}
+            {draft.id && draft.specialFlow === "TOXINA_VIAL" && (
+              <p className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                Este tratamiento usa el flujo de toxina (vial + unidades por
+                sesión). No lleva receta fija.
+              </p>
             )}
             {!draft.id && (
               <p className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
