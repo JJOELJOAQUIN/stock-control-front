@@ -31,7 +31,7 @@ import {
   type ProcedureSplitRule,
   type ProcedureSpecialFlow,
   type RecipeLinePayload,
-} from "@/features/treatments/ui/screens/api/procedureCatalogApi";
+} from "@/features/treatments/ui/screens/api/procedureCatalogApi";  
 import { useGetProductsWithStockQuery } from "@/features/stock/api/stockApi";
 
 type Draft = {
@@ -281,8 +281,8 @@ function EditDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>{isEdit ? "Editar tratamiento" : "Nuevo tratamiento"}</DialogTitle>
           <DialogDescription>
             El reparto define cómo se divide la plata en la caja.
@@ -290,7 +290,7 @@ function EditDialog({
         </DialogHeader>
 
         {draft && (
-          <div className="space-y-4">
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
             <div className="space-y-1.5">
               <Label htmlFor="label">Nombre</Label>
               <Input
@@ -365,6 +365,11 @@ function EditDialog({
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {draft.specialFlow === "TOXINA_VIAL"
+                  ? "Usa el flujo de toxina (vial + unidades por sesión, 2 sesiones). Dejá esta opción sólo para la toxina; el resto va con receta fija."
+                  : "Descuenta los insumos de la receta cada vez que se pasa el tratamiento."}
+              </p>
             </div>
 
             {/* La receta se edita sobre un tratamiento ya creado y sólo cuando
@@ -381,7 +386,7 @@ function EditDialog({
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="border-t px-6 py-4">
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
@@ -419,10 +424,18 @@ function RecipeEditor({ treatmentId }: { treatmentId: string }) {
     () => new Map(productList.map((p) => [p.id, p.name] as const)),
     [productList],
   );
-  const unitById = useMemo(
+  // Unidad en vivo desde el producto (se ve al elegir, sin esperar a guardar).
+  // Si el producto no está en la lista, caemos a la que trajo la receta.
+  const unitFromProduct = useMemo(
+    () => new Map(productList.map((p) => [p.id, p.consumptionUnit ?? null] as const)),
+    [productList],
+  );
+  const unitFromRecipe = useMemo(
     () => new Map((recipe ?? []).map((l) => [l.productId, l.unit] as const)),
     [recipe],
   );
+  const unitOf = (productId: string) =>
+    unitFromProduct.get(productId) ?? unitFromRecipe.get(productId) ?? null;
 
   const inRecipe = new Set(rows.map((r) => r.productId));
   const available = productList.filter((p) => !inRecipe.has(p.id));
@@ -480,8 +493,8 @@ function RecipeEditor({ treatmentId }: { treatmentId: string }) {
                 }}
                 className="w-16 text-center"
               />
-              {unitById.get(r.productId) && (
-                <Badge variant="secondary" className="shrink-0">{unitById.get(r.productId)}</Badge>
+              {unitOf(r.productId) && (
+                <Badge variant="secondary" className="shrink-0">{unitOf(r.productId)}</Badge>
               )}
               <span className="min-w-0 flex-1 truncate text-sm">
                 {nameById.get(r.productId) ?? r.productId}

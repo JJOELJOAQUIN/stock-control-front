@@ -51,8 +51,8 @@ export const SPLIT_RULE_LABELS: Record<ProcedureSplitRule, string> = {
 };
 
 export const SPECIAL_FLOW_LABELS: Record<ProcedureSpecialFlow, string> = {
-  NONE: "Receta fija (consumo automático)",
-  TOXINA_VIAL: "Flujo especial de vial (toxina)",
+  NONE: "Receta fija (descuenta insumos solo)",
+  TOXINA_VIAL: "Toxina · vial (unidades por sesión)",
 };
 
 export const procedureCatalogApi = baseApi.injectEndpoints({

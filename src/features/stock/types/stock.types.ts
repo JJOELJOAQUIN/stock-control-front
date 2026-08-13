@@ -101,6 +101,7 @@ export type ProductWithStock = {
   defaultMarkupPercentage?: number | null;
   shelfLifeMonths?: number | null;
   restockPriority?: number | null;
+  consumptionUnit?: string | null; // ML / AMPOLLA / DISPARO / UNIDAD
 };
 
 export type UpdateProductRequest = {

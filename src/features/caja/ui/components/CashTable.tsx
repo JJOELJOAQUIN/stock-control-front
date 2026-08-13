@@ -258,14 +258,14 @@ export function CashTable({
           {/* Comentario / detalle */}
           <div className="flex flex-1 flex-col gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">
-              Comentario o detalle
+              Comentario, detalle o paciente
             </span>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={commentQuery}
                 onChange={(e) => setCommentQuery(e.target.value)}
-                placeholder="Buscar..."
+                placeholder="Buscar por comentario o paciente..."
                 className="pl-9"
               />
             </div>
@@ -429,7 +429,13 @@ export function CashTable({
                         : "-"}
                     </TableCell>
 
-                    <TableCell className="truncate text-muted-foreground">
+                    <TableCell className="text-muted-foreground">
+                      <div className="flex min-w-0 flex-col">
+                      {item.patientName && (
+                        <span className="truncate text-xs font-medium text-foreground">
+                          {item.patientName}
+                        </span>
+                      )}
                       {item.voided ? (
                         // El motivo va acá y no en una columna nueva: es lo
                         // primero que se busca cuando alguien pregunta "¿y
@@ -464,6 +470,7 @@ export function CashTable({
                       ) : (
                         "-"
                       )}
+                      </div>
                     </TableCell>
 
                     <TableCell>

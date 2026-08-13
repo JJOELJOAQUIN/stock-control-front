@@ -30,6 +30,7 @@ export type CashMovementResponse = {
   voidedAt?: string | null;
   voidReason?: string | null;
   voidedBy?: string | null;
+  patientName?: string | null;
 };
 
 export type PageResponse<T> = {
