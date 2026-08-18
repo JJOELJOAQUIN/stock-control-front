@@ -41,7 +41,6 @@ type ColKey =
   | "amount"
   | "retention"
   | "net"
-  | "doctor"
   | "cosmetologist"
   | "comment"
   | "actions";
@@ -60,7 +59,6 @@ const COLUMNS: {
   { key: "amount", label: "Bruto", width: 120, min: 90, align: "right" },
   // { key: "retention", label: "Retención", width: 120, min: 90, align: "right" },
   { key: "net", label: "Neto", width: 120, min: 90, align: "right" },
-  { key: "doctor", label: "Médica", width: 120, min: 90, align: "right" },
   { key: "cosmetologist", label: "Cosmetóloga", width: 130, min: 100, align: "right" },
   { key: "comment", label: "Comentario", width: 240, min: 140 },
   { key: "actions", label: "", width: 70, min: 60 },
@@ -415,12 +413,6 @@ export function CashTable({
 
                     <TableCell className="truncate text-right font-semibold tabular-nums">
                       {formatCurrency(Number(item.netAmount))}
-                    </TableCell>
-
-                    <TableCell className="truncate text-right tabular-nums">
-                      {item.doctorShare != null
-                        ? formatCurrency(Number(item.doctorShare))
-                        : "-"}
                     </TableCell>
 
                     <TableCell className="truncate text-right tabular-nums">

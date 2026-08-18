@@ -120,14 +120,14 @@ export const NAV_ITEMS: NavItem[] = [
         label: "Cierre de caja",
         icon: Lock,
         showInMobile: false,
-        roles: ["ADMIN"],
+        roles: ["ADMIN", "COSMETOLOGA"],
       },
       {
         href: "/inicio/caja/compras",
         label: "Compras",
         icon: ShoppingCart,
         showInMobile: false,
-        roles: ["ADMIN", "USER"],
+        roles: ["ADMIN", "COSMETOLOGA", "USER"],
       },
       {
         href: "/inicio/caja/venta-combinada",

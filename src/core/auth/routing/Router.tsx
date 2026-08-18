@@ -85,11 +85,11 @@ export default function Router() {
           <Route path="tratamientos/peeling" element={<Tratamientos />} />
           <Route path="tratamientos/procedimientos" element={<ProcedimientosPage />} />
           <Route path="tratamientos/toxina" element={<ToxinaPage />} />
+          <Route path="caja/cierre" element={<CierreCajaPage />} />
         </Route>
         <Route element={<RoleGuard allowedRoles={["ADMIN"]} redirectPath="/inicio" />}>
           <Route path="tratamientos/mesoterapias" element={<MesoterapiasPage />} />
           <Route path="tratamientos/catalogo" element={<CatalogoTratamientosPage />} />
-          <Route path="caja/cierre" element={<CierreCajaPage />} />
         </Route>
       </Route>
 
