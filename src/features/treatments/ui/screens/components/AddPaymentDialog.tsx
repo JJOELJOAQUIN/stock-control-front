@@ -23,7 +23,7 @@ import { PAYMENT_METHODS } from "@/lib/sale";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import type { PaymentMethod } from "@/features/caja/types/cash.types";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 import { isSplitPresetAllowed, splitPresetOptions, supportsSplitPreset, type SplitPreset, type Treatment } from "../models/treatment";
 
 type Props = {
@@ -57,6 +57,10 @@ export function AddPaymentDialog({ open, onOpenChange, treatment, isPaying, onPa
 
   const showSplitPreset = supportsSplitPreset(treatment.code);
   const isDeviation = splitPreset !== "NORMAL";
+  // La opción elegida trae su frase determinística: quién cobra qué en
+  // ESTE pago. Se muestra siempre, no sólo en los desvíos.
+  const selectedOption =
+    presetOptions.find((p) => p.value === splitPreset) ?? presetOptions[0];
 
   const remaining = treatment.remainingAmount;
   const amountNum = Number(amount) || 0;
@@ -184,16 +188,31 @@ export function AddPaymentDialog({ open, onOpenChange, treatment, isPaying, onPa
                 </Select>
               </div>
 
-              {isDeviation && (
-                <div className="flex gap-2 rounded-md bg-amber-100/70 p-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-200">
+              {/* Frase determinística del reparto elegido: siempre visible. */}
+              <div
+                className={
+                  "flex gap-2 rounded-md p-2 text-xs " +
+                  (isDeviation
+                    ? "bg-amber-100/70 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200"
+                    : "bg-muted/60 text-muted-foreground")
+                }
+              >
+                {isDeviation ? (
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    Este pago se aparta del reparto habitual. El reparto real del peeling
-                    no cambia: queda registrado como desvío, y la diferencia es una deuda
-                    entre ustedes que el sistema todavía no lleva.
-                  </span>
-                </div>
-              )}
+                ) : (
+                  <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                )}
+                <span>
+                  <span className="font-medium">{selectedOption.detail}</span>
+                  {isDeviation && (
+                    <>
+                      {" "}El reparto real del peeling no cambia: queda registrado
+                      como desvío, y la diferencia es una deuda entre ustedes que el
+                      sistema todavía no lleva.
+                    </>
+                  )}
+                </span>
+              </div>
             </div>
           )}
         </div>

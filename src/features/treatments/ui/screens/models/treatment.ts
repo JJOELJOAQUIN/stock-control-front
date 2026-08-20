@@ -75,40 +75,66 @@ export const PEELING_PROFUNDO = {
 export const DEFAULT_COSMETOLOGIST_FIXED_SHARE = 40000;
 
 /**
- * Las etiquetas se arman con el monto real y no con un porcentaje escrito a
- * mano: es plata que Pili y Gise leen para decidir, y el peeling nunca se
- * repartió por porcentaje.
+ * Opción de reparto para el selector. `label` es el nombre corto que se ve
+ * en el combo; `detail` es UNA frase que dice, de forma determinística, a
+ * dónde va la plata de ESTE pago. La frase se muestra bajo el selector para
+ * que Pili y Gise lean quién cobra antes de confirmar.
+ */
+export type SplitPresetOption = {
+  value: SplitPreset;
+  label: string;
+  detail: string;
+};
+
+/**
+ * Opciones de reparto para un pago, ya resueltas para el momento exacto
+ * (primera cuota o no) y el fijo de ESTE tratamiento. Cada opción trae su
+ * frase determinística: el mismo preset "Normal" reparte distinto en la
+ * primera cuota que en las siguientes, y esa diferencia se explica acá en
+ * vez de quedar escondida en la palabra "Normal".
  *
- * Los desvíos se etiquetan como "neto entero" y no con el monto cobrado
- * porque el neto depende de la retención del método de pago (30% en tarjeta),
- * y poner el bruto sería mentir en los casos que no son efectivo.
+ * Los desvíos hablan de "neto" y no del monto cobrado: el neto depende de la
+ * retención del método de pago (30% en tarjeta), así que poner el bruto
+ * mentiría en todo lo que no sea efectivo.
  */
 export function splitPresetOptions(
   isFirstPayment: boolean,
   cosmetologistFixedShare: number | null | undefined
-): { value: SplitPreset; label: string }[] {
-  const normalShare = isFirstPayment ? (cosmetologistFixedShare ?? 0) : 0;
+): SplitPresetOption[] {
+  const fixed = cosmetologistFixedShare ?? 0;
 
-  const options: { value: SplitPreset; label: string }[] = [
+  // NORMAL: en la primera cuota Gise cobra su fijo y Pili el resto; en las
+  // cuotas siguientes Gise ya cobró, así que el pago va entero a Pili.
+  const normalDetail =
+    isFirstPayment && fixed > 0
+      ? `Gise cobra ${currencyFormatter.format(fixed)} y Pili el resto de este pago.`
+      : isFirstPayment
+        ? "Este pago va entero a Pili (no hay fijo de Gise cargado)."
+        : "Este pago va entero a Pili — Gise ya cobró su parte en la primera cuota.";
+
+  const options: SplitPresetOption[] = [
     {
       value: "NORMAL",
-      label: `Normal — Gise ${currencyFormatter.format(normalShare)}`,
+      label: "Reparto habitual",
+      detail: normalDetail,
     },
   ];
 
-  // Las etiquetas dicen QUIÉN COBRA y QUIÉN NO en la misma línea: "Todo a
-  // Gise" y "Todo a Pili" se parecen demasiado leídas al pasar, y elegir la
-  // equivocada mueve el neto entero de una a la otra.
+  // Los desvíos dicen QUIÉN cobra todo en una frase, sin ambigüedad: "Todo a
+  // Gise" y "Todo a Pili" se parecen demasiado leídos al pasar, y elegir el
+  // equivocado mueve el neto entero de una a la otra.
   if (isFirstPayment) {
     options.push({
       value: "TODO_COSMETOLOGA",
-      label: "DESVÍO — Gise cobra todo",
+      label: "Desvío · todo para Gise",
+      detail: "Este pago entero va a Gise. Pili no cobra nada de esta cuota.",
     });
   }
 
   options.push({
     value: "TODO_MEDICA",
-    label: "DESVÍO — Pili cobra todo",
+    label: "Desvío · todo para Pili",
+    detail: "Este pago entero va a Pili. Gise no cobra nada de esta cuota.",
   });
 
   return options;
