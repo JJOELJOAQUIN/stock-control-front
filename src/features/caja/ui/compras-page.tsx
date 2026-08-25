@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { FileText, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/shared/components/ui/button";
 import { PurchaseDialog } from "@/features/stock/components/PurchaseDialog";
 import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
+import { LacrozeImportDialog } from "@/features/shopping/ui/LacrozeImportDialog";
 
 /**
  * Compras a proveedor como seccion propia. Usa el mismo flujo de siempre
@@ -13,7 +14,7 @@ import { useCashConsultorioPage } from "../hooks/useCashConsultorioPage";
  */
 export default function ComprasPage() {
   const [open, setOpen] = useState(false);
-
+  const [lacrozeOpen, setLacrozeOpen] = useState(false);
   const { products, purchaseProductFromCash, isPurchasingProduct } =
     useCashConsultorioPage();
 
@@ -47,6 +48,12 @@ export default function ComprasPage() {
           setOpen(false);
         }}
       />
+
+
+      <Button variant="outline" onClick={() => setLacrozeOpen(true)}>
+        <FileText className="size-4" /> Importar factura LACROZE
+      </Button>
+      <LacrozeImportDialog open={lacrozeOpen} onOpenChange={setLacrozeOpen} />
     </div>
   );
 }
