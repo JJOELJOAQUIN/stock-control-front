@@ -431,7 +431,7 @@ export function CombinedSaleDialog({
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent
-                            className="w-[var(--radix-popover-trigger-width)] bg-popover p-0 text-popover-foreground shadow-md dark:bg-[#1f1a1d] dark:text-white"
+                            className="w-[var(--radix-popover-trigger-width)] bg-white p-0 text-zinc-900 shadow-md dark:bg-[#1f1a1d] dark:text-white"
                             align="start"
                             onCloseAutoFocus={(e) => e.preventDefault()}
                         >
