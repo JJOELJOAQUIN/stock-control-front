@@ -56,7 +56,6 @@ const COLUMNS: {
   { key: "type", label: "Tipo", width: 110, min: 90 },
   { key: "source", label: "Origen", width: 210, min: 140 },
   { key: "method", label: "Método", width: 120, min: 90 },
-  { key: "amount", label: "Bruto", width: 120, min: 90, align: "right" },
   // { key: "retention", label: "Retención", width: 120, min: 90, align: "right" },
   { key: "net", label: "Neto", width: 120, min: 90, align: "right" },
   { key: "cosmetologist", label: "Cosmetóloga", width: 130, min: 100, align: "right" },
@@ -401,10 +400,6 @@ export function CashTable({
                       <span className="rounded-md bg-muted px-2 py-1 text-xs font-medium">
                         {item.paymentMethod}
                       </span>
-                    </TableCell>
-
-                    <TableCell className="truncate text-right tabular-nums">
-                      {formatCurrency(Number(item.amount))}
                     </TableCell>
 
                     {/* <TableCell className="truncate text-right tabular-nums text-muted-foreground">

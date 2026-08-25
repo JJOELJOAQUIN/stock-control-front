@@ -507,9 +507,7 @@ export function CombinedSaleDialog({
                                 const baseSubtotal = l.quantity * l.unitAmount;
                                 const hasDiscount = isCashDiscount && l.kind === "PRODUCT";
                                 const performerError = attempted && missingPerformer(l);
-                                const isCosmoProc =
-                                    l.kind === "PROCEDURE" &&
-                                    l.cosmetologistSharePercent > 0;
+
                                 return (
                                     <div
                                         key={l.uid}
@@ -620,19 +618,7 @@ export function CombinedSaleDialog({
                                             )}
                                         </div>
 
-                                        {/* Reparto del procedimiento (informativo, fijo por catálogo). */}
-                                        {l.kind === "PROCEDURE" && isConsultorio && (
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <Badge variant="secondary" className="font-normal">
-                                                    {isCosmoProc ? "Cosmetóloga" : "Médica"}
-                                                </Badge>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {isCosmoProc
-                                                        ? `Reparto ${Math.round(l.cosmetologistSharePercent * 100)}% cosmetóloga · ${Math.round(l.doctorSharePercent * 100)}% médica`
-                                                        : "100% médica"}
-                                                </span>
-                                            </div>
-                                        )}
+                        
 
                                         {l.kind === "PRODUCT" && isConsultorio && (
                                             <div className="mt-2 flex items-center justify-end gap-1 text-sm">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { businessToday, toBusinessDateISO } from "@/lib/businessDate";
 
 import {
   useCreateCashMovementMutation,
@@ -31,13 +32,9 @@ import type {
   PurchaseOrderRequest,
 } from "@/features/stock/types/stock.types";
 
-function getTodayISODate() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export function useCashConsultorioPage() {
   const [page, setPage] = useState(0);
-  const [splitDate, setSplitDate] = useState(getTodayISODate());
+  const [splitDate, setSplitDate] = useState(businessToday());
 
   const size = 10;
 
@@ -142,7 +139,9 @@ export function useCashConsultorioPage() {
       if (typeFilter && m.type !== typeFilter) return false;
       if (sourceFilter && m.source !== sourceFilter) return false;
 
-      const day = (m.createdAt ?? "").slice(0, 10);
+      // Fecha del movimiento en hora Argentina, para que el filtro
+      // coincida con el día real (no con la fecha UTC del instante).
+      const day = m.createdAt ? toBusinessDateISO(m.createdAt) : "";
       if (dateFrom && day < dateFrom) return false;
       if (dateTo && day > dateTo) return false;
 
