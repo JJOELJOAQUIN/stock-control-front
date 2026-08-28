@@ -40,6 +40,14 @@ export type CreateProductRequest = {
   defaultMarkupPercentage?: number | null;
   shelfLifeMonths?: number | null;
   restockPriority?: number | null;
+ 
+  // --- NUEVO ---
+  // Unidad en la que se cuenta el stock (ML / AMPOLLA / DISPARO / UNIDAD).
+  consumptionUnit?: "UNIDAD" | "ML" | "AMPOLLA" | "DISPARO" | null;
+  // Unidades consumibles por envase (caja NCTF 5×3ml -> 15).
+  unitsPerPackage?: number | null;
+  // Asociación opcional a procedimientos (receta/BOM).
+  recipes?: ProductRecipeLine[];
 };
 
 export type ProductScanResponse = {
@@ -224,3 +232,10 @@ export const PRODUCT_BRANDS = [
 ] as const;
 
 export type ProductBrand = (typeof PRODUCT_BRANDS)[number];
+
+
+export type ProductRecipeLine = {
+  procedureCode: string;
+  quantity: number;
+};
+ 

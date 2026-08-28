@@ -40,6 +40,9 @@ const emptyNewProduct: NewProductForm = {
   costPrice: 0,
   shelfLifeMonths: null,
   restockPriority: 0,
+  consumptionUnit: "UNIDAD",
+  unitsPerPackage: null,
+  recipes: [],
 };
 
 export default function StockPage() {
@@ -75,7 +78,7 @@ export default function StockPage() {
   const canViewCosts = useHasRole(["ADMIN", "USER"]);
   const canRegisterPurchase = useHasRole(["ADMIN", "USER"]);
   // Crear / editar / desactivar productos es solo ADMIN (igual que el backend).
-  const canManageProducts = useHasRole(["ADMIN"]);
+  const canManageProducts = useHasRole(["ADMIN", "COSMETOLOGA"]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
