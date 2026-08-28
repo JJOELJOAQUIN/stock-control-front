@@ -68,7 +68,7 @@ export default function Router() {
         <Route path="caja/venta-directa" element={<VentaDirectaPage />} />
         <Route path="caja/precio-especial" element={<PrecioEspecialPage />} />
 
-        <Route element={<RoleGuard allowedRoles={["ADMIN", "USER"]} redirectPath="/inicio" />}>
+        <Route element={<RoleGuard allowedRoles={["ADMIN", "USER", "COSMETOLOGA"]} redirectPath="/inicio" />}>
           <Route path="caja/compras" element={<ComprasPage />} />
           {/* Ruta vieja: quien tenga el link guardado cae en la nueva. */}
           <Route
