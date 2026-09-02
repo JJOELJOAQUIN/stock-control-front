@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   X,
+  ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,7 +49,16 @@ import {
   useCreateProductMutation,
   usePurchaseProductMutation,
 } from "@/features/stock/api/stockApi";
-import { parseLacrozePdf, type LacrozeParseResult } from "@/lib/parseLacrozePdf";
+import {
+  parseLacrozeLines,
+  extractLinesFromPdf,
+  type LacrozeParseResult,
+} from "@/lib/parseLacrozePdf";
+import {
+  extractLinesFromImage,
+  isImageFile,
+  isPdfFile,
+} from "@/lib/lacrozeOcr";
 import { allResolved, matchLacrozeLines, type MatchedLine } from "@/lib/matchLacrozeProducts";
 
 
@@ -75,6 +85,7 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
     usePurchaseProductMutation();
 
   const [parsing, setParsing] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState<number | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [parseResult, setParseResult] = useState<LacrozeParseResult | null>(null);
   const [lines, setLines] = useState<MatchedLine[]>([]);
@@ -91,7 +102,10 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
   }, [products]);
 
   const ready = allResolved(lines);
-  const total = parseResult?.totalCalculado ?? 0;
+  const total = useMemo(
+    () => lines.reduce((acc, l) => acc + l.cantidad * l.precioUnit, 0),
+    [lines]
+  );
 
   function resetAll() {
     setParseResult(null);
@@ -101,6 +115,7 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
     setUpdateCost(true);
     setCreateFor(null);
     setParsing(false);
+    setOcrProgress(null);
   }
 
   function handleClose(next: boolean) {
@@ -110,22 +125,28 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
-    const isPdf =
-      file.type === "application/pdf" ||
-      file.name.toLowerCase().endsWith(".pdf");
-    if (!isPdf) {
-      toast.error("El archivo debe ser un PDF de la factura de Lacroze.");
+    const pdf = isPdfFile(file);
+    const img = isImageFile(file);
+    if (!pdf && !img) {
+      toast.error("Subí un PDF o una foto (JPG/PNG) del pedido de Lacroze.");
       return;
     }
 
     setParsing(true);
+    setOcrProgress(img ? 0 : null);
     try {
-      const result = await parseLacrozePdf(file);
+      // Extracción de texto: PDF por capa de texto, imagen por OCR.
+      const textLines = img
+        ? await extractLinesFromImage(file, (pr) => setOcrProgress(pr))
+        : await extractLinesFromPdf(file);
+
+      const result = parseLacrozeLines(textLines);
       if (result.lines.length === 0) {
         toast.error(
-          "No se detectó ningún producto en el PDF. ¿Es la factura de Lacroze con texto (no escaneada)?"
+          img
+            ? "No se detectó ningún producto en la foto. Probá con una imagen más nítida o cargá el PDF."
+            : "No se detectó ningún producto en el PDF. ¿Es el documento de Lacroze?"
         );
-        setParsing(false);
         return;
       }
       const matched = matchLacrozeLines(result.lines, products);
@@ -133,15 +154,28 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
       setLines(matched);
       setComment(
         result.meta.factura
-          ? `LACROZE FC ${result.meta.factura}${result.meta.fecha ? " · " + result.meta.fecha : ""}`
+          ? `LACROZE ${result.meta.factura}${result.meta.fecha ? " · " + result.meta.fecha : ""}`
           : "Compra LACROZE"
       );
+      if (img) {
+        toast.info(
+          "Leído por OCR: revisá bien cantidades y costos antes de confirmar."
+        );
+      }
       for (const w of result.warnings) toast.warning(w);
     } catch {
-      toast.error("No se pudo leer el PDF. Probá de nuevo o revisá el archivo.");
+      toast.error("No se pudo leer el archivo. Probá de nuevo o revisá que sea legible.");
     } finally {
       setParsing(false);
+      setOcrProgress(null);
     }
+  }
+
+  // Edita cantidad/costo de una línea (red de seguridad del OCR).
+  function patchLine(index: number, patch: { cantidad?: number; precioUnit?: number }) {
+    setLines((prev) =>
+      prev.map((l, i) => (i === index ? { ...l, ...patch } : l))
+    );
   }
 
   function assign(index: number, productId: string) {
@@ -211,12 +245,12 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="size-5" />
-            Importar compra de LACROZE (PDF)
+            Importar compra de LACROZE (PDF o foto)
           </DialogTitle>
           <DialogDescription>
-            Arrastrá la factura PDF de Farmacia Magistral Lacroze. Se leen los
-            productos, se cruzan con tu catálogo y confirmás antes de impactar
-            stock y caja.
+            Arrastrá el PDF o una foto (JPG) del pedido de Farmacia Magistral
+            Lacroze. Se leen los productos, se cruzan con tu catálogo y
+            confirmás antes de impactar stock y caja.
           </DialogDescription>
         </DialogHeader>
 
@@ -251,27 +285,37 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
               <input
                 ref={inputRef}
                 type="file"
-                accept="application/pdf,.pdf"
+                accept="application/pdf,.pdf,image/*"
                 className="hidden"
                 onChange={(e) => handleFile(e.target.files?.[0])}
               />
               {parsing ? (
                 <>
                   <Spinner />
-                  <p className="text-sm text-muted-foreground">Leyendo el PDF…</p>
+                  <p className="text-sm text-muted-foreground">
+                    {ocrProgress != null
+                      ? `Leyendo la foto (OCR)… ${Math.round(ocrProgress * 100)}%`
+                      : "Leyendo el PDF…"}
+                  </p>
+                  {ocrProgress != null && (
+                    <div className="h-1.5 w-48 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{ width: `${Math.round(ocrProgress * 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
-                  <Upload
-                    className={cn(
-                      "size-12 text-muted-foreground",
-                      dragActive && "text-primary"
-                    )}
-                  />
+                  <div className="flex gap-2 text-muted-foreground">
+                    <Upload className={cn("size-12", dragActive && "text-primary")} />
+                    <ImageIcon className={cn("size-12", dragActive && "text-primary")} />
+                  </div>
                   <p className="text-base text-muted-foreground">
                     {dragActive
-                      ? "Soltá la factura PDF acá…"
-                      : "Arrastrá la factura PDF o hacé clic para elegirla"}
+                      ? "Soltá el PDF o la foto acá…"
+                      : "Arrastrá el PDF o la foto (JPG), o hacé clic para elegir"}
                   </p>
                 </>
               )}
@@ -338,17 +382,51 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">
                           {line.descripcion}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {line.cantidad} ×{" "}
-                          {currencyFormatter.format(line.precioUnit)} ={" "}
-                          {currencyFormatter.format(
-                            line.cantidad * line.precioUnit
+                        {/* Cantidad y costo editables: red de seguridad del OCR. */}
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                          <label className="flex items-center gap-1 text-muted-foreground">
+                            Cant.
+                            <Input
+                              type="number"
+                              min={1}
+                              value={line.cantidad}
+                              onChange={(e) =>
+                                patchLine(index, {
+                                  cantidad: Math.max(1, Math.trunc(Number(e.target.value) || 1)),
+                                })
+                              }
+                              className="h-7 w-16"
+                            />
+                          </label>
+                          <label className="flex items-center gap-1 text-muted-foreground">
+                            Costo u.
+                            <Input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={line.precioUnit}
+                              onChange={(e) =>
+                                patchLine(index, {
+                                  precioUnit: Math.max(0, Number(e.target.value) || 0),
+                                })
+                              }
+                              className="h-7 w-24"
+                            />
+                          </label>
+                          <span className="font-medium text-foreground">
+                            = {currencyFormatter.format(line.cantidad * line.precioUnit)}
+                          </span>
+                          {line.importeDescuadra && (
+                            <span className="inline-flex items-center gap-1 rounded bg-red-100 px-1.5 py-0.5 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                              <AlertTriangle className="size-3" />
+                              revisar (¿OCR?)
+                            </span>
                           )}
-                        </p>
+                        </div>
                       </div>
                       {resolved ? (
                         <Badge className="shrink-0 gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
@@ -445,7 +523,7 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
           </Button>
           {parseResult && (
             <Button variant="ghost" onClick={resetAll}>
-              Cargar otro PDF
+              Cargar otro archivo
             </Button>
           )}
           <Button
