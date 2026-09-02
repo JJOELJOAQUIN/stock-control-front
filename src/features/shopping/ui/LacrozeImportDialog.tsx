@@ -139,6 +139,7 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
       const textLines = img
         ? await extractLinesFromImage(file, (pr) => setOcrProgress(pr))
         : await extractLinesFromPdf(file);
+        console.log("OCR LÍNEAS:", textLines);
 
       const result = parseLacrozeLines(textLines);
       if (result.lines.length === 0) {
