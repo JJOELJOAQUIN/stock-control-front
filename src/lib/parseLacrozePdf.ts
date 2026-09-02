@@ -54,7 +54,9 @@ export type LacrozeParseResult = {
 // Formato FACTURA: codigo(4-6) | desc | cantidad | UN | precio | importe
 const FACTURA_RE = /^(\d{4,6})\s+(.+?)\s+(\d+)\s+UN\s+([\d.,]+)\s+([\d.,]+)$/;
 // Formato PEDIDO: codigo(5-9) | desc | cantidad | precio | importe  (sin UN)
-const PEDIDO_RE = /^(\d{5,9})\s+(.+?)\s+(\d+)\s+([\d.,]+)\s+([\d.,]+)$/;
+// La cantidad acepta caracteres que el OCR confunde con dígitos (l I | :),
+// que después normalizamos con fixOcrQty. Ej: el "1" se lee a veces como ":".
+const PEDIDO_RE = /^(\d{5,9})\s+(.+?)\s+([\dlI|:]+)\s+([\d.,]+)\s+([\d.,]+)$/;
 
 function parseNum(raw: string): number {
   const s = raw.trim();
@@ -69,6 +71,15 @@ function parseNum(raw: string): number {
 
 function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+/**
+ * Normaliza la cantidad leída por OCR: l/I/| y : se confunden con dígitos.
+ * Devuelve el entero, o NaN si no queda un número válido.
+ */
+function fixOcrQty(raw: string): number {
+  const cleaned = raw.replace(/[lI|:]/g, "1");
+  return /^\d+$/.test(cleaned) ? parseInt(cleaned, 10) : NaN;
 }
 
 /**
@@ -115,7 +126,8 @@ export function parseLacrozeLines(rawLines: string[]): LacrozeParseResult {
     const mp = PEDIDO_RE.exec(line);
     if (mp) {
       const [, codigo, descripcion, cantStr, precioStr, importeStr] = mp;
-      const cantidad = parseInt(cantStr, 10);
+      const cantidad = fixOcrQty(cantStr);
+      if (!Number.isFinite(cantidad) || cantidad < 1) continue;
       const precioMostrado = parseNum(precioStr);
       const importe = parseNum(importeStr);
       // Costo real por unidad: el importe es la fuente de verdad; el precio
