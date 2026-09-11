@@ -50,13 +50,15 @@ export function MonthlyMetricsCard() {
   const [moneyModal, setMoneyModal] = useState<null | "facturado" | "medica" | "productos">(null);
   // Detalle de lo que vendió Gise (mismo dato en las dos vistas).
   const [cosmoProductsOpen, setCosmoProductsOpen] = useState(false);
+  // Modal con la cuenta detallada de la cosmetóloga (70/30, 50/50, productos).
+  const [cosmoDetailOpen, setCosmoDetailOpen] = useState(false);
 
   const isCosmetologist = useHasRole(["COSMETOLOGA"]);
 
   // Clasificación médica/cosmetología y etiquetas: salen del catálogo (con
   // fallback a las constantes), así un tratamiento nuevo cae en el bucket
   // correcto y se muestra con su nombre, no con el código.
-  const { cosmetologia: cosmoOptions, all: allOptions } = useProcedureOptions();
+  const { cosmetologia: cosmoOptions, all: allOptions, sharesFor } = useProcedureOptions();
 
   const { data } = useGetMonthlyMetricsQuery({
     context: "CONSULTORIO",
@@ -120,6 +122,57 @@ export function MonthlyMetricsCard() {
     // Lo que le queda a la médica por procedimientos (médicos 100% + 30% cosmo).
     const procParaMedica = medicaProcMonto + cosmoParaMedica;
 
+    // ── Desglose de la cosmetóloga por tasa de reparto ──
+    // La parte de la médica NO viene del backend (está en cero por blindaje):
+    // se DERIVA de la parte de Gise y la tasa conocida del catálogo (regla de
+    // negocio, no dato de Pili). total = suParte / tasa ; médica = total − suParte.
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    type CosmoRowDetail = {
+      code: string; label: string; count: number;
+      gise: number; medica: number; generado: number;
+    };
+    const mkBucket = () => ({ rows: [] as CosmoRowDetail[], gise: 0, medica: 0, generado: 0 });
+    const b7030 = mkBucket();
+    const b5050 = mkBucket();
+    const bOtros = mkBucket();
+
+    for (const r of rows) {
+      const her = Number(r.cosmetologistShare ?? 0);
+      if (her <= 0) continue;
+      const rate = Number(sharesFor(r.procedureCode)?.cosmetologistSharePercent ?? 0.7) || 0.7;
+      const generado = rate > 0 ? r2(her / rate) : her;
+      const medicaShare = r2(generado - her);
+      const entry: CosmoRowDetail = {
+        code: r.procedureCode,
+        label: labels.get(r.procedureCode) ?? r.procedureCode,
+        count: r.count,
+        gise: her,
+        medica: medicaShare,
+        generado,
+      };
+      const bucket =
+        Math.abs(rate - 0.5) < 0.01 ? b5050
+          : Math.abs(rate - 0.7) < 0.01 ? b7030
+            : bOtros;
+      bucket.rows.push(entry);
+      bucket.gise = r2(bucket.gise + her);
+      bucket.medica = r2(bucket.medica + medicaShare);
+      bucket.generado = r2(bucket.generado + generado);
+    }
+
+    // Productos: Gise cobra su 5% (comisión); el 95% es mercadería de la médica.
+    const prodGenerado = cosmoProductRevenue;
+    const prodGise = cosmoProductCommission;
+    const prodMedica = r2(prodGenerado - prodGise);
+
+    const cosmoDetail = {
+      b7030, b5050, bOtros,
+      productos: { generado: prodGenerado, gise: prodGise, medica: prodMedica, units: cosmoProductUnits },
+      totalGenerado: r2(b7030.generado + b5050.generado + bOtros.generado + prodGenerado),
+      totalGise: r2(b7030.gise + b5050.gise + bOtros.gise + prodGise),
+      totalMedica: r2(b7030.medica + b5050.medica + bOtros.medica + prodMedica),
+    };
+
     return {
       totalCount: sum(rows, (r) => r.count),
       medicaCount: sum(medica, (r) => r.count),
@@ -165,8 +218,11 @@ export function MonthlyMetricsCard() {
       cosmoProductUnits,
       cosmoProductRevenue,
       cosmoProductCommission,
+
+      // Desglose por tasa para la vista de la cosmetóloga.
+      cosmoDetail,
     };
-  }, [metrics, cosmoOptions, allOptions]);
+  }, [metrics, cosmoOptions, allOptions, sharesFor]);
 
   const header = (
     <CardHeader>
@@ -201,13 +257,18 @@ export function MonthlyMetricsCard() {
         {header}
         <CardContent className="space-y-5">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Money label="Generaste este mes" value={view.cosmoDetail.totalGenerado} />
+            <Money label="Te queda a vos" value={view.cosmoDetail.totalGise} strong />
+            <Money label="Le dejás a la médica" value={view.cosmoDetail.totalMedica} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Kpi
               icon={<Sparkles className="size-4 text-violet-600" />}
               label="Procedimientos"
               value={String(view.totalCount)}
               onClick={view.cosmoRows.length ? () => setProcModal("self") : undefined}
             />
-            <Money label="Tu total del mes" value={view.paraCosmo} strong />
             <Kpi
               icon={<ShoppingBag className="size-4 text-emerald-600" />}
               label="Productos que vendiste"
@@ -221,25 +282,23 @@ export function MonthlyMetricsCard() {
             />
           </div>
 
-          {view.ventasParteCosmo > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Incluye {currencyFormatter.format(view.ventasParteCosmo)} por
-              ventas de producto.
-            </p>
-          )}
-
-          {view.cosmoRows.length > 0 || view.cosmoProductDetail.length > 0 ? (
+          {(view.cosmoRows.length > 0 || view.cosmoProductDetail.length > 0) ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <DetailTrigger
+                label="Cuenta detallada del mes"
+                hint="Cómo se reparte todo: 70/30, 50/50 y productos."
+                onClick={() => setCosmoDetailOpen(true)}
+              />
               {view.cosmoRows.length > 0 && (
                 <DetailTrigger
                   label="Detalle por procedimiento"
-                  hint={`Ver el desglose de tus ${view.totalCount} procedimientos.`}
+                  hint={`Tu parte en cada uno de tus ${view.totalCount} procedimientos.`}
                   onClick={() => setProcModal("self")}
                 />
               )}
               {view.cosmoProductDetail.length > 0 && (
                 <DetailTrigger
-                  label="Detalle de productos vendidos"
+                  label="Productos vendidos"
                   hint={`${view.cosmoProductUnits} unidades · ${currencyFormatter.format(
                     view.cosmoProductCommission
                   )} de comisión.`}
@@ -267,6 +326,12 @@ export function MonthlyMetricsCard() {
           rows={view.cosmoProductDetail}
           revenue={view.cosmoProductRevenue}
           commission={view.cosmoProductCommission}
+        />
+
+        <CosmoBreakdownDialog
+          open={cosmoDetailOpen}
+          onOpenChange={setCosmoDetailOpen}
+          detail={view.cosmoDetail}
         />
       </Card>
     );
@@ -425,6 +490,128 @@ export function MonthlyMetricsCard() {
 }
 
 // ═══════════════ Modales ═══════════════
+
+// Cosmetóloga: cuenta detallada del mes por tasa de reparto (70/30, 50/50,
+// productos 5%). En verde lo de Gise, en gris lo que le deja a la médica.
+type CosmoRowDetailT = {
+  code: string; label: string; count: number;
+  gise: number; medica: number; generado: number;
+};
+type CosmoBucketT = { rows: CosmoRowDetailT[]; gise: number; medica: number; generado: number };
+type CosmoDetailT = {
+  b7030: CosmoBucketT;
+  b5050: CosmoBucketT;
+  bOtros: CosmoBucketT;
+  productos: { generado: number; gise: number; medica: number; units: number };
+  totalGenerado: number;
+  totalGise: number;
+  totalMedica: number;
+};
+
+function CosmoBreakdownDialog({
+  open, onOpenChange, detail,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  detail: CosmoDetailT;
+}) {
+  const bucket = (title: string, b: CosmoBucketT) => {
+    if (b.rows.length === 0) return null;
+    return (
+      <div>
+        <p className="mb-1 text-xs font-medium text-muted-foreground">{title}</p>
+        {b.rows.map((r) => (
+          <div key={r.code} className="flex items-center justify-between gap-2 py-1.5 text-sm">
+            <span className="flex min-w-0 items-center gap-2">
+              <Badge variant="secondary">{r.count}</Badge>
+              <span className="truncate">{r.label}</span>
+            </span>
+            <span className="flex shrink-0 gap-4 tabular-nums text-xs">
+              <span className="text-emerald-600 dark:text-emerald-400">
+                {currencyFormatter.format(r.gise)}
+              </span>
+              <span className="text-muted-foreground">
+                {currencyFormatter.format(r.medica)}
+              </span>
+            </span>
+          </div>
+        ))}
+        <div className="mt-1 flex items-center justify-between border-t pt-1.5 text-xs">
+          <span className="text-muted-foreground">Subtotal</span>
+          <span className="flex gap-4 tabular-nums font-medium">
+            <span className="text-emerald-600 dark:text-emerald-400">
+              Cosmetologa: {currencyFormatter.format(b.gise)}
+            </span>
+            <span className="text-muted-foreground">
+              Médica: {currencyFormatter.format(b.medica)}
+            </span>
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-0 p-0">
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle>Cuenta detallada del mes</DialogTitle>
+          <DialogDescription>
+            En verde Gise, en gris Pili.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-3">
+          {bucket("Cosmetologías (te queda el 70%)", detail.b7030)}
+          {bucket("50 / 50 (ej. FRAX con exosomas)", detail.b5050)}
+          {bucket("Otros repartos", detail.bOtros)}
+
+          {detail.productos.units > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-medium text-muted-foreground">
+                Productos (5%)
+              </p>
+              <div className="flex items-center justify-between py-1.5 text-sm">
+                <span className="flex items-center gap-2">
+                  <Badge variant="secondary">{detail.productos.units}</Badge>
+                  <span>Ventas de producto</span>
+                </span>
+                <span className="flex shrink-0 gap-4 tabular-nums text-xs">
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {currencyFormatter.format(detail.productos.gise)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {currencyFormatter.format(detail.productos.medica)}
+                  </span>
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                El resto Pili.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t px-6 py-4 space-y-1.5 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Generaste este mes</span>
+            <span className="tabular-nums">{currencyFormatter.format(detail.totalGenerado)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Total Pili</span>
+            <span className="tabular-nums">{currencyFormatter.format(detail.totalMedica)}</span>
+          </div>
+          <div className="flex items-center justify-between border-t pt-2">
+            <span className="font-medium">Total Gise</span>
+            <span className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+              {currencyFormatter.format(detail.totalGise)}
+            </span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // Médica: dos bloques — procedimientos médicos (100%) y el aporte del 30%
 // de las cosmetologías. El total es lo que le queda a la médica por
