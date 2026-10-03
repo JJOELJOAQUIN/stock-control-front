@@ -19,7 +19,8 @@ export async function extractLinesFromImage(
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<string[]> {
-  const { data } = await Tesseract.recognize(file, "spa", {
+  const input = await preprocessForOcr(file).catch(() => file);
+  const { data } = await Tesseract.recognize(input, "spa", {
     logger: (m: { status?: string; progress?: number }) => {
       if (onProgress && m.status === "recognizing text" && typeof m.progress === "number") {
         onProgress(m.progress);
@@ -32,6 +33,41 @@ export async function extractLinesFromImage(
     .split("\n")
     .map((l) => l.replace(/\s+/g, " ").trim())
     .filter((l) => l.length > 0);
+}
+
+/**
+ * Prepara la imagen para el OCR:
+ *  - la agranda x2 (Tesseract lee mucho mejor los números chicos), y
+ *  - la pasa a blanco y negro usando el canal MÁS OSCURO de cada pixel.
+ *
+ * Lo segundo es clave para el pedido de Lacroze: los precios están en ROJO
+ * sobre fondo rosado, y en escala de grises normal quedan como gris medio que
+ * Tesseract lee mal ("8" -> "El", "4" -> "a", "8410" -> "sa10"). Con el canal
+ * mínimo, el rojo (G y B bajos) queda negro y el fondo claro queda blanco.
+ */
+async function preprocessForOcr(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = bitmap.width < 2000 ? 2 : 1;
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width * scale;
+  canvas.height = bitmap.height * scale;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return file;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = Math.min(d[i], d[i + 1], d[i + 2]) < 150 ? 0 : 255;
+    d[i] = d[i + 1] = d[i + 2] = v;
+  }
+  ctx.putImageData(img, 0, 0);
+
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob"))), "image/png")
+  );
 }
 
 /** true si el archivo es una imagen (por tipo MIME o extensión). */

@@ -7,6 +7,7 @@ import {
   type ProductScanResponse,
   type ProductWithStock,
   type PurchaseOrderRequest,
+  type ReconcileStockResponse,
   type SellByBarcodeRequest,
   type UpdateProductRequest,
 } from "../types/stock.types";
@@ -113,6 +114,27 @@ export const stockApi = baseApi.injectEndpoints({
       invalidatesTags: ["Products", "Stock"],
     }),
 
+    /**
+     * Reconciliación: deja el stock en lo contado físicamente (en la unidad
+     * de consumo: ml, ampollas, disparos o unidades).
+     */
+    reconcileStock: builder.mutation<
+      ReconcileStockResponse,
+      {
+        productId: string;
+        context: "LOCAL" | "CONSULTORIO";
+        countedQuantity: number;
+        comment?: string;
+      }
+    >({
+      query: ({ productId, context, countedQuantity, comment }) => ({
+        url: `/api/stock/${productId}/reconcile?context=${context}`,
+        method: "POST",
+        body: { countedQuantity, comment },
+      }),
+      invalidatesTags: ["Products", "Stock", "Toxina"],
+    }),
+
     getExpiringProductBatches: builder.query<
       ProductBatchExpiration[],
       { context: "LOCAL" | "CONSULTORIO"; days?: number }
@@ -139,4 +161,5 @@ export const {
   useGetExpiringProductBatchesQuery,
   useCombinedSaleMutation,
   useInternalConsumptionMutation,
+  useReconcileStockMutation,
 } = stockApi;

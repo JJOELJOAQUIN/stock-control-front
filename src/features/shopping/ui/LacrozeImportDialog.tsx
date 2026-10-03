@@ -139,7 +139,6 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
       const textLines = img
         ? await extractLinesFromImage(file, (pr) => setOcrProgress(pr))
         : await extractLinesFromPdf(file);
-        console.log("OCR LÍNEAS:", textLines);
 
       const result = parseLacrozeLines(textLines);
       if (result.lines.length === 0) {
@@ -512,9 +511,27 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
             <span className="text-sm text-emerald-700 dark:text-emerald-400">
               Total de la compra ({lines.length} ítems)
             </span>
-            <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
-              {currencyFormatter.format(total)}
-            </span>
+            <div className="text-right">
+              <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                {currencyFormatter.format(total)}
+              </span>
+              {parseResult.meta.totalFactura != null && (
+                <p
+                  className={cn(
+                    "text-xs",
+                    Math.abs(parseResult.meta.totalFactura - total) > 1
+                      ? "font-medium text-red-600 dark:text-red-400"
+                      : "text-emerald-700/80 dark:text-emerald-400/80"
+                  )}
+                >
+                  Total del documento:{" "}
+                  {currencyFormatter.format(parseResult.meta.totalFactura)}
+                  {Math.abs(parseResult.meta.totalFactura - total) > 1
+                    ? " · no coincide, revisá las líneas marcadas"
+                    : " ✓"}
+                </p>
+              )}
+            </div>
           </div>
         )}
 

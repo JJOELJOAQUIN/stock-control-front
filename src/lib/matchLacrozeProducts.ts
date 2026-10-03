@@ -93,7 +93,13 @@ export function matchLacrozeLines(
   });
 }
 
-/** true si todas las líneas tienen un producto asignado (listo para confirmar). */
+/**
+ * true si todas las líneas tienen un producto asignado y números válidos
+ * (listo para confirmar). Una línea rescatada del OCR sin costo bloquea.
+ */
 export function allResolved(lines: MatchedLine[]): boolean {
-  return lines.length > 0 && lines.every((l) => l.productId != null);
+  return (
+    lines.length > 0 &&
+    lines.every((l) => l.productId != null && l.cantidad >= 1 && l.precioUnit > 0)
+  );
 }

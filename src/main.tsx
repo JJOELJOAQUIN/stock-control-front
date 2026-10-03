@@ -11,6 +11,7 @@ import App from "./App";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "./core/context/theme-provider";
 import { BusinessProvider } from "./core/context/business-context";
+import { StockReconcileDialog } from "./features/stock/reconcile/StockReconcileDialog";
 
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider>
@@ -20,6 +21,7 @@ createRoot(document.getElementById("root")!).render(
           <BusinessProvider>
             <App />
           </BusinessProvider>
+          <StockReconcileDialog />
           <Toaster closeButton richColors position="top-right" />
         </Provider>
       </AuthProvider>
