@@ -238,4 +238,11 @@ export type ProductRecipeLine = {
   procedureCode: string;
   quantity: number;
 };
- 
+
+/** Respuesta de POST /api/stock/{id}/reconcile. */
+export type ReconcileStockResponse = {
+  productId: string;
+  previous: number;
+  current: number;
+  difference: number;
+};
