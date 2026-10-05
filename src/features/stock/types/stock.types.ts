@@ -110,6 +110,8 @@ export type ProductWithStock = {
   shelfLifeMonths?: number | null;
   restockPriority?: number | null;
   consumptionUnit?: string | null; // ML / AMPOLLA / DISPARO / UNIDAD
+  /** Unidades de consumo por envase (ej. 10 dosis por caja de NCTF). */
+  unitsPerPackage?: number | null;
 };
 
 export type UpdateProductRequest = {
