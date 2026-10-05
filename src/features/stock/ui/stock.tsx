@@ -14,8 +14,8 @@ import type {
   UpdateProductRequest,
 } from "../types/stock.types";
 import { StockSummary } from "../components/StockSumary";
-import { StockOperationsPanel } from "../components/StockOperationPanel";
 import { ProductCatalogSection } from "../components/ProductCatalogSection";
+import { StockReconcileCard } from "../reconcile/StockReconcileCard";
 import { CreateProductDialog } from "../components/CreateProductDialog";
 import { PurchaseDialog } from "../components/PurchaseDialog";
 import { SellDialog } from "../components/SellDialog";
@@ -52,10 +52,7 @@ export default function StockPage() {
     isLoading,
     search,
     setSearch,
-    barcodeQuery,
-    setBarcodeQuery,
     scannedProduct,
-    isScanning,
     isCreatingProduct,
     isPurchasing,
     isSelling,
@@ -63,7 +60,6 @@ export default function StockPage() {
     isUpdatingProduct,
     isDeactivatingProduct,
     handleCreateProduct,
-    handleScan,
     handlePurchase,
     handleSell,
     handleConsume,
@@ -141,32 +137,6 @@ export default function StockPage() {
   const openPurchaseDialog = (product: ProductWithStock) => {
     setSelectedProduct(product);
     setIsPurchaseOpen(true);
-  };
-
-  const openSellDialog = () => {
-    if (!scannedProduct) {
-      toast.error("Primero escaneá un producto");
-      return;
-    }
-
-    setSellForm({
-      quantity: "",
-      amount: "",
-      paymentMethod: "CASH",
-      comment: "",
-      performedBy: performer.actor,
-    });
-    setIsSellOpen(true);
-  };
-
-  const openConsumeDialog = (product: ProductWithStock) => {
-    setConsumeProduct(product);
-    setIsConsumeOpen(true);
-  };
-
-  const openMultiSaleDialog = (product?: ProductWithStock) => {
-    setMultiSaleInitial(product ?? null);
-    setIsMultiSaleOpen(true);
   };
 
   const openEditDialog = (product: ProductWithStock) => {
@@ -359,34 +329,9 @@ export default function StockPage() {
         inactiveProducts={inactiveProducts.length}
       />
 
-      <StockOperationsPanel
-        context={context}
-        barcodeQuery={barcodeQuery}
-        setBarcodeQuery={setBarcodeQuery}
-        scannedProduct={scannedProduct}
-        isScanning={isScanning}
-        onScan={handleScan}
-        onOpenSell={openSellDialog}
-        canPurchase={canRegisterPurchase}
-        canManageProducts={canManageProducts}
-        products={operableProducts}
-        onOpenMultiSale={openMultiSaleDialog}
-        onOpenConsume={openConsumeDialog}
-        onOpenPurchase={openPurchaseDialog}
-        onOpenEdit={openEditDialog}
-        onOpenPurchaseFromScan={() => {
-          const product = filteredProducts.find(
-            (item) => item.id === scannedProduct?.id
-          );
-
-          if (!product) {
-            toast.error("No se encontró el producto en catálogo");
-            return;
-          }
-
-          openPurchaseDialog(product);
-        }}
-      />
+      {canManageProducts && (
+        <StockReconcileCard context={context} products={operableProducts} />
+      )}
 
       <LowStockCard
         products={operableProducts}
