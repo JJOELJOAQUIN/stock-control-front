@@ -25,10 +25,16 @@ export const stockApi = baseApi.injectEndpoints({
 
     getProductsWithStock: builder.query<
       ProductWithStock[],
-      { context: "LOCAL" | "CONSULTORIO" }
+      {
+        context: "LOCAL" | "CONSULTORIO";
+        /** Incluir productos dados de baja (pantalla de Stock, para reactivarlos). */
+        includeInactive?: boolean;
+      }
     >({
-      query: ({ context }) => ({
-        url: `/api/products/with-stock?context=${context}`,
+      query: ({ context, includeInactive }) => ({
+        url: `/api/products/with-stock?context=${context}${
+          includeInactive ? "&includeInactive=true" : ""
+        }`,
         method: "GET",
       }),
       providesTags: ["Products", "Stock"],

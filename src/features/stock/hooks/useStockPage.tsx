@@ -40,7 +40,9 @@ export function useStockPage() {
     isLoading,
     refetch,
   } = useGetProductsWithStockQuery(
-    { context },
+    // Incluye los inactivos: si no, un producto dado de baja desaparece y no
+    // hay forma de reactivarlo (pasó con Xeomin).
+    { context, includeInactive: true },
     {
       refetchOnMountOrArgChange: true,
     }

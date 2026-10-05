@@ -126,6 +126,13 @@ export default function StockPage() {
     [filteredProducts]
   );
 
+  // Para operar (vender, consumir, stock bajo) solo cuentan los activos; los
+  // inactivos se listan en el catálogo únicamente para poder reactivarlos.
+  const operableProducts = useMemo(
+    () => products.filter((p) => p.active),
+    [products]
+  );
+
   const inactiveProducts = useMemo(
     () => filteredProducts.filter((p) => !p.active),
     [filteredProducts]
@@ -362,7 +369,7 @@ export default function StockPage() {
         onOpenSell={openSellDialog}
         canPurchase={canRegisterPurchase}
         canManageProducts={canManageProducts}
-        products={products}
+        products={operableProducts}
         onOpenMultiSale={openMultiSaleDialog}
         onOpenConsume={openConsumeDialog}
         onOpenPurchase={openPurchaseDialog}
@@ -382,7 +389,7 @@ export default function StockPage() {
       />
 
       <LowStockCard
-        products={products}
+        products={operableProducts}
         onPurchaseProduct={canRegisterPurchase ? openPurchaseDialog : undefined}
       />
 
@@ -434,7 +441,7 @@ export default function StockPage() {
         open={isMultiSaleOpen}
         onOpenChange={setIsMultiSaleOpen}
         context={context}
-        products={products}
+        products={operableProducts}
         initialProduct={multiSaleInitial}
         onSuccess={() => {
           setMultiSaleInitial(null);
