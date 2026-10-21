@@ -60,6 +60,7 @@ import {
   isPdfFile,
 } from "@/lib/lacrozeOcr";
 import { allResolved, matchLacrozeLines, type MatchedLine } from "@/lib/matchLacrozeProducts";
+import { stockLabel } from "@/lib/units";
 
 
 
@@ -624,7 +625,7 @@ function ProductPicker({
             >
               <span className="flex-1 truncate">{p.name}</span>
               <span className="text-xs text-muted-foreground">
-                Stock: {p.currentStock}
+                Stock: {stockLabel(p)}
               </span>
             </button>
           ))}

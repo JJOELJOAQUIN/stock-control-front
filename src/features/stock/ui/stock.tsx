@@ -25,6 +25,7 @@ import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { LowStockCard } from "../components/LowStockCard";
 import { ProductMultiSaleDialog } from "@/features/caja/ui/components/ProductMultiSaleDialog";
 import { InternalConsumptionDialog } from "@/features/caja/ui/components/InternalConsumptionDialog";
+import { defaultScale, fromStored, scaleOf, toStored } from "@/lib/units";
 
 type NewProductForm = CreateProductRequest;
 
@@ -144,7 +145,8 @@ export default function StockPage() {
     setEditForm({
       name: product.name,
       description: "",
-      minimumStock: product.minimumStock,
+      // El formulario trabaja en unidades REALES (ml); se guarda escalado.
+      minimumStock: fromStored(product.minimumStock, scaleOf(product.unitScale)),
       category: product.category,
       brand: product.brand,
       expirable: false,
@@ -154,6 +156,11 @@ export default function StockPage() {
       defaultMarkupPercentage: Number(product.defaultMarkupPercentage ?? 0),
       shelfLifeMonths: product.shelfLifeMonths ?? null,
       restockPriority: product.restockPriority ?? 0,
+      consumptionUnit: (product.consumptionUnit ?? "UNIDAD") as UpdateProductRequest["consumptionUnit"],
+      unitsPerPackage:
+        product.unitsPerPackage != null
+          ? fromStored(product.unitsPerPackage, scaleOf(product.unitScale))
+          : null,
     });
     setIsEditOpen(true);
   };
@@ -175,8 +182,19 @@ export default function StockPage() {
         return;
       }
 
+      // El formulario trabaja en unidades REALES (1,5 ml); se guarda escalado.
+      const createScale = defaultScale(newProduct.consumptionUnit);
       await handleCreateProduct({
         ...newProduct,
+        minimumStock: toStored(newProduct.minimumStock, createScale),
+        unitsPerPackage:
+          newProduct.unitsPerPackage != null && newProduct.unitsPerPackage > 0
+            ? toStored(newProduct.unitsPerPackage, createScale)
+            : null,
+        recipes: (newProduct.recipes ?? []).map((r) => ({
+          ...r,
+          quantity: toStored(r.quantity, createScale),
+        })),
         scope: "CONSULTORIO",
         name: newProduct.name.trim(),
         description: newProduct.description?.trim() || "",
@@ -269,8 +287,14 @@ export default function StockPage() {
         return;
       }
 
+      const editScale = defaultScale(editForm.consumptionUnit);
       await handleUpdateProduct(editingProduct.id, {
         ...editForm,
+        minimumStock: toStored(editForm.minimumStock, editScale),
+        unitsPerPackage:
+          editForm.unitsPerPackage != null && editForm.unitsPerPackage > 0
+            ? toStored(editForm.unitsPerPackage, editScale)
+            : null,
         name: editForm.name.trim(),
         description: editForm.description?.trim() || "",
         shelfLifeMonths: editForm.shelfLifeMonths || null,

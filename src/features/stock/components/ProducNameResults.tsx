@@ -1,5 +1,6 @@
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import type { ProductScanResponse } from "@/features/stock/types/stock.types";
+import { stockLabel } from "@/lib/units";
 
 type Props = {
   results: ProductScanResponse[];
@@ -21,7 +22,7 @@ export function ProductNameResults({ results, onSelect }: Props) {
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium">{product.name}</span>
               <span className="block text-xs text-muted-foreground">
-                {product.barcode} · Stock: {product.currentStock}
+                {product.barcode} · Stock: {stockLabel(product)}
               </span>
             </span>
             <span className="shrink-0 text-sm text-emerald-600 dark:text-emerald-400">

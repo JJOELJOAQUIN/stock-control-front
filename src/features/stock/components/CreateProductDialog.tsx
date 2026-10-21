@@ -160,10 +160,11 @@ export function CreateProductDialog({
             </Field>
 
             <Field>
-              <FieldLabel>Stock minimo</FieldLabel>
+              <FieldLabel>Stock minimo ({unitLabel})</FieldLabel>
               <Input
                 type="number"
                 min="0"
+                step={form.consumptionUnit === "ML" ? "0.1" : "1"}
                 placeholder="0"
                 value={form.minimumStock}
                 onChange={(e) =>
@@ -291,11 +292,16 @@ export function CreateProductDialog({
             </Field>
 
             <Field>
-              <FieldLabel>Unidades por envase</FieldLabel>
+              <FieldLabel>Contenido de un envase ({unitLabel})</FieldLabel>
               <Input
                 type="number"
-                min="1"
-                placeholder="Ej: 15 (caja NCTF 5×3ml)"
+                min="0"
+                step={form.consumptionUnit === "ML" ? "0.1" : "1"}
+                placeholder={
+                  form.consumptionUnit === "ML"
+                    ? "Ej: 15 (caja de 5 viales × 3 ml)"
+                    : "Ej: 20 (caja de 20 ampollas)"
+                }
                 value={form.unitsPerPackage ?? ""}
                 onChange={(e) =>
                   setForm((p) => ({
@@ -379,15 +385,20 @@ export function CreateProductDialog({
                       <FieldLabel className="text-xs">Cantidad ({unitLabel})</FieldLabel>
                       <Input
                         type="number"
-                        min="1"
+                        min={form.consumptionUnit === "ML" ? "0.1" : "1"}
+                        step={form.consumptionUnit === "ML" ? "0.1" : "1"}
                         value={line.quantity}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          // ML admite 1 decimal (1,5 ml); el resto, enteros.
+                          const n = Number(e.target.value) || 0;
                           updateRecipeLine(
                             index,
                             "quantity",
-                            Math.max(1, Math.trunc(Number(e.target.value) || 1))
-                          )
-                        }
+                            form.consumptionUnit === "ML"
+                              ? Math.max(0.1, Math.round(n * 10) / 10)
+                              : Math.max(1, Math.trunc(n || 1))
+                          );
+                        }}
                       />
                     </Field>
 

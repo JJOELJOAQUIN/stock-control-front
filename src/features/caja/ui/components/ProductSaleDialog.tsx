@@ -30,6 +30,7 @@ import { currencyFormatter } from "@/lib/currencyFormatter";
 import { calcSale, PAYMENT_METHODS, SALE_ACTORS } from "@/lib/sale";
 import { useHasRole } from "@/features/auth/hooks/useRoles";
 import { usePerformer } from "@/features/caja/hooks/usePerformer";
+import { stockLabel } from "@/lib/units";
 
 /** Lo que se traspasa al carrito cuando la venta deja de ser de un solo ítem. */
 export type SaleDraftLine = {
@@ -203,7 +204,7 @@ export function ProductSaleDialog({
                             </span>
                         </div>
                         <Badge variant={product.belowMinimum ? "destructive" : "secondary"}>
-                            Stock: {product.currentStock}
+                            Stock: {stockLabel(product)}
                         </Badge>
                     </div>
 

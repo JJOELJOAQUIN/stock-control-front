@@ -23,15 +23,11 @@ import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { useReconcileStockMutation } from "@/features/stock/api/stockApi";
 import type { BusinessContext, ProductWithStock } from "@/features/stock/types/stock.types";
+import { scaleOf, unitLong } from "@/lib/units";
+import { ReconcileQuantityFields } from "./ReconcileQuantityFields";
+import { computeTarget, qtyWithUnit, type ReconcileMode } from "./reconcileQuantity";
 
 const MAX_RESULTS = 8;
-
-const UNIT_PLURAL: Record<string, string> = {
-  UNIDAD: "unidades",
-  ML: "ml",
-  AMPOLLA: "ampollas/viales",
-  DISPARO: "disparos",
-};
 
 type Props = {
   context: BusinessContext | null;
@@ -91,8 +87,8 @@ function ReconcileDialog({
 }) {
   const [term, setTerm] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [closed, setClosed] = useState("");
-  const [loose, setLoose] = useState("");
+  const [mode, setMode] = useState<ReconcileMode>("total");
+  const [raw, setRaw] = useState("");
   const [comment, setComment] = useState("");
   const [reconcileStock, { isLoading }] = useReconcileStockMutation();
 
@@ -106,47 +102,36 @@ function ReconcileDialog({
 
   // Siempre la versión más fresca del producto (se refresca tras guardar).
   const product = products.find((p) => p.id === selectedId) ?? null;
-
-  const unitKey = product?.consumptionUnit ?? "UNIDAD";
-  const unit = UNIT_PLURAL[unitKey] ?? unitKey.toLowerCase();
-  const perPackage =
-    product?.unitsPerPackage != null && product.unitsPerPackage > 1
-      ? product.unitsPerPackage
-      : 1;
-  const byPackage = perPackage > 1;
-
-  const closedN = closed === "" ? 0 : Number(closed);
-  const looseN = loose === "" ? 0 : Number(loose);
-  const valid =
-    Number.isInteger(closedN) && closedN >= 0 && Number.isInteger(looseN) && looseN >= 0;
-  const touched = closed !== "" || loose !== "";
-  const total = valid ? closedN * perPackage + looseN : NaN;
+  const scale = scaleOf(product?.unitScale);
+  const unit = product?.consumptionUnit ?? "UNIDAD";
+  const { targetStored } = product
+    ? computeTarget(mode, raw, product.currentStock, scale)
+    : { targetStored: null };
 
   function pick(p: ProductWithStock) {
     setSelectedId(p.id);
     setTerm("");
-    setClosed("");
-    setLoose("");
+    setRaw("");
+    setMode("total");
   }
 
   async function handleSave() {
-    if (!product || !valid || !touched) return;
+    if (!product || targetStored == null) return;
     try {
       const r = await reconcileStock({
         productId: product.id,
         context,
-        countedQuantity: total,
+        countedQuantity: targetStored,
         comment: comment.trim() || undefined,
       }).unwrap();
       toast.success(
         r.difference === 0
-          ? `${product.name}: el stock ya era ${r.current} ${unit}, no hubo cambios.`
-          : `${product.name}: ${r.previous} → ${r.current} ${unit}.`
+          ? `${product.name}: el stock ya era ${qtyWithUnit(r.current, unit, scale)}, no hubo cambios.`
+          : `${product.name}: ${qtyWithUnit(r.previous, unit, scale)} → ${qtyWithUnit(r.current, unit, scale)}.`
       );
       // Listo para reconciliar otro producto sin cerrar el diálogo.
       setSelectedId(null);
-      setClosed("");
-      setLoose("");
+      setRaw("");
       setComment("");
     } catch (e: unknown) {
       const msg =
@@ -159,15 +144,15 @@ function ReconcileDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && !isLoading && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PackageCheck className="size-5 text-primary" />
             Reconciliación de stock
           </DialogTitle>
           <DialogDescription>
-            Elegí el producto y cargá lo que hay físicamente. El stock queda en
-            ese valor y la diferencia se registra como ajuste en Movimientos.
+            Elegí el producto y cargá lo que hay físicamente. La diferencia se
+            registra como ajuste en Movimientos.
           </DialogDescription>
         </DialogHeader>
 
@@ -210,8 +195,7 @@ function ReconcileDialog({
                             : "shrink-0"
                         }
                       >
-                        {p.currentStock}{" "}
-                        {UNIT_PLURAL[p.consumptionUnit ?? "UNIDAD"] ?? ""}
+                        {qtyWithUnit(p.currentStock, p.consumptionUnit, scaleOf(p.unitScale))}
                       </Badge>
                     </button>
                   </li>
@@ -225,8 +209,7 @@ function ReconcileDialog({
               <div className="min-w-0">
                 <p className="font-medium">{product.name}</p>
                 <p className="text-muted-foreground">
-                  En sistema: <b>{product.currentStock}</b> {unit}
-                  {byPackage && ` · envase de ${perPackage} ${unit}`}
+                  Se cuenta en <b>{unitLong(unit)}</b>
                 </p>
               </div>
               <Button
@@ -239,61 +222,27 @@ function ReconcileDialog({
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {byPackage && (
-                <Field>
-                  <FieldLabel>Envases cerrados</FieldLabel>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    step={1}
-                    placeholder="0"
-                    value={closed}
-                    onChange={(e) => setClosed(e.target.value)}
-                    autoFocus
-                  />
-                </Field>
-              )}
-              <Field className={byPackage ? undefined : "sm:col-span-2"}>
-                <FieldLabel>
-                  {byPackage ? `${unit} sueltos (abiertos)` : `Cantidad real (${unit})`}
-                </FieldLabel>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={1}
-                  placeholder="0"
-                  value={loose}
-                  onChange={(e) => setLoose(e.target.value)}
-                  autoFocus={!byPackage}
-                />
-              </Field>
-              <Field className="sm:col-span-2">
-                <FieldLabel>Nota (opcional)</FieldLabel>
-                <Input
-                  placeholder="Ej: conteo mensual, compra no cargada…"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  maxLength={200}
-                />
-              </Field>
-            </div>
+            <ReconcileQuantityFields
+              mode={mode}
+              onModeChange={setMode}
+              raw={raw}
+              onRawChange={setRaw}
+              currentStored={product.currentStock}
+              unit={unit}
+              scale={scale}
+              unitsPerPackageStored={product.unitsPerPackage}
+              autoFocus
+            />
 
-            {touched && (
-              <p className="text-sm text-muted-foreground">
-                {!valid ? (
-                  "Usá números enteros, sin decimales."
-                ) : (
-                  <>
-                    Stock real: <b className="text-foreground">{total} {unit}</b>
-                    {total !== product.currentStock &&
-                      ` (${total > product.currentStock ? "+" : ""}${total - product.currentStock} respecto del sistema)`}
-                  </>
-                )}
-              </p>
-            )}
+            <Field>
+              <FieldLabel>Nota (opcional)</FieldLabel>
+              <Input
+                placeholder="Ej: conteo mensual, compra no cargada…"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                maxLength={200}
+              />
+            </Field>
           </div>
         )}
 
@@ -302,7 +251,7 @@ function ReconcileDialog({
             Cerrar
           </Button>
           {product && (
-            <Button onClick={handleSave} disabled={!touched || !valid || isLoading}>
+            <Button onClick={handleSave} disabled={targetStored == null || isLoading}>
               {isLoading && <Spinner />}
               Guardar stock
             </Button>

@@ -30,6 +30,7 @@ import {
   type BomTemplateLine,
 } from "../models/dermatoCatalog";
 import { useRegisterDermatoProcedureMutation } from "../api/dermatoApi";
+import { stockLabel } from "@/lib/units";
 
 type Props = {
   open: boolean;
@@ -279,7 +280,7 @@ export function DermatoProcedureDialog({ open, onOpenChange }: Props) {
                         <SelectContent>
                           {sortedProducts.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
-                              {p.name} (stock {p.currentStock})
+                              {p.name} (stock {stockLabel(p)})
                             </SelectItem>
                           ))}
                         </SelectContent>

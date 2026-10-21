@@ -6,6 +6,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
 import { restockPriorityLabel } from "@/features/stock/types/stock.types";
+import { formatQty, stockLabel, minimumLabel } from "@/lib/units";
 
 type Props = {
   products: ProductWithStock[];
@@ -124,7 +125,7 @@ export function LowStockCard({ products, onPurchaseProduct, defaultOpen = false 
                       {restockPriorityLabel(p.priority) !== "Normal"
                         ? `Prioridad ${restockPriorityLabel(p.priority).toLowerCase()} · `
                         : ""}
-                      Stock {p.currentStock} / mínimo {p.minimumStock}
+                      Stock {stockLabel(p)} / mínimo {minimumLabel(p)}
                     </p>
                   </div>
 
@@ -139,7 +140,7 @@ export function LowStockCard({ products, onPurchaseProduct, defaultOpen = false 
                     >
                       {p.currentStock === 0
                         ? "Sin stock"
-                        : `Faltan ${p.missing}`}
+                        : `Faltan ${formatQty(p.missing, p.consumptionUnit, p.unitScale)}`}
                     </Badge>
 
                     {onPurchaseProduct && (

@@ -11,6 +11,7 @@ import {
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import type { PageResponse, StockMovementItem } from "../ui/types/movements.types";
+import { formatQty } from "@/lib/units";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -179,7 +180,7 @@ export function MovementsTable({ data, isLoading, page, setPage }: Props) {
                               : movement.type === "OUT"
                                 ? "-"
                                 : ""}
-                            {movement.quantity}
+                            {formatQty(movement.quantity, movement.unit, movement.unitScale)}
                           </span>
                         </TableCell>
 

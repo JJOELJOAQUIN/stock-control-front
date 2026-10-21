@@ -23,6 +23,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Badge } from "@/shared/components/ui/badge";
 import { INTERNAL_CONSUMPTION_REASONS, type InternalConsumptionReason, type InternalConsumptionRequest, type ProductWithStock } from "@/features/stock/types/stock.types";
+import { fitsScale, formatQty, parseDecimal, scaleOf, stockLabel, toStored, unitShort } from "@/lib/units";
 
 
 
@@ -69,16 +70,23 @@ export function InternalConsumptionDialog({
       return;
     }
 
-    const qty = Number(quantity);
+    // Cantidad REAL (ml con decimales); se manda escalada (décimas de ml).
+    const scale = scaleOf(product.unitScale);
+    const real = parseDecimal(quantity);
 
-    if (!Number.isInteger(qty) || qty <= 0) {
-      toast.error("La cantidad debe ser un entero mayor a cero");
+    if (!(real > 0) || !fitsScale(real, scale)) {
+      toast.error(
+        scale > 1
+          ? "La cantidad debe ser mayor a cero, con hasta 1 decimal (ej: 1,5)"
+          : "La cantidad debe ser un entero mayor a cero"
+      );
       return;
     }
+    const qty = toStored(real, scale);
 
     if (qty > product.currentStock) {
       toast.error(
-        `Stock insuficiente: hay ${product.currentStock} y querés consumir ${qty}`
+        `Stock insuficiente: hay ${stockLabel(product)} y querés consumir ${formatQty(qty, product.consumptionUnit, product.unitScale)}`
       );
       return;
     }
@@ -113,19 +121,21 @@ export function InternalConsumptionDialog({
               <p className="text-xs text-muted-foreground">{product.brand}</p>
             </div>
             <Badge variant={product.currentStock === 0 ? "destructive" : "secondary"}>
-              Stock: {product.currentStock}
+              Stock: {stockLabel(product)}
             </Badge>
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field>
-            <FieldLabel>Cantidad</FieldLabel>
+            <FieldLabel>
+              Cantidad{product && product.consumptionUnit && product.consumptionUnit !== "UNIDAD"
+                ? ` (${unitShort(product.consumptionUnit)})`
+                : ""}
+            </FieldLabel>
             <Input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              step={1}
+              type="text"
+              inputMode={scaleOf(product?.unitScale) > 1 ? "decimal" : "numeric"}
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
             />

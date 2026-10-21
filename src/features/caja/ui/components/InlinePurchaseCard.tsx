@@ -29,6 +29,7 @@ import {
   currencyFormatter,
   validatePurchase,
 } from "@/shared/lib/purchase";
+import { stockLabel } from "@/lib/units";
 
 type Props = {
   products: ProductWithStock[];
@@ -174,7 +175,7 @@ export function InlineProductPurchaseCard({
                 <SelectContent>
                   {products.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name} · Stock: {product.currentStock}
+                      {product.name} · Stock: {stockLabel(product)}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -32,6 +32,7 @@ import {
   type RecipeLinePayload,
 } from "@/features/treatments/ui/screens/api/procedureCatalogApi";
 import { useGetProductsWithStockQuery } from "@/features/stock/api/stockApi";
+import { fitsScale, formatNumber, fromStored, parseDecimal, scaleOf, toStored, unitShort } from "@/lib/units";
 
 type Draft = {
   id: string | null;
@@ -402,7 +403,13 @@ function RecipeEditor({ treatmentId }: { treatmentId: string }) {
   // Cargar la receta traída del backend en el estado local editable.
   useEffect(() => {
     if (recipe) {
-      setRows(recipe.map((l) => ({ productId: l.productId, quantity: String(l.quantity) })));
+      // En pantalla, la cantidad REAL (1,5 ml), no la guardada (15).
+      setRows(
+        recipe.map((l) => ({
+          productId: l.productId,
+          quantity: formatNumber(fromStored(l.quantity, scaleOf(l.unitScale))),
+        }))
+      );
     }
   }, [recipe]);
 
@@ -423,6 +430,11 @@ function RecipeEditor({ treatmentId }: { treatmentId: string }) {
   );
   const unitOf = (productId: string) =>
     unitFromProduct.get(productId) ?? unitFromRecipe.get(productId) ?? null;
+  const scaleFor = (productId: string) => {
+    const p = productList.find((x) => x.id === productId);
+    if (p) return scaleOf(p.unitScale);
+    return scaleOf(recipe?.find((l) => l.productId === productId)?.unitScale);
+  };
 
   const inRecipe = new Set(rows.map((r) => r.productId));
   const available = productList.filter((p) => !inRecipe.has(p.id));
@@ -436,12 +448,17 @@ function RecipeEditor({ treatmentId }: { treatmentId: string }) {
   const save = async () => {
     const lines: RecipeLinePayload[] = [];
     for (const r of rows) {
-      const q = Number(r.quantity);
-      if (!Number.isInteger(q) || q < 1) {
-        toast.error("Las cantidades tienen que ser enteros mayores o iguales a 1");
+      const scale = scaleFor(r.productId);
+      const q = parseDecimal(r.quantity);
+      if (!(q > 0) || !fitsScale(q, scale)) {
+        toast.error(
+          scale > 1
+            ? `${nameById.get(r.productId) ?? "Insumo"}: poné los ml con hasta 1 decimal (ej: 1,5).`
+            : `${nameById.get(r.productId) ?? "Insumo"}: la cantidad tiene que ser un entero mayor a 0.`
+        );
         return;
       }
-      lines.push({ productId: r.productId, quantity: q });
+      lines.push({ productId: r.productId, quantity: toStored(q, scale) });
     }
     try {
       await setRecipe({ id: treatmentId, lines }).unwrap();
@@ -472,17 +489,17 @@ function RecipeEditor({ treatmentId }: { treatmentId: string }) {
           {rows.map((r, i) => (
             <div key={r.productId} className="flex items-center gap-2">
               <Input
-                inputMode="numeric"
+                inputMode={scaleFor(r.productId) > 1 ? "decimal" : "numeric"}
                 value={r.quantity}
                 onChange={(e) => {
-                  const q = e.target.value.replace(/[^\d]/g, "");
+                  const q = e.target.value.replace(/[^\d.,]/g, "");
                   setRows((prev) => prev.map((x, xi) => (xi === i ? { ...x, quantity: q } : x)));
                 }}
                 className="w-16 text-center"
               />
-              {unitOf(r.productId) && (
-                <Badge variant="secondary" className="shrink-0">{unitOf(r.productId)}</Badge>
-              )}
+              <Badge variant="secondary" className="shrink-0">
+                {unitShort(unitOf(r.productId))}
+              </Badge>
               <span className="min-w-0 flex-1 truncate text-sm">
                 {nameById.get(r.productId) ?? r.productId}
               </span>

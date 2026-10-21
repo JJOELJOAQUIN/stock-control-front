@@ -18,6 +18,7 @@ import {
   useToggleShoppingItemMutation,
   type ShoppingListItem,
 } from "../api/shoppingApi";
+import { stockLabel } from "@/lib/units";
 
 type Props = {
   /** Los mismos productos que ya carga la página de caja. */
@@ -117,7 +118,7 @@ export function ShoppingListCard({ products }: Props) {
                   <Plus className="size-3" />
                   {p.name}
                   <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
-                    {p.currentStock}
+                    {stockLabel(p)}
                   </Badge>
                 </Button>
               ))}

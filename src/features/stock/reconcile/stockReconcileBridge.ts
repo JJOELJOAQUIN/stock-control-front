@@ -18,6 +18,8 @@ export type InsufficientStockInfo = {
   requested: number;
   unit: string;
   unitsPerPackage: number;
+  /** available/requested/unitsPerPackage van guardados; ML en décimas (10). */
+  unitScale?: number;
 };
 
 type Listener = (info: InsufficientStockInfo, resolve: (ok: boolean) => void) => void;
