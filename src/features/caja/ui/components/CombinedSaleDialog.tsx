@@ -38,6 +38,13 @@ import { Spinner } from "@/shared/components/ui/spinner";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import { PAYMENT_METHODS, PEELING_PROTOCOLO_CODE } from "@/lib/peeling";
 import { stockLabel } from "@/lib/units";
+import { useHasRole } from "@/features/auth/hooks/useRoles";
+import { ProcedureConsumptionEditor } from "./ProcedureConsumptionEditor";
+import {
+    toConsumptionLines,
+    type ConsumptionDraft,
+    type ConsumptionLine,
+} from "./procedureConsumption";
 
 type Context = "LOCAL" | "CONSULTORIO";
 
@@ -76,6 +83,8 @@ type CartLine =
         unitAmount: number;
         doctorSharePercent: number;
         cosmetologistSharePercent: number;
+        /** null = descuenta la receta; array = insumos cargados para esta sesión. */
+        consumptions: ConsumptionDraft[] | null;
     };
 
 type Props = {
@@ -131,6 +140,8 @@ export function CombinedSaleDialog({
     };
 
     const [lines, setLines] = useState<CartLine[]>([]);
+    // Solo la médica (ADMIN) ajusta insumos por sesión; el backend lo valida igual.
+    const isAdmin = useHasRole(["ADMIN"]);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
     const [comment, setComment] = useState("");
     const [attempted, setAttempted] = useState(false);
@@ -292,6 +303,7 @@ export function CombinedSaleDialog({
                     unitAmount: Number(proc.amount ?? 0),
                     doctorSharePercent: shares.doctorSharePercent,
                     cosmetologistSharePercent: shares.cosmetologistSharePercent,
+                    consumptions: null,
                 },
             ];
         });
@@ -345,6 +357,20 @@ export function CombinedSaleDialog({
             return;
         }
 
+        // Insumos ajustados a mano (solo la médica): validar y pasar a
+        // unidades guardadas antes de armar el pedido.
+        const customConsumptions = new Map<string, ConsumptionLine[]>();
+        for (const l of lines) {
+            if (l.kind !== "PROCEDURE" || l.consumptions == null) continue;
+            const r = toConsumptionLines(l.consumptions, products, l.description);
+            if ("error" in r) {
+                lineRefs.current[l.uid]?.scrollIntoView({ behavior: "smooth", block: "center" });
+                toast.error(r.error);
+                return;
+            }
+            customConsumptions.set(l.uid, r.lines);
+        }
+
         const items: CombinedSaleItemRequest[] = lines.map((l) => {
             const subtotal = lineSubtotal(l);
             const unit = effectiveUnit(l);
@@ -382,6 +408,7 @@ export function CombinedSaleDialog({
                 performedBy: shares.performedBy,
                 doctorSharePercent: shares.doctorSharePercent,
                 cosmetologistSharePercent: shares.cosmetologistSharePercent,
+                consumptions: customConsumptions.get(l.uid) ?? null,
             };
         });
 
@@ -620,6 +647,18 @@ export function CombinedSaleDialog({
                                         </div>
 
                         
+
+                                        {l.kind === "PROCEDURE" && isConsultorio && (
+                                            <ProcedureConsumptionEditor
+                                                procedureCode={l.procedureCode}
+                                                products={products}
+                                                value={l.consumptions}
+                                                onChange={(consumptions) =>
+                                                    patchLine(l.uid, { consumptions } as Partial<CartLine>)
+                                                }
+                                                canEdit={isAdmin}
+                                            />
+                                        )}
 
                                         {l.kind === "PRODUCT" && isConsultorio && (
                                             <div className="mt-2 flex items-center justify-end gap-1 text-sm">

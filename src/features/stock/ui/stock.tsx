@@ -125,6 +125,10 @@ export default function StockPage() {
 
   // Para operar (vender, consumir, stock bajo) solo cuentan los activos; los
   // inactivos se listan en el catálogo únicamente para poder reactivarlos.
+  // ¿La API ya guarda ml en décimas? Si el front se publica antes que la
+  // API, unitScale no viene y hay que mandar las cantidades sin escalar.
+  const serverScaleAware = products.some((p) => p.unitScale != null);
+
   const operableProducts = useMemo(
     () => products.filter((p) => p.active),
     [products]
@@ -183,7 +187,7 @@ export default function StockPage() {
       }
 
       // El formulario trabaja en unidades REALES (1,5 ml); se guarda escalado.
-      const createScale = defaultScale(newProduct.consumptionUnit);
+      const createScale = serverScaleAware ? defaultScale(newProduct.consumptionUnit) : 1;
       await handleCreateProduct({
         ...newProduct,
         minimumStock: toStored(newProduct.minimumStock, createScale),
@@ -287,7 +291,7 @@ export default function StockPage() {
         return;
       }
 
-      const editScale = defaultScale(editForm.consumptionUnit);
+      const editScale = serverScaleAware ? defaultScale(editForm.consumptionUnit) : 1;
       await handleUpdateProduct(editingProduct.id, {
         ...editForm,
         minimumStock: toStored(editForm.minimumStock, editScale),
