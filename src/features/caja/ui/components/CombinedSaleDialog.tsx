@@ -37,6 +37,7 @@ import {
 import { Spinner } from "@/shared/components/ui/spinner";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import { PAYMENT_METHODS, PEELING_PROTOCOLO_CODE } from "@/lib/peeling";
+import { stockLabel } from "@/lib/units";
 
 type Context = "LOCAL" | "CONSULTORIO";
 
@@ -461,7 +462,7 @@ export function CombinedSaleDialog({
                                         <Package className="h-4 w-4 shrink-0 text-emerald-600" />
                                         <span className="flex-1 truncate">{p.name}</span>
                                         <span className="text-xs text-muted-foreground dark:text-zinc-300">
-                                            Stock: {p.currentStock}
+                                            Stock: {stockLabel(p)}
                                         </span>
                                     </button>
                                 ))}

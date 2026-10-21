@@ -23,6 +23,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { currencyFormatter } from "@/lib/currencyFormatter";
 import { ProductSaleDialog, type SaleDraftLine } from "./ProductSaleDialog";
+import { stockLabel } from "@/lib/units";
 
 type Props = {
   scannedProduct: ProductScanResponse | null;
@@ -128,7 +129,7 @@ export function InlineProductSaleCard({
                         {product.name}
                       </span>
                       <span className="block text-xs text-muted-foreground">
-                        {product.barcode} · Stock: {product.currentStock}
+                        {product.barcode} · Stock: {stockLabel(product)}
                       </span>
                     </span>
                     <span className="shrink-0 text-sm text-emerald-600 dark:text-emerald-400">

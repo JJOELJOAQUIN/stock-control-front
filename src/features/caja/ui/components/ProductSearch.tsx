@@ -4,6 +4,7 @@ import { Plus, Search } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
 import { currencyFormatter } from "@/shared/lib/purchase";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
+import { stockLabel } from "@/lib/units";
 
 const MAX_RESULTS = 8;
 
@@ -62,7 +63,7 @@ export function ProductSearch({ products, addedProductIds, onAdd }: ProductSearc
                 <span className="min-w-0">
                   <span className="block truncate text-sm">{product.name}</span>
                   <span className="block text-xs text-muted-foreground">
-                    Stock: {product.currentStock} · Costo guardado:{" "}
+                    Stock: {stockLabel(product)} · Costo guardado:{" "}
                     {product.costPrice != null
                       ? currencyFormatter.format(product.costPrice)
                       : "—"}

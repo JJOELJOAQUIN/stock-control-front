@@ -27,6 +27,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Badge } from "@/shared/components/ui/badge";
 import { currencyFormatter } from "@/shared/lib/purchase";
+import { stockLabel, minimumLabel } from "@/lib/units";
 
 const MAX_RESULTS = 8;
 
@@ -152,7 +153,7 @@ export function StockOperationsPanel({
                     <span className="min-w-0">
                       <span className="block truncate text-sm">{product.name}</span>
                       <span className="block text-xs text-muted-foreground">
-                        Stock: {product.currentStock}
+                        Stock: {stockLabel(product)}
                         {product.salePrice != null &&
                           ` · Venta: ${currencyFormatter.format(product.salePrice)}`}
                       </span>
@@ -179,7 +180,7 @@ export function StockOperationsPanel({
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground">{selectedFresh.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      Stock: {selectedFresh.currentStock} · Mín: {selectedFresh.minimumStock}
+                      Stock: {stockLabel(selectedFresh)} · Mín: {minimumLabel(selectedFresh)}
                       {selectedFresh.salePrice != null &&
                         ` · Venta: ${currencyFormatter.format(selectedFresh.salePrice)}`}
                     </p>

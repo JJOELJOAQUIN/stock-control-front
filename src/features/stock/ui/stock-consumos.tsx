@@ -10,6 +10,7 @@ import { InternalConsumptionDialog } from "@/features/caja/ui/components/Interna
 import { useStockPage } from "@/features/stock/hooks/useStockPage";
 import type { ProductWithStock } from "@/features/stock/types/stock.types";
 import type { InternalConsumptionRequest } from "@/features/stock/types/stock.types";
+import { stockLabel } from "@/lib/units";
 
 /**
  * Consumos internos como seccion propia: buscar el producto por nombre y
@@ -85,7 +86,7 @@ export default function StockConsumosPage() {
               >
                 <span className="min-w-0 flex-1 truncate">{p.name}</span>
                 <Badge variant={p.belowMinimum ? "destructive" : "secondary"}>
-                  {p.currentStock}
+                  {stockLabel(p)}
                 </Badge>
               </button>
             ))}

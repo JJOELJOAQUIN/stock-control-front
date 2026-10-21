@@ -35,7 +35,9 @@ export type RecipeLine = {
   productId: string;
   productName: string;
   unit: string | null; // ML / AMPOLLA / DISPARO / UNIDAD
+  /** Cantidad guardada (ML en décimas): mostrar con fromStored(quantity, unitScale). */
   quantity: number;
+  unitScale?: number | null;
 };
 
 /** Lo que se manda al guardar la receta. */

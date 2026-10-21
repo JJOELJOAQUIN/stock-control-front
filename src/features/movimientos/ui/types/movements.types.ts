@@ -19,6 +19,9 @@ export type StockMovementItem = {
   comment?: string | null;
   context: BusinessContext;
   createdAt: string;
+  /** Unidad del producto; quantity va guardada (ML en décimas, unitScale 10). */
+  unit?: string | null;
+  unitScale?: number | null;
 };
 
 export type PageResponse<T> = {

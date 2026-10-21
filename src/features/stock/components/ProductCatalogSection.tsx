@@ -15,6 +15,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/components/ui/dropdown-menu";
 import { DropdownMenuContent } from "@radix-ui/react-dropdown-menu";
 import { Spinner } from "@/shared/components/ui/spinner";
+import { stockLabel, minimumLabel } from "@/lib/units";
 
 type Props = {
   products: ProductWithStock[];
@@ -166,14 +167,14 @@ export function ProductCatalogSection({
                             : "text-foreground"
                             }`}
                         >
-                          {product.currentStock}
+                          {stockLabel(product)}
                         </span>
                         {product.belowMinimum && (
                           <Badge
                             variant="destructive"
                             className="text-[10px] text-black dark:text-white"
                           >
-                            Min: {product.minimumStock}
+                            Min: {minimumLabel(product)}
                           </Badge>
                         )}
                       </div>

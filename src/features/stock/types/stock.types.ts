@@ -110,8 +110,10 @@ export type ProductWithStock = {
   shelfLifeMonths?: number | null;
   restockPriority?: number | null;
   consumptionUnit?: string | null; // ML / AMPOLLA / DISPARO / UNIDAD
-  /** Unidades de consumo por envase (ej. 10 dosis por caja de NCTF). */
+  /** Contenido de un envase, en unidades guardadas (ML en décimas: 150 = 15 ml). */
   unitsPerPackage?: number | null;
+  /** Escala de la unidad (ML = 10). Ver src/lib/units.ts. */
+  unitScale?: number | null;
 };
 
 export type UpdateProductRequest = {
@@ -127,6 +129,10 @@ export type UpdateProductRequest = {
   defaultMarkupPercentage?: number | null;
   shelfLifeMonths?: number | null;
   restockPriority?: number | null;
+  /** Opcional: cambia la unidad (el backend re-escala el stock). */
+  consumptionUnit?: "UNIDAD" | "ML" | "AMPOLLA" | "DISPARO" | null;
+  /** Contenido de un envase, en unidades guardadas (ML en décimas). */
+  unitsPerPackage?: number | null;
 };
 
 export type PatchProductRequest = {
@@ -231,6 +237,9 @@ export const PRODUCT_BRANDS = [
   "UVANZA",
   "EXODERMAL",
   "MERZ_AESTHETICS",
+  "PBSERUM",
+  "SUISSELLE",
+  "NAHYCO",
 ] as const;
 
 export type ProductBrand = (typeof PRODUCT_BRANDS)[number];

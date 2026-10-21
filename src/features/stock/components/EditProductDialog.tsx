@@ -26,6 +26,7 @@ import {
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
+import { stockLabel, UNIT_OPTIONS, unitShort } from "@/lib/units";
 
 const PRODUCT_CATEGORIES = [
   { value: "COSMETICO_VENTA", label: "Cosmético Venta" },
@@ -127,10 +128,62 @@ export function EditProductDialog({
             </Field>
 
             <Field>
-              <FieldLabel>Stock mínimo</FieldLabel>
+              <FieldLabel>Unidad en que se cuenta el stock</FieldLabel>
+              <Select
+                value={form.consumptionUnit ?? "UNIDAD"}
+                onValueChange={(value) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    consumptionUnit: value as UpdateProductRequest["consumptionUnit"],
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNIT_OPTIONS.map((u) => (
+                    <SelectItem key={u.value} value={u.value}>
+                      {u.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {product && (form.consumptionUnit ?? "UNIDAD") !== (product.consumptionUnit ?? "UNIDAD") && (
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  Al cambiar la unidad, revisá después el stock con Reconciliación de stock.
+                </p>
+              )}
+            </Field>
+
+            <Field>
+              <FieldLabel>
+                Contenido de un envase ({unitShort(form.consumptionUnit)})
+              </FieldLabel>
               <Input
                 type="number"
                 min="0"
+                step={form.consumptionUnit === "ML" ? "0.1" : "1"}
+                placeholder={form.consumptionUnit === "ML" ? "Ej: 15 (5 viales × 3 ml)" : "Ej: 20"}
+                value={form.unitsPerPackage ?? ""}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    unitsPerPackage: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Al cargar una compra de 1 envase, entra esta cantidad al stock.
+              </p>
+            </Field>
+
+            <Field>
+              <FieldLabel>Stock mínimo ({unitShort(form.consumptionUnit)})</FieldLabel>
+              <Input
+                type="number"
+                min="0"
+                step={form.consumptionUnit === "ML" ? "0.1" : "1"}
                 value={form.minimumStock}
                 onChange={(e) =>
                   setForm((prev) => ({
@@ -309,7 +362,7 @@ export function EditProductDialog({
               variant={product.active ? "default" : "secondary"}
               className="mr-auto"
             >
-              Stock actual: {product.currentStock}
+              Stock actual: {stockLabel(product)}
             </Badge>
           )}
 
