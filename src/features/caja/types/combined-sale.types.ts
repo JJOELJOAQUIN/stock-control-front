@@ -13,6 +13,11 @@ export interface CombinedSaleItemRequest {
   performedBy: CashActor | null;
   doctorSharePercent: number | null;
   cosmetologistSharePercent: number | null;
+  /**
+   * Solo PROCEDURE, solo ADMIN: insumos usados en esta sesión (unidades
+   * guardadas, ML en décimas). Reemplaza la receta. null = receta.
+   */
+  consumptions?: { productId: string; quantity: number }[] | null;
 }
 
 export interface CombinedSaleRequest {
