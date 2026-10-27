@@ -154,12 +154,14 @@ export default function StockPage() {
     const savedMarkup = Number(product.defaultMarkupPercentage ?? 0);
     setEditForm({
       name: product.name,
-      description: "",
+      description: product.description ?? "",
       // El formulario trabaja en unidades REALES (ml); se guarda escalado.
       minimumStock: fromStored(product.minimumStock, scaleOf(product.unitScale)),
       category: product.category,
       brand: product.brand,
-      expirable: false,
+      // Si la API todavía no lo informa queda sin definir y no se envía,
+      // así no se pisa lo guardado (antes se mandaba siempre false).
+      expirable: product.expirable ?? undefined,
       active: product.active,
       costPrice: Number(product.costPrice ?? 0),
       salePrice: Number(product.salePrice ?? 0),

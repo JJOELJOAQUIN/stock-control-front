@@ -309,7 +309,7 @@ export function EditProductDialog({
             <Field>
               <FieldLabel>Expirable</FieldLabel>
               <Select
-                value={String(form.expirable ?? false)}
+                value={form.expirable == null ? undefined : String(form.expirable)}
                 onValueChange={(value) =>
                   setForm((prev) => ({
                     ...prev,
@@ -318,7 +318,7 @@ export function EditProductDialog({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Sin cambios" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="true">Sí</SelectItem>
