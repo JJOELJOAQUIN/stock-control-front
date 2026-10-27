@@ -61,6 +61,18 @@ export const stockApi = baseApi.injectEndpoints({
       invalidatesTags: ["Products", "Stock"],
     }),
 
+    assignProductBarcode: builder.mutation<
+      void,
+      { id: string; barcode: string }
+    >({
+      query: ({ id, barcode }) => ({
+        url: `/api/products/${id}/barcode`,
+        method: "PATCH",
+        body: { barcode },
+      }),
+      invalidatesTags: ["Products", "Stock"],
+    }),
+
     deactivateProduct: builder.mutation<void, string>({
       query: (id) => ({
         url: `/api/products/${id}`,
@@ -163,6 +175,7 @@ export const {
   usePurchaseProductMutation,
   useSellByBarcodeMutation,
   useUpdateProductMutation,
+  useAssignProductBarcodeMutation,
   useDeactivateProductMutation,
   useGetExpiringProductBatchesQuery,
   useCombinedSaleMutation,

@@ -26,6 +26,7 @@ import { LowStockCard } from "../components/LowStockCard";
 import { ProductMultiSaleDialog } from "@/features/caja/ui/components/ProductMultiSaleDialog";
 import { InternalConsumptionDialog } from "@/features/caja/ui/components/InternalConsumptionDialog";
 import { defaultScale, fromStored, scaleOf, toStored } from "@/lib/units";
+import { impliedMarkupPercentage } from "@/shared/lib/purchase";
 
 type NewProductForm = CreateProductRequest;
 
@@ -105,6 +106,7 @@ export default function StockPage() {
     shelfLifeMonths: null,
     restockPriority: 0,
   });
+  const [editBarcode, setEditBarcode] = useState("");
 
   const [sellForm, setSellForm] = useState({
     quantity: "",
@@ -146,18 +148,27 @@ export default function StockPage() {
 
   const openEditDialog = (product: ProductWithStock) => {
     setEditingProduct(product);
+    setEditBarcode(product.barcode ?? "");
+    // Sin margen guardado se usa el que surge de costo y venta actuales; si
+    // no, al tocar el costo el precio de venta quedaba igual al costo.
+    const savedMarkup = Number(product.defaultMarkupPercentage ?? 0);
     setEditForm({
       name: product.name,
-      description: "",
+      description: product.description ?? "",
       // El formulario trabaja en unidades REALES (ml); se guarda escalado.
       minimumStock: fromStored(product.minimumStock, scaleOf(product.unitScale)),
       category: product.category,
       brand: product.brand,
-      expirable: false,
+      // Si la API todavía no lo informa queda sin definir y no se envía,
+      // así no se pisa lo guardado (antes se mandaba siempre false).
+      expirable: product.expirable ?? undefined,
       active: product.active,
       costPrice: Number(product.costPrice ?? 0),
       salePrice: Number(product.salePrice ?? 0),
-      defaultMarkupPercentage: Number(product.defaultMarkupPercentage ?? 0),
+      defaultMarkupPercentage:
+        savedMarkup > 0
+          ? savedMarkup
+          : impliedMarkupPercentage(product.costPrice, product.salePrice) ?? 0,
       shelfLifeMonths: product.shelfLifeMonths ?? null,
       restockPriority: product.restockPriority ?? 0,
       consumptionUnit: (product.consumptionUnit ?? "UNIDAD") as UpdateProductRequest["consumptionUnit"],
@@ -291,6 +302,12 @@ export default function StockPage() {
         return;
       }
 
+      const barcode = editBarcode.trim();
+      if (!barcode && editingProduct.barcode) {
+        toast.error("El código de barras no puede quedar vacío");
+        return;
+      }
+
       const editScale = serverScaleAware ? defaultScale(editForm.consumptionUnit) : 1;
       await handleUpdateProduct(editingProduct.id, {
         ...editForm,
@@ -303,7 +320,7 @@ export default function StockPage() {
         description: editForm.description?.trim() || "",
         shelfLifeMonths: editForm.shelfLifeMonths || null,
         restockPriority: editForm.restockPriority ?? 0,
-      });
+      }, barcode !== (editingProduct.barcode ?? "") ? barcode : undefined);
 
       setIsEditOpen(false);
       setEditingProduct(null);
@@ -436,6 +453,8 @@ export default function StockPage() {
         product={editingProduct}
         form={editForm}
         setForm={setEditForm}
+        barcode={editBarcode}
+        onBarcodeChange={setEditBarcode}
         isSubmitting={isUpdatingProduct}
         onSubmit={onSubmitEdit}
       />

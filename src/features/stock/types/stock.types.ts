@@ -114,6 +114,8 @@ export type ProductWithStock = {
   unitsPerPackage?: number | null;
   /** Escala de la unidad (ML = 10). Ver src/lib/units.ts. */
   unitScale?: number | null;
+  description?: string | null;
+  expirable?: boolean | null;
 };
 
 export type UpdateProductRequest = {
