@@ -42,6 +42,8 @@ type Props = {
   product: ProductWithStock | null;
   form: UpdateProductRequest;
   setForm: React.Dispatch<React.SetStateAction<UpdateProductRequest>>;
+  barcode: string;
+  onBarcodeChange: (barcode: string) => void;
   isSubmitting: boolean;
   onSubmit: () => void;
 };
@@ -52,39 +54,56 @@ export function EditProductDialog({
   product,
   form,
   setForm,
+  barcode,
+  onBarcodeChange,
   isSubmitting,
   onSubmit,
 }: Props) {
-  const handleCostOrMarkupChange = (
-    field: "costPrice" | "defaultMarkupPercentage",
-    value: number
-  ) => {
+  // Costo, margen y venta van enlazados: cambiar el costo mantiene el margen
+  // (la venta acompaña el aumento), cambiar el margen recalcula la venta y
+  // cambiar la venta a mano actualiza el margen.
+  const handleCostChange = (costPrice: number) => {
     setForm((prev) => {
-      const next = {
-        ...prev,
-        [field]: value,
-      };
-
-      const costPrice =
-        field === "costPrice" ? value : Number(prev.costPrice ?? 0);
-
-      const markup =
-        field === "defaultMarkupPercentage"
-          ? value
-          : Number(prev.defaultMarkupPercentage ?? 0);
-
-      if (
-        Number.isFinite(costPrice) &&
-        costPrice > 0 &&
-        Number.isFinite(markup) &&
-        markup >= 0
-      ) {
-        next.salePrice = Number(
-          (costPrice + costPrice * (markup / 100)).toFixed(2)
-        );
+      const markup = Number(prev.defaultMarkupPercentage ?? 0);
+      // Sin margen no se toca la venta: antes quedaba igual al costo.
+      if (!(costPrice > 0) || !(markup > 0)) {
+        return { ...prev, costPrice };
       }
+      return {
+        ...prev,
+        costPrice,
+        salePrice: Number((costPrice * (1 + markup / 100)).toFixed(2)),
+      };
+    });
+  };
 
-      return next;
+  const handleMarkupChange = (markup: number) => {
+    setForm((prev) => {
+      const costPrice = Number(prev.costPrice ?? 0);
+      if (!(costPrice > 0) || !(markup >= 0)) {
+        return { ...prev, defaultMarkupPercentage: markup };
+      }
+      return {
+        ...prev,
+        defaultMarkupPercentage: markup,
+        salePrice: Number((costPrice * (1 + markup / 100)).toFixed(2)),
+      };
+    });
+  };
+
+  const handleSalePriceChange = (salePrice: number) => {
+    setForm((prev) => {
+      const costPrice = Number(prev.costPrice ?? 0);
+      if (!(costPrice > 0) || !(salePrice > 0)) {
+        return { ...prev, salePrice };
+      }
+      return {
+        ...prev,
+        salePrice,
+        defaultMarkupPercentage: Number(
+          ((salePrice / costPrice - 1) * 100).toFixed(2)
+        ),
+      };
     });
   };
 
@@ -204,13 +223,8 @@ export function EditProductDialog({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={form.costPrice ?? 0}
-                  onChange={(e) =>
-                    handleCostOrMarkupChange(
-                      "costPrice",
-                      Number(e.target.value)
-                    )
-                  }
+                  value={form.costPrice || ""}
+                  onChange={(e) => handleCostChange(Number(e.target.value))}
                 />
               </InputGroup>
             </Field>
@@ -225,13 +239,8 @@ export function EditProductDialog({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={form.defaultMarkupPercentage ?? 0}
-                  onChange={(e) =>
-                    handleCostOrMarkupChange(
-                      "defaultMarkupPercentage",
-                      Number(e.target.value)
-                    )
-                  }
+                  value={form.defaultMarkupPercentage || ""}
+                  onChange={(e) => handleMarkupChange(Number(e.target.value))}
                 />
               </InputGroup>
             </Field>
@@ -246,15 +255,13 @@ export function EditProductDialog({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={form.salePrice ?? 0}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      salePrice: Number(e.target.value),
-                    }))
-                  }
+                  value={form.salePrice || ""}
+                  onChange={(e) => handleSalePriceChange(Number(e.target.value))}
                 />
               </InputGroup>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Si cambiás el costo, el precio de venta se ajusta manteniendo el margen.
+              </p>
             </Field>
 
             <Field>
@@ -347,10 +354,14 @@ export function EditProductDialog({
                 <InputGroupAddon>
                   <Barcode className="h-4 w-4" />
                 </InputGroupAddon>
-                <InputGroupInput value={product?.barcode ?? ""} disabled />
+                <InputGroupInput
+                  value={barcode}
+                  placeholder="Escaneá o escribí el código"
+                  onChange={(e) => onBarcodeChange(e.target.value)}
+                />
               </InputGroup>
               <p className="mt-1 text-xs text-muted-foreground">
-                El código de barras no puede modificarse.
+                No puede repetirse: si otro producto ya lo usa, no se guarda.
               </p>
             </Field>
           </FieldGroup>

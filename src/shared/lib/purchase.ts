@@ -34,6 +34,23 @@ export function calcSuggestedSalePrice(
   return unitCost + unitCost * (markupPercentage / 100);
 }
 
+/**
+ * Margen (%) que hoy tiene el producto según su costo y su precio de venta.
+ * Sirve cuando no hay margen guardado: así, al subir el costo, el precio de
+ * venta sube en la misma proporción en lugar de perderse.
+ * Devuelve null si falta alguno de los dos precios.
+ */
+export function impliedMarkupPercentage(
+  costPrice: number | null | undefined,
+  salePrice: number | null | undefined
+): number | null {
+  const cost = Number(costPrice);
+  const sale = Number(salePrice);
+  if (!Number.isFinite(cost) || cost <= 0) return null;
+  if (!Number.isFinite(sale) || sale <= 0) return null;
+  return Number(((sale / cost - 1) * 100).toFixed(2));
+}
+
 export type PurchaseValidationInput = {
   quantity: number;
   unitCost: number;

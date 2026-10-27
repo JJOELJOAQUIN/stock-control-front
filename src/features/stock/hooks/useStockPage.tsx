@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
+  useAssignProductBarcodeMutation,
   useCreateProductMutation,
   useDeactivateProductMutation,
   useGetProductsWithStockQuery,
@@ -49,6 +50,8 @@ export function useStockPage() {
   );
   const [updateProduct, { isLoading: isUpdatingProduct }] =
     useUpdateProductMutation();
+  const [assignProductBarcode, { isLoading: isAssigningBarcode }] =
+    useAssignProductBarcodeMutation();
 
   const [deactivateProduct, { isLoading: isDeactivatingProduct }] =
     useDeactivateProductMutation();
@@ -192,7 +195,17 @@ export function useStockPage() {
     }
   };
 
-  const handleUpdateProduct = async (id: string, payload: UpdateProductRequest) => {
+  const handleUpdateProduct = async (
+    id: string,
+    payload: UpdateProductRequest,
+    newBarcode?: string
+  ) => {
+    // El código va por su propio endpoint (valida que no lo use otro
+    // producto). Se asigna primero: si está repetido no se guarda nada.
+    if (newBarcode) {
+      await assignProductBarcode({ id, barcode: newBarcode }).unwrap();
+    }
+
     await updateProduct({
       id,
       body: payload,
@@ -245,7 +258,7 @@ export function useStockPage() {
     handleSell,
     handleConsume,
     performer,
-    isUpdatingProduct,
+    isUpdatingProduct: isUpdatingProduct || isAssigningBarcode,
     isDeactivatingProduct,
     handleUpdateProduct,
     handleDeactivateProduct,

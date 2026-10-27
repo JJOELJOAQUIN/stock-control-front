@@ -27,6 +27,7 @@ import {
   calcSuggestedSalePrice,
   calcTotalAmount,
   currencyFormatter,
+  impliedMarkupPercentage,
   validatePurchase,
 } from "@/shared/lib/purchase";
 import { stockLabel } from "@/lib/units";
@@ -84,9 +85,12 @@ export function InlineProductPurchaseCard({
 
   const totalAmount = calcTotalAmount(parsedUnitCost, parsedQuantity);
 
+  // Sin margen guardado se sugiere con el margen actual (venta / costo),
+  // así un aumento de costo sube la venta en la misma proporción.
   const suggestedSalePrice = calcSuggestedSalePrice(
     parsedUnitCost,
-    selectedProduct?.defaultMarkupPercentage
+    selectedProduct?.defaultMarkupPercentage ||
+      impliedMarkupPercentage(selectedProduct?.costPrice, selectedProduct?.salePrice)
   );
 
   const handleUpdateSalePriceChange = (checked: boolean) => {
