@@ -44,8 +44,7 @@ export default function ComprasPage() {
         products={products}
         isSubmitting={isPurchasingProduct}
         onSubmit={async (order) => {
-          await purchaseProductFromCash(order);
-          setOpen(false);
+          if (await purchaseProductFromCash(order)) setOpen(false);
         }}
       />
 

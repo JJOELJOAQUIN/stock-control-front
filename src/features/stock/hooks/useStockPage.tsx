@@ -1,3 +1,4 @@
+import { sendPurchaseCheckingDuplicates } from "../lib/purchaseDuplicate";
 import { useEffect, useMemo, useState } from "react";
 
 import { toast } from "sonner";
@@ -126,13 +127,20 @@ export function useStockPage() {
   ) => {
     if (!context) {
       toast.error("Seleccioná un contexto");
-      return;
+      return false;
     }
 
-    await purchaseProduct({
-      ...order,
-      context,
-    }).unwrap();
+    const loaded = await sendPurchaseCheckingDuplicates((confirmDuplicate) =>
+      purchaseProduct({
+        ...order,
+        context,
+        confirmDuplicate,
+      }).unwrap()
+    );
+    if (!loaded) {
+      toast.info("La compra no se cargó");
+      return false;
+    }
 
     toast.success("Compra registrada correctamente");
     refetch();
@@ -140,6 +148,7 @@ export function useStockPage() {
     if (barcodeQuery.trim()) {
       await runScan(barcodeQuery, context);
     }
+    return true;
   };
 
   const handleSell = async (payload: {

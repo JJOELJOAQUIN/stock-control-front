@@ -1,3 +1,4 @@
+import { sendPurchaseCheckingDuplicates } from "@/features/stock/lib/purchaseDuplicate";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { businessToday, toBusinessDateISO } from "@/lib/businessDate";
@@ -346,10 +347,17 @@ export function useCashConsultorioPage() {
     order: Omit<PurchaseOrderRequest, "context">
   ) => {
     try {
-      await purchaseProduct({
-        ...order,
-        context: "CONSULTORIO",
-      }).unwrap();
+      const loaded = await sendPurchaseCheckingDuplicates((confirmDuplicate) =>
+        purchaseProduct({
+          ...order,
+          context: "CONSULTORIO",
+          confirmDuplicate,
+        }).unwrap()
+      );
+      if (!loaded) {
+        toast.info("La compra no se cargó");
+        return false;
+      }
 
       toast.success("Compra de producto registrada");
 
@@ -358,8 +366,10 @@ export function useCashConsultorioPage() {
       await refetchExpiringProducts();
 
       clearScannedProduct();
+      return true;
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar la compra");
+      return false;
     }
   };
 

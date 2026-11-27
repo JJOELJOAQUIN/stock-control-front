@@ -81,6 +81,8 @@ export type PurchaseOrderRequest = {
   paymentMethod: PaymentMethod;
   expectedTotal: number;
   items: PurchaseItem[];
+  /** true cuando el usuario confirmó que no es una compra repetida. */
+  confirmDuplicate?: boolean;
 };
 
 export type SellByBarcodeRequest = {

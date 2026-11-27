@@ -17,6 +17,7 @@ import {
   type MonthlyMetrics,
   type CosmetologistProductRow,
 } from "../api/metricsApi";
+import { CosmoCashSection } from "./CosmoCashSection";
 
 function currentMonthValue() {
   const d = new Date();
@@ -262,6 +263,13 @@ export function MonthlyMetricsCard() {
             <Money label="Le dejás a la médica" value={view.cosmoDetail.totalMedica} />
           </div>
 
+          <CosmoCashSection
+            year={Number(yearStr)}
+            month={Number(monthStr)}
+            owed={view.cosmoDetail.totalMedica}
+            mine
+          />
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Kpi
               icon={<Sparkles className="size-4 text-violet-600" />}
@@ -393,6 +401,13 @@ export function MonthlyMetricsCard() {
             ventas de producto, donde la mercadería ya es de Pili.
           </p>
         </div>
+
+        <CosmoCashSection
+          year={Number(yearStr)}
+          month={Number(monthStr)}
+          owed={view.cosmoDetail.totalMedica}
+          mine={false}
+        />
 
         {view.medicaRows.length || view.cosmoRows.length || view.cosmoProductDetail.length ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -62,7 +62,7 @@ export default function StockEscanearPage() {
 
   const onSubmitPurchase = async (order: Omit<PurchaseOrderRequest, "context">) => {
     try {
-      await handlePurchase(order);
+      if (!(await handlePurchase(order))) return;
       setIsPurchaseOpen(false);
       setSelectedProduct(null);
     } catch {

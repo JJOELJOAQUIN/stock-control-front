@@ -61,6 +61,7 @@ import {
 } from "@/lib/lacrozeOcr";
 import { allResolved, matchLacrozeLines, type MatchedLine } from "@/lib/matchLacrozeProducts";
 import { stockLabel } from "@/lib/units";
+import { sendPurchaseCheckingDuplicates } from "@/features/stock/lib/purchaseDuplicate";
 
 
 
@@ -209,7 +210,9 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
   async function handleConfirm() {
     if (!parseResult || !ready) return;
     try {
-      await purchaseProduct({
+      const loaded = await sendPurchaseCheckingDuplicates((confirmDuplicate) =>
+        purchaseProduct({
+        confirmDuplicate,
         context: "CONSULTORIO",
         comment: comment.trim() || undefined,
         paymentMethod,
@@ -226,7 +229,12 @@ export function LacrozeImportDialog({ open, onOpenChange }: Props) {
           updateMarkupPercentage: false,
           newDefaultMarkupPercentage: null,
         })),
-      }).unwrap();
+        }).unwrap()
+      );
+      if (!loaded) {
+        toast.info("La compra no se cargó.");
+        return;
+      }
       toast.success("Compra de LACROZE registrada.");
       handleClose(false);
     } catch (e: unknown) {
