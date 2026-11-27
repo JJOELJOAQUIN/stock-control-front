@@ -146,56 +146,75 @@ export function EditProductDialog({
               />
             </Field>
 
-            <Field>
-              <FieldLabel>Unidad en que se cuenta el stock</FieldLabel>
-              <Select
-                value={form.consumptionUnit ?? "UNIDAD"}
-                onValueChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    consumptionUnit: value as UpdateProductRequest["consumptionUnit"],
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {UNIT_OPTIONS.map((u) => (
-                    <SelectItem key={u.value} value={u.value}>
-                      {u.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {product && (form.consumptionUnit ?? "UNIDAD") !== (product.consumptionUnit ?? "UNIDAD") && (
-                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-                  Al cambiar la unidad, revisá después el stock con Reconciliación de stock.
-                </p>
-              )}
-            </Field>
+            {/* Unidad y contenido: solo para insumos. Un cosmético de venta se
+                cuenta siempre por unidad (en ml cada envase entraba como 0,1 ml). */}
+            {form.category === "COSMETICO_VENTA" ? (
+              <Field>
+                <FieldLabel>Unidad en que se cuenta el stock</FieldLabel>
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium text-muted-foreground">
+                  Unidad
+                </div>
+                {(product?.consumptionUnit ?? "UNIDAD") !== "UNIDAD" && (
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                    Este producto estaba en {unitShort(product?.consumptionUnit)}: al guardar pasa a
+                    unidad. Revisá después el stock con Reconciliación de stock.
+                  </p>
+                )}
+              </Field>
+            ) : (
+              <>
+              <Field>
+                <FieldLabel>Unidad en que se cuenta el stock</FieldLabel>
+                <Select
+                  value={form.consumptionUnit ?? "UNIDAD"}
+                  onValueChange={(value) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      consumptionUnit: value as UpdateProductRequest["consumptionUnit"],
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNIT_OPTIONS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>
+                        {u.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {product && (form.consumptionUnit ?? "UNIDAD") !== (product.consumptionUnit ?? "UNIDAD") && (
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                    Al cambiar la unidad, revisá después el stock con Reconciliación de stock.
+                  </p>
+                )}
+              </Field>
 
-            <Field>
-              <FieldLabel>
-                Contenido de un envase ({unitShort(form.consumptionUnit)})
-              </FieldLabel>
-              <Input
-                type="number"
-                min="0"
-                step={form.consumptionUnit === "ML" ? "0.1" : "1"}
-                placeholder={form.consumptionUnit === "ML" ? "Ej: 15 (5 viales × 3 ml)" : "Ej: 20"}
-                value={form.unitsPerPackage ?? ""}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    unitsPerPackage: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Al cargar una compra de 1 envase, entra esta cantidad al stock.
-              </p>
-            </Field>
+              <Field>
+                <FieldLabel>
+                  Contenido de un envase ({unitShort(form.consumptionUnit)})
+                </FieldLabel>
+                <Input
+                  type="number"
+                  min="0"
+                  step={form.consumptionUnit === "ML" ? "0.1" : "1"}
+                  placeholder={form.consumptionUnit === "ML" ? "Ej: 15 (5 viales × 3 ml)" : "Ej: 20"}
+                  value={form.unitsPerPackage ?? ""}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      unitsPerPackage: e.target.value ? Number(e.target.value) : null,
+                    }))
+                  }
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Al cargar una compra de 1 envase, entra esta cantidad al stock.
+                </p>
+              </Field>
+              </>
+            )}
 
             <Field>
               <FieldLabel>Stock mínimo ({unitShort(form.consumptionUnit)})</FieldLabel>
@@ -269,7 +288,14 @@ export function EditProductDialog({
               <Select
                 value={form.category}
                 onValueChange={(value) =>
-                  setForm((prev) => ({ ...prev, category: value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    category: value,
+                    // Un cosmético de venta se cuenta y se vende por unidad.
+                    ...(value === "COSMETICO_VENTA"
+                      ? { consumptionUnit: "UNIDAD" as UpdateProductRequest["consumptionUnit"] }
+                      : {}),
+                  }))
                 }
               >
                 <SelectTrigger>

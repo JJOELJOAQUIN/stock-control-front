@@ -195,8 +195,7 @@ export default function CajaConsultorioPage() {
               products={products}
               isSubmitting={isPurchasingProduct}
               onSubmit={async (order) => {
-                await purchaseProductFromCash(order);
-                setIsPurchaseOpen(false);
+                if (await purchaseProductFromCash(order)) setIsPurchaseOpen(false);
               }}
             />
           )}

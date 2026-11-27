@@ -197,10 +197,21 @@ export default function StockPage() {
         return;
       }
 
+      // Un cosmético de venta se cuenta por unidad; ml/ampolla/disparo son
+      // para insumos. Y un insumo en ml necesita el contenido del envase:
+      // sin él, cada envase comprado entra como 0,1 ml.
+      const createUnit =
+        newProduct.category === "COSMETICO_VENTA" ? "UNIDAD" : newProduct.consumptionUnit;
+      if (createUnit === "ML" && !(newProduct.unitsPerPackage && newProduct.unitsPerPackage > 0)) {
+        toast.error("Indicá el contenido de un envase en ml (por ejemplo, 15)");
+        return;
+      }
+
       // El formulario trabaja en unidades REALES (1,5 ml); se guarda escalado.
-      const createScale = serverScaleAware ? defaultScale(newProduct.consumptionUnit) : 1;
+      const createScale = serverScaleAware ? defaultScale(createUnit) : 1;
       await handleCreateProduct({
         ...newProduct,
+        consumptionUnit: createUnit,
         minimumStock: toStored(newProduct.minimumStock, createScale),
         unitsPerPackage:
           newProduct.unitsPerPackage != null && newProduct.unitsPerPackage > 0
@@ -229,8 +240,7 @@ export default function StockPage() {
     order: Omit<PurchaseOrderRequest, "context">
   ) => {
     try {
-      await handlePurchase(order);
-      setIsPurchaseOpen(false);
+      if (await handlePurchase(order)) setIsPurchaseOpen(false);
     } catch (error: any) {
       toast.error(error?.data?.message || "No se pudo registrar la compra");
     }
@@ -308,9 +318,20 @@ export default function StockPage() {
         return;
       }
 
-      const editScale = serverScaleAware ? defaultScale(editForm.consumptionUnit) : 1;
+      const editUnit =
+        editForm.category === "COSMETICO_VENTA" ? "UNIDAD" : editForm.consumptionUnit;
+      if (
+        editUnit === "ML" &&
+        !(editForm.unitsPerPackage && editForm.unitsPerPackage > 0)
+      ) {
+        toast.error("Indicá el contenido de un envase en ml (por ejemplo, 15)");
+        return;
+      }
+
+      const editScale = serverScaleAware ? defaultScale(editUnit) : 1;
       await handleUpdateProduct(editingProduct.id, {
         ...editForm,
+        consumptionUnit: editUnit,
         minimumStock: toStored(editForm.minimumStock, editScale),
         unitsPerPackage:
           editForm.unitsPerPackage != null && editForm.unitsPerPackage > 0

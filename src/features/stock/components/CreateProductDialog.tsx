@@ -56,6 +56,7 @@ export function CreateProductDialog({
   const { data: procedures = [] } = useGetProcedureCatalogQuery();
   const recipes = form.recipes ?? [];
   const unitLabel = UNIT_SHORT[form.consumptionUnit ?? "UNIDAD"] ?? "u.";
+  const isSaleProduct = form.category === "COSMETICO_VENTA";
 
   const handleCostOrMarkupChange = (
     field: "costPrice" | "defaultMarkupPercentage",
@@ -235,7 +236,16 @@ export function CreateProductDialog({
               <FieldLabel>Categoria</FieldLabel>
               <Select
                 value={form.category}
-                onValueChange={(value) => setForm((p) => ({ ...p, category: value as any }))}
+                onValueChange={(value) =>
+                  setForm((p) => ({
+                    ...p,
+                    category: value as any,
+                    // Un cosmético de venta se cuenta y se vende por unidad.
+                    ...(value === "COSMETICO_VENTA"
+                      ? { consumptionUnit: "UNIDAD" as const, unitsPerPackage: null }
+                      : {}),
+                  }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar..." />
@@ -269,48 +279,66 @@ export function CreateProductDialog({
               </Select>
             </Field>
 
-            {/* --- Unidad de consumo + unidades por envase --- */}
-            <Field>
-              <FieldLabel>Unidad de consumo</FieldLabel>
-              <Select
-                value={form.consumptionUnit ?? "UNIDAD"}
-                onValueChange={(value) =>
-                  setForm((p) => ({ ...p, consumptionUnit: value as any }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONSUMPTION_UNITS.map((u) => (
-                    <SelectItem key={u.value} value={u.value}>
-                      {u.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+            {/* --- Unidad de consumo + unidades por envase ---
+                Solo para insumos (ml de un vial, ampollas, disparos). Un
+                cosmético de venta se cuenta siempre por unidad: en ml cada
+                envase comprado entraba como 0,1 ml. */}
+            {isSaleProduct ? (
+              <Field>
+                <FieldLabel>Unidad de consumo</FieldLabel>
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium text-muted-foreground">
+                  Unidad
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Los cosméticos de venta se cuentan por unidad. ml, ampolla y disparo son
+                  para insumos de procedimientos.
+                </p>
+              </Field>
+            ) : (
+              <>
+              <Field>
+                <FieldLabel>Unidad de consumo</FieldLabel>
+                <Select
+                  value={form.consumptionUnit ?? "UNIDAD"}
+                  onValueChange={(value) =>
+                    setForm((p) => ({ ...p, consumptionUnit: value as any }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONSUMPTION_UNITS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>
+                        {u.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
 
-            <Field>
-              <FieldLabel>Contenido de un envase ({unitLabel})</FieldLabel>
-              <Input
-                type="number"
-                min="0"
-                step={form.consumptionUnit === "ML" ? "0.1" : "1"}
-                placeholder={
-                  form.consumptionUnit === "ML"
-                    ? "Ej: 15 (caja de 5 viales × 3 ml)"
-                    : "Ej: 20 (caja de 20 ampollas)"
-                }
-                value={form.unitsPerPackage ?? ""}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    unitsPerPackage: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-              />
-            </Field>
+              <Field>
+                <FieldLabel>Contenido de un envase ({unitLabel})</FieldLabel>
+                <Input
+                  type="number"
+                  min="0"
+                  step={form.consumptionUnit === "ML" ? "0.1" : "1"}
+                  placeholder={
+                    form.consumptionUnit === "ML"
+                      ? "Ej: 15 (caja de 5 viales × 3 ml)"
+                      : "Ej: 20 (caja de 20 ampollas)"
+                  }
+                  value={form.unitsPerPackage ?? ""}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      unitsPerPackage: e.target.value ? Number(e.target.value) : null,
+                    }))
+                  }
+                />
+              </Field>
+              </>
+            )}
 
             <Field>
               <FieldLabel>Disponibilidad</FieldLabel>
