@@ -48,6 +48,23 @@ export type MonthlyMetrics = {
   cosmetologistProductDetail: CosmetologistProductRow[];
 };
 
+/** Efectivo que la cosmetóloga le deja a la médica (una entrega). */
+export type CosmoCashEntry = {
+  id: string;
+  date: string;       // YYYY-MM-DD
+  amount: number;
+  note: string | null;
+  createdBy: string;  // email de quien lo cargó
+  createdAt: string;
+};
+
+export type CosmoCashMonth = {
+  year: number;
+  month: number;
+  total: number;
+  entries: CosmoCashEntry[];
+};
+
 export const metricsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getMonthlyMetrics: builder.query({
@@ -56,8 +73,36 @@ export const metricsApi = baseApi.injectEndpoints({
         "&year=" + arg.year + "&month=" + arg.month,
       providesTags: ["Cash"],
     }),
+
+    getCosmoCash: builder.query<CosmoCashMonth, { year: number; month: number }>({
+      query: (arg) =>
+        "/api/metrics/cosmetologist-cash?year=" + arg.year + "&month=" + arg.month,
+      providesTags: ["CosmoCash"],
+    }),
+
+    addCosmoCash: builder.mutation<CosmoCashEntry, { amount: number; date?: string; note?: string }>({
+      query: (body) => ({
+        url: "/api/metrics/cosmetologist-cash",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["CosmoCash"],
+    }),
+
+    deleteCosmoCash: builder.mutation<void, string>({
+      query: (id) => ({
+        url: "/api/metrics/cosmetologist-cash/" + id,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CosmoCash"],
+    }),
   }),
   overrideExisting: false,
 });
 
-export const { useGetMonthlyMetricsQuery } = metricsApi;
+export const {
+  useGetMonthlyMetricsQuery,
+  useGetCosmoCashQuery,
+  useAddCosmoCashMutation,
+  useDeleteCosmoCashMutation,
+} = metricsApi;
